@@ -1,0 +1,16 @@
+[package]
+name = "stitchline-engine"
+version = "0.1.0"
+edition = "2021"
+description = "Stitchline engine: import, edit, stitch, sequence and export sewing jobs, and write SLW machine files"
+license = "MIT"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order", "float_roundtrip"] }
+regex = { version = "1", default-features = false, features = ["std", "perf"] }
+miniz_oxide = "0.8"
+
+[[bin]]
+name = "stitchline-cli"
+path = "src/bin/cli.rs"

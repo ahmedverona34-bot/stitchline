@@ -1,0 +1,12 @@
+%!PS-Adobe-3.0
+%%Creator: Adobe Illustrator(R) 8.0
+%%EndSetup
+0 g 1 w
+100 100 m 200 100 l 200 180 L 100 180 l h S
+250 100 m 300 160 350 40 400 100 c 450 160 v 500 100 520 140 y s
+[3 2] 0 d (text (with) parens) pop /Name pop
+50 300 120 60 re f
+600 100 m 650 150 l 700 100 l b
+% a comment 1 2 m
+800 100 m 820 120 l 840 100 l n
+900 100 m 950 130 l

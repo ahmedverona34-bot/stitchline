@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en" class="lite">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stitchline</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<canvas id="cv" aria-label="Drawing canvas"></canvas>
+
+<header class="topbar">
+  <div class="brand">
+    <svg class="mark" viewBox="0 0 26 26" aria-hidden="true">
+      <rect width="26" height="26" rx="7.5" fill="var(--fg)"/>
+      <path d="M5.5 19.5c3.5-1 6-3.5 8.2-7.4" fill="none" stroke="var(--thread)" stroke-width="2" stroke-linecap="round" stroke-dasharray="2.6 2.4"/>
+      <path d="M20.5 5.5 13 13.6" stroke="var(--canvas)" stroke-width="2.2" stroke-linecap="round"/>
+      <circle cx="19.6" cy="6.4" r=".9" fill="var(--fg)"/>
+    </svg>
+    <b>Stitchline</b>
+    <span class="slash" aria-hidden="true">/</span>
+    <button class="file-chip" id="fileChip" title="Rename job"><span id="fileName">Untitled</span><span class="dot" id="dirtyDot"></span></button>
+  </div>
+  <nav class="stages" role="tablist" aria-label="Workflow">
+    <button class="stage" role="tab" data-stage="import" title="Import (1)"><span class="n">1</span><span class="lb">Import</span></button>
+    <button class="stage" role="tab" data-stage="arrange" title="Arrange (2)"><span class="n">2</span><span class="lb">Arrange</span></button>
+    <button class="stage" role="tab" data-stage="stitch" title="Stitch (3)"><span class="n">3</span><span class="lb">Stitch</span></button>
+    <button class="stage" role="tab" data-stage="sequence" title="Sequence (4)"><span class="n">4</span><span class="lb">Sequence</span></button>
+    <button class="stage" role="tab" data-stage="output" title="Output (5)"><span class="n">5</span><span class="lb">Output</span></button>
+  </nav>
+  <div class="tb-right">
+    <button class="search" id="openPalette" title="Find any tool (Ctrl+K)"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span>Find any tool</span><kbd data-notr>Ctrl K</kbd></button>
+    <button class="icon-btn" id="btnOpen" title="Open (Ctrl+O)" aria-label="Open"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></button>
+    <button class="icon-btn" id="btnSave" title="Save job (Ctrl+S)" aria-label="Save"><svg viewBox="0 0 24 24"><path d="M5 3h11l3 3v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M7 3v5h8V3M7 21v-7h10v7"/></svg></button>
+    <span class="tb-sep" aria-hidden="true"></span>
+    <button class="icon-btn" id="undo" title="Undo (Ctrl+Z)" aria-label="Undo"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg></button>
+    <button class="icon-btn" id="redo" title="Redo (Ctrl+Y)" aria-label="Redo"><svg viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H9a5 5 0 0 0 0 10h3"/></svg></button>
+    <span class="tb-sep" aria-hidden="true"></span>
+    <button class="icon-btn" id="keys" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg></button>
+    <button class="icon-btn lang-btn" id="lang" title="Language" aria-label="Language" data-notr><span class="ar-only">EN</span><span class="en-only">ع</span></button>
+    <button class="icon-btn" id="theme" title="Light / dark (Ctrl+Shift+L)" aria-label="Switch light or dark"><svg class="ico-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg><svg class="ico-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
+    <button class="btn primary tb-machine" id="saveTop" title="Save machine file (Ctrl+E)"><span class="lb">Save machine file</span><kbd data-notr>Ctrl E</kbd></button>
+  </div>
+</header>
+
+<nav class="rail" role="toolbar" aria-label="Canvas tools" aria-orientation="vertical">
+  <button class="tool" aria-pressed="true" data-tool="select" data-key="V" title="Select and move (V)" aria-label="Select and move"><svg viewBox="0 0 24 24"><path d="m5 3 14 8-6 2-2 6z"/></svg></button>
+  <button class="tool" aria-pressed="false" data-tool="pan" data-key="H" title="Pan (H, or hold Space)" aria-label="Pan"><svg viewBox="0 0 24 24"><path d="M8 11V5.5a1.5 1.5 0 0 1 3 0V10m0-4.5a1.5 1.5 0 0 1 3 0V10m0-3a1.5 1.5 0 0 1 3 0v6.5A6.5 6.5 0 0 1 10.5 20h0A6.5 6.5 0 0 1 5 17l-1.7-3a1.5 1.5 0 0 1 2.6-1.5L8 15"/></svg></button>
+  <button class="tool" aria-pressed="false" data-tool="start" data-key="S" title="Set start point (S)" aria-label="Set start point"><svg viewBox="0 0 24 24"><circle cx="7" cy="17" r="3"/><path d="M10 14 19 5M14 5h5v5"/></svg></button>
+  <button class="tool" aria-pressed="false" data-tool="measure" data-key="M" title="Measure (M)" aria-label="Measure"><svg viewBox="0 0 24 24"><path d="m3 17 14-14 4 4L7 21z"/><path d="m7 13 2 2M10 10l2 2M13 7l2 2"/></svg></button>
+  <span class="rail-sep" aria-hidden="true"></span>
+  <button class="tool" id="railAdd" title="Add shape" aria-label="Add shape"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M12 8v8M8 12h8"/></svg></button>
+</nav>
+
+<aside class="side" aria-label="Layers and shapes">
+  <div class="p-head"><span class="eyebrow">Layers</span>
+    <span style="display:flex;gap:2px">
+      <button class="icon-btn" id="groupSel" title="Make a layer from the selection (Ctrl+G)" aria-label="Make a layer from the selection" disabled><svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/><path d="M3 15v4a2 2 0 0 0 2 2h4M21 9V5a2 2 0 0 0-2-2h-4"/></svg></button>
+      <button class="icon-btn" id="addLayer" title="New empty layer" aria-label="New empty layer"><svg viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/><path d="M19 3v4M17 5h4"/></svg></button>
+      <button class="icon-btn" id="addShape" title="Add shape" aria-label="Add shape"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+    </span>
+  </div>
+  <div class="scroll" id="layers"></div>
+  <div class="p-foot">
+    <button class="btn grow" data-act="insert" title="Insert file (Ctrl+I)"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Insert file</button>
+    <button class="btn" data-act="selectAll" title="Select all (Ctrl+A)">All</button>
+  </div>
+</aside>
+
+<div class="float readout" id="readout">
+  <span>W <b class="num" id="rw">0.000</b> × H <b class="num" id="rh">0.000</b> mm</span>
+  <span>X <b class="num" id="cx">0.000</b> Y <b class="num" id="cy">0.000</b></span>
+  <span id="rsel"></span>
+</div>
+
+<div class="empty" id="empty" hidden>
+  <div class="hero">
+    <svg class="mark" viewBox="0 0 26 26" aria-hidden="true"><rect width="26" height="26" rx="7.5" fill="var(--fg)"/><path d="M5.5 19.5c3.5-1 6-3.5 8.2-7.4" fill="none" stroke="var(--thread)" stroke-width="2" stroke-linecap="round" stroke-dasharray="2.6 2.4"/><path d="M20.5 5.5 13 13.6" stroke="var(--canvas)" stroke-width="2.2" stroke-linecap="round"/><circle cx="19.6" cy="6.4" r=".9" fill="var(--fg)"/></svg>
+    <h1>Start a sewing job</h1>
+    <p>Open a pattern drawing, or drop the file anywhere in this window.</p>
+    <div style="display:flex;gap:8px"><button class="btn primary big" data-act="open">Open drawing…</button><button class="btn big" data-act="addShapeSheet">Draw a shape</button></div>
+    <div class="fmt">DXF · AI · PLT · PRT · DST · DSB · STITCHLINE</div>
+    <div class="recent" id="heroRecent" style="width:100%"></div>
+  </div>
+</div>
+
+<div class="float sim" id="sim" hidden>
+  <button class="tool" id="simPlay" aria-label="Play"><svg viewBox="0 0 24 24" id="simIcon"><path d="M7 5v14l11-7z" fill="currentColor"/></svg></button>
+  <input type="range" id="simPos" min="0" max="1000" value="1000" aria-label="Position in the sewing run">
+  <select class="sel" id="simSpeed" style="min-width:64px" aria-label="Simulation speed (not the machine's real speed)" title="Simulation speed (not the machine's real speed)"><option value="0.5">½×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="5">5×</option><option value="20">20×</option></select>
+  <span class="num" id="simTxt">0 / 0</span>
+  <button class="tool" id="simClose" aria-label="Close simulation"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+</div>
+
+<div class="float viewbar" role="group" aria-label="Show">
+  <div class="seg" role="group" aria-label="Layers shown">
+    <button aria-pressed="true" data-view="all" title="Show all layers">All</button>
+    <button aria-pressed="false" data-view="layer" title="Show only the current layer">Layer</button>
+  </div>
+  <span class="sep"></span>
+  <button class="tool" aria-pressed="false" id="showStitch" title="Show stitches (T)"><svg viewBox="0 0 24 24"><path d="M3 17c4-2 6-8 9-10s6 0 9-2" stroke-dasharray="2.5 2.5"/></svg>Stitches</button>
+  <button class="tool" aria-pressed="false" id="showOrder" title="Show sewing order (O)"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.5 6H14a4 4 0 0 1 0 8h-4a4 4 0 0 0 0 8h5.5"/></svg>Order</button>
+</div>
+
+<div class="float zoombar" role="group" aria-label="Zoom">
+  <button class="tool" id="zoomOut" title="Zoom out (−)" aria-label="Zoom out"><svg viewBox="0 0 24 24"><path d="M6 12h12"/></svg></button>
+  <span class="zoomtxt" id="zoomTxt">100%</span>
+  <button class="tool" id="zoomIn" title="Zoom in (+)" aria-label="Zoom in"><svg viewBox="0 0 24 24"><path d="M12 6v12M6 12h12"/></svg></button>
+  <span class="sep"></span>
+  <button class="tool" id="fit" title="Fit (F)"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>Fit</button>
+</div>
+
+<aside class="inspector" aria-label="Inspector">
+  <div class="scroll" id="insp"></div>
+  <div class="i-foot" id="ifoot"></div>
+</aside>
+
+<div class="scrim" id="paletteScrim" hidden>
+  <div class="palette" role="dialog" aria-label="Find any tool">
+    <div class="q"><svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:var(--fg-3);fill:none;stroke-width:1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="pq" placeholder="Search tools, e.g. back-tack, mirror, machine file" autocomplete="off"><kbd>Esc</kbd></div>
+    <ul id="plist"></ul>
+    <div class="count" id="pcount"></div>
+  </div>
+</div>
+<div class="scrim" id="sheetScrim" hidden><div class="sheet" role="dialog" id="sheet"></div></div>
+<div class="ctx" id="ctx" hidden></div>
+<div class="toast" id="toast" hidden></div>
+<div class="busy" id="busy" hidden><span class="spin"></span><span id="busyTxt">Working…</span></div>
+
+<script src="i18n.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

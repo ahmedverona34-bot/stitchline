@@ -1,0 +1,6 @@
+# build output
+/target/
+/node_modules/
+/src-tauri/gen/
+*.log
+__pycache__/

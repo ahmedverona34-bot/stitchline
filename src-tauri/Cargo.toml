@@ -1,0 +1,15 @@
+[package]
+name = "stitchline"
+version = "1.0.0"
+edition = "2021"
+description = "Stitchline: pattern sewing and laser cutting jobs for SLW sewing machines"
+license = "MIT"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+stitchline-engine = { path = "../engine" }
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+serde_json = { version = "1", features = ["preserve_order"] }

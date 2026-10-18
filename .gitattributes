@@ -1,0 +1,7 @@
+# test drawings and machine files are compared byte for byte: never convert line endings
+reference/** -text
+tests/data/** -text
+*.slw binary
+*.ttf binary
+*.ico binary
+*.png binary

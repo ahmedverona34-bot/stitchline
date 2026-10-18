@@ -1,0 +1,31 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Stitchline",
+  "version": "1.0.0",
+  "identifier": "com.stitchline.desktop",
+  "build": {
+    "frontendDist": "../ui"
+  },
+  "app": {
+    "windows": [],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "publisher": "Stitchline",
+    "shortDescription": "Stitchline pattern sewing",
+    "longDescription": "Stitchline: open drawings, set up stitches and laser cuts, and save SLW machine files.",
+    "icon": ["icons/icon.ico", "icons/icon.png"],
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "installerIcon": "icons/icon.ico",
+        "languages": ["Arabic", "English"],
+        "displayLanguageSelector": true
+      }
+    }
+  }
+}
