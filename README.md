@@ -1,4 +1,10 @@
-# Stitchline
+<p align="center"><img src="ui/icon-512.png" width="112" alt="Stitchline icon"></p>
+
+<h1 align="center">Stitchline</h1>
+
+<p align="center">Pattern sewing and laser cutting jobs for SLW sewing machines · Windows · English and Arabic</p>
+
+![Stitch settings for a quilted demo pattern, light theme](docs/screenshots/stitch-light.png)
 
 A Windows desktop app for pattern sewing machines that read **SLW** machine files (the format of the
 "Sew_Soft" pattern-sewing CAD, including machines with a laser head on needle 3). Open a drawing, arrange
@@ -17,6 +23,20 @@ straight onto a USB stick if you like.
 
 The SLW files it writes match those of the original program record for record on the reference drawings in
 `reference/` (see Tests).
+
+## Screenshots
+
+| | |
+|---|---|
+| ![Dark theme, stitch settings](docs/screenshots/stitch-dark.png) | ![Laser layer with its cutting speed check](docs/screenshots/laser-dark.png) |
+| **Dark theme:** the same job, switched with Ctrl+Shift+L | **Laser layer** (needle 3) and its cutting-speed check |
+| ![Sewing order with numbers on the drawing](docs/screenshots/sequence-light.png) | ![Machine program and statistics before saving](docs/screenshots/output-dark.png) |
+| **Sequence:** sewing order, sorting and simulation | **Output:** the machine program, statistics and saving the SLW file |
+
+![Keyboard shortcuts sheet](docs/screenshots/shortcuts-light.png)
+
+Every button shows its shortcut; `?` or F1 opens the full list. The demo pattern is
+`tests/data/drawings/demo.plt` (made by `tests/make_test_drawings.py`).
 
 ## Download and install
 

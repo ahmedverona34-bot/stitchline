@@ -1,8 +1,10 @@
 # Tests only: rebuild the debug app and start it on a fresh test profile with DevTools on port 9333.
 param([string]$Home2 = "$env:TEMP\sl_ui_dev")
 $ErrorActionPreference = 'Continue'
-Get-Process stitchline -ErrorAction SilentlyContinue | Stop-Process -Force
 Set-Location (Split-Path $PSScriptRoot)
+# stop only the test build from this project, never an installed Stitchline someone is using
+$debugExe = Join-Path (Get-Location) 'target\debug\stitchline.exe'
+Get-Process stitchline -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq $debugExe } | Stop-Process -Force
 $winlibs = (Get-ChildItem "$env:LOCALAPPDATA\Microsoft\WinGet\Packages" -Directory -Filter 'BrechtSanders.WinLibs*' | Select-Object -First 1).FullName + '\mingw64\bin'
 $env:PATH = "$env:USERPROFILE\.cargo\bin;$env:PATH;$winlibs"
 $env:CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER = "$env:USERPROFILE\.rustup\toolchains\stable-x86_64-pc-windows-gnu\lib\rustlib\x86_64-pc-windows-gnu\bin\self-contained\x86_64-w64-mingw32-gcc.exe"

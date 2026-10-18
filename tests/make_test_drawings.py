@@ -163,10 +163,57 @@ def plt_mixed():
     return (';\n'.join(out) + ';\n').encode('ascii')
 
 
+def demo_plt():
+    """A demo pattern for screenshots: two garment pieces, quilting lines to sew (pen 1), outlines to laser cut (pen 2)."""
+    def quad(p0, c, p1, n=24):
+        return [((1 - t) ** 2 * p0[0] + 2 * (1 - t) * t * c[0] + t * t * p1[0], (1 - t) ** 2 * p0[1] + 2 * (1 - t) * t * c[1] + t * t * p1[1])
+                for t in (i / n for i in range(1, n + 1))]
+    front = [(0, 0), (230, 0), (245, 240)] + quad((245, 240), (185, 250), (175, 330)) + [(95, 372)] + quad((95, 372), (60, 330), (0, 325))
+    sleeve = [(330, 30), (570, 30), (610, 250)] + quad((610, 250), (470, 470), (310, 250))
+    pieces = [front, sleeve]
+
+    def clip(poly, p, d):
+        """Pieces of the line p + t*d inside the polygon."""
+        ts = []
+        for (ax, ay), (bx, by) in zip(poly, poly[1:] + poly[:1]):
+            ex, ey = bx - ax, by - ay
+            den = d[0] * ey - d[1] * ex
+            if abs(den) < 1e-12:
+                continue
+            t = ((ax - p[0]) * ey - (ay - p[1]) * ex) / den
+            u = ((ax - p[0]) * d[1] - (ay - p[1]) * d[0]) / den
+            if 0 <= u < 1:
+                ts.append(t)
+        ts.sort()
+        return [(ts[i], ts[i + 1]) for i in range(0, len(ts) - 1, 2)]
+
+    lines = []
+    for poly in pieces:
+        for d in ((1, 1), (1, -1)):                       # quilted diamonds
+            n = (d[0] / 2 ** 0.5, d[1] / 2 ** 0.5)
+            for k in range(-30, 31):
+                off = k * 34.0
+                p = (300 - n[1] * off, 200 + n[0] * off)
+                for t0, t1 in clip(poly, p, n):
+                    t0, t1 = t0 + 12, t1 - 12              # stay inside the seam allowance
+                    if t1 - t0 > 15:
+                        lines.append([(p[0] + n[0] * t0, p[1] + n[1] * t0), (p[0] + n[0] * t1, p[1] + n[1] * t1)])
+    k = 1016 / 25.4
+    u = lambda q: '%d,%d' % (round(q[0] * k), round(q[1] * k))
+    out = ['IN', 'SP1']
+    for ln in lines:
+        out += ['PU' + u(ln[0]), 'PD' + u(ln[1])]
+    out.append('SP2')
+    for poly in pieces:
+        out += ['PU' + u(poly[0]), 'PD' + ','.join(u(q) for q in poly[1:] + poly[:1])]
+    out += ['PU', 'SP0']
+    return (';\n'.join(out) + ';\n').encode('ascii')
+
+
 if __name__ == '__main__':
     os.makedirs(OUT, exist_ok=True)
     for name, data in [('synthetic.dxf', dxf()), ('synthetic.dst', dst()), ('synthetic.dsb', dsb()), ('synthetic_ps.ai', ai_ps()),
-                       ('synthetic_pdf.ai', ai_pdf()), ('mixed.plt', plt_mixed()), ('mixed.hpgl', plt_mixed()), ('unsupported.edi', b'x'),
+                       ('synthetic_pdf.ai', ai_pdf()), ('mixed.plt', plt_mixed()), ('demo.plt', demo_plt()), ('mixed.hpgl', plt_mixed()), ('unsupported.edi', b'x'),
                        ('unknown.xyz', b'x'), ('empty.dxf', b'0\nSECTION\n2\nENTITIES\n0\nENDSEC\n0\nEOF\n'), ('broken.slw', b'\x00' * 100)]:
         with open(os.path.join(OUT, name), 'wb') as f:
             f.write(data)
