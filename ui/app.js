@@ -503,7 +503,7 @@
     short: () => needSel() && api('delete_short', { ids: [...sel], min: num('sl') }),
     join: () => needSel() && api('join', { ids: [...sel], tol: num('jt') }),
     tool: b => setTool(b.dataset.tool),
-    theme: () => $('#theme').click(),
+    theme: () => toggleTheme(),
     sheet: b => openSheet(b.dataset.sheet),
     groupSheet: () => needSel() && openSheet('group'),
     dpi: b => setJob({ dpi: +b.dataset.v }),
@@ -1047,18 +1047,33 @@
   $('#btnSave').onclick = () => ACT.save();
   $('#addShape').onclick = () => openSheet('add');
   $('#railAdd').onclick = () => openSheet('add');
-  $('#keys').onclick = () => openSheet('keys');
+  $('#keys').onclick = () => { closeSettings(); openSheet('keys'); };
   $('#saveTop').onclick = () => S && ACT.saveMachine();
   $('#groupSel').onclick = () => ACT.groupSheet();
   $('#addLayer').onclick = () => promptSheet('New layer', 'Name of the new empty layer', 'Layer ' + ((S?.job.layers.length || 0) + 1), name => api('add_layer', { name }, { quiet: true }).then(d => { if (d) curLayer = d.job.layers.at(-1).id; renderAll(); }));
   $('#fileChip').onclick = () => promptSheet('Job name', 'Used for the machine file and exports', S.job.name, name => api('rename_job', { name }, { quiet: true }));
-  $('#lang').onclick = () => setLang(window.STL_LANG === 'ar' ? 'en' : 'ar');
   function setLang(l) { store.set('lang', l); location.reload(); }
-  $('#theme').onclick = () => {
-    const r = document.documentElement; const dark = r.dataset.theme ? r.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
-    r.dataset.theme = dark ? 'light' : 'dark'; store.set('theme', r.dataset.theme); draw();
-  };
+  function setTheme(t) { document.documentElement.dataset.theme = t; store.set('theme', t); syncSettings(); draw(); }
+  function toggleTheme() { setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'); }
   { const th = store.get('theme', null); document.documentElement.dataset.theme = th || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); }
+
+  /* settings menu (language, light / dark, shortcuts) */
+  function syncSettings() {
+    $$('#setPop [data-lang]').forEach(b => b.setAttribute('aria-pressed', b.dataset.lang === window.STL_LANG));
+    $$('#setPop [data-theme-v]').forEach(b => b.setAttribute('aria-pressed', b.dataset.themeV === document.documentElement.dataset.theme));
+  }
+  function closeSettings() { $('#setPop').hidden = true; $('#settings').setAttribute('aria-expanded', 'false'); }
+  $('#settings').onclick = () => {
+    const open = $('#setPop').hidden;
+    if (!open) return closeSettings();
+    syncSettings(); $('#setPop').hidden = false; $('#settings').setAttribute('aria-expanded', 'true');
+  };
+  $('#setPop').addEventListener('click', e => {
+    const l = e.target.closest('[data-lang]'); if (l && l.dataset.lang !== window.STL_LANG) return setLang(l.dataset.lang);
+    const t = e.target.closest('[data-theme-v]'); if (t) setTheme(t.dataset.themeV);
+  });
+  document.addEventListener('pointerdown', e => { if (!$('#setPop').hidden && !e.target.closest('.set-wrap')) closeSettings(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#setPop').hidden) { e.stopImmediatePropagation(); closeSettings(); $('#settings').focus(); } }, true);
   let lite = store.get('lite', true);
   function setLite(v) { lite = v; store.set('lite', v); document.documentElement.classList.toggle('lite', v); if (S && stage === 'import') renderInspector(); draw(); }
   setLite(lite);
@@ -1393,7 +1408,7 @@
     ['Remove overlapping shapes on open', 'import'], ["Don't join lines automatically", 'import'], ['Work without reference point', 'import'], ['Drawing resolution (dpi)', 'import'], ['Scale drawing', 'import'], ['Calculate scale from a measurement', 'import', () => openSheet('calc')], ['Machine table size', 'import'], ['New job', 'import', () => confirmSheet('New job?', 'The current job closes. Save it first if you want to keep it.', 'New job', () => { sel.clear(); api('new'); })],
     ['Add shape (point, line, rectangle, circle)', 'arrange', () => openSheet('add')], ['Duplicate', 'arrange', () => openSheet('dup')], ['Move shape to another layer', 'arrange'], ['New empty layer', 'arrange', () => $('#addLayer').click()], ['Reference point', 'arrange', () => openSheet('ref')], ['Nudge / move', 'arrange'], ['Rotate', 'arrange'], ['Mirror', 'arrange'], ['Resize selected shapes', 'arrange', () => openSheet('resize')], ['Pick start point', 'arrange', () => setTool('start')], ['Reverse direction', 'arrange', () => ACT.op({ dataset: { op: 'reverse' } })], ['Extend or shorten ends', 'arrange'], ['Edit points one by one', 'arrange', () => openSheet('points')], ['Split a shape', 'arrange'], ['Merge close points', 'arrange'], ['Delete short lines', 'arrange'], ['Join line ends', 'arrange'], ['Select all', 'arrange', () => ACT.selectAll()], ['Delete selected', 'arrange', () => ACT.op({ dataset: { op: 'delete' } })], ['Start every shape at top / bottom / left / right', 'arrange'], ['Sections: zigzag, back-tack, special length', 'arrange', () => openSheet('marks')], ['Measure distance', 'arrange', () => setTool('measure')], ['Undo', 'arrange', () => api('undo')], ['Redo', 'arrange', () => api('redo')],
     ['Make a layer from the selection (Ctrl+G)', 'arrange', () => ACT.groupSheet()], ['Delete layer, keep its shapes (Ctrl+Shift+G)', 'arrange'], ['Set the needle of a layer', 'arrange'],
-    ['Light / dark (Ctrl+Shift+L)', 'import', () => $('#theme').click()],
+    ['Light / dark (Ctrl+Shift+L)', 'import', () => toggleTheme()],
     ['Keyboard shortcuts', 'import', () => openSheet('keys')],
     ['Language: العربية / English', 'import', () => setLang(window.STL_LANG === 'ar' ? 'en' : 'ar')],
     ['Make a layer laser cut', 'stitch', () => setKind(curLayer, 'laser')],
@@ -1445,7 +1460,7 @@
     if (ctrl && k === 'e') { e.preventDefault(); return ACT.saveMachine(); }
     if (ctrl && k === 'n') { e.preventDefault(); return confirmSheet('New job?', 'The current job closes. Save it first if you want to keep it.', 'New job', () => { sel.clear(); api('new'); }); }
     if (ctrl && k === 'i') { e.preventDefault(); return ACT.insert(); }
-    if (ctrl && e.shiftKey && k === 'l') { e.preventDefault(); return $('#theme').click(); }
+    if (ctrl && e.shiftKey && k === 'l') { e.preventDefault(); return toggleTheme(); }
     if (e.key === 'F1') { e.preventDefault(); return openSheet('keys'); }
     if (typing) return;
     // during a move or resize: Esc cancels it, Shift / Alt change the resize at once, other keys wait
