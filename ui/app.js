@@ -1284,6 +1284,17 @@
     sh.innerHTML = `<header><h3>${title}</h3><p>${text}</p></header><footer><button class="btn" data-close>Cancel</button><button class="btn primary" data-ok>${okText}</button></footer>`;
     sheetCtx = { fn }; $('#sheetScrim').hidden = false; $('#sheet [data-ok]').focus();
   }
+  /* Closing the window with unsaved changes (the engine stops the close and calls this): Save / Don't save / Cancel */
+  const quit = discard => window.__TAURI_INTERNALS__?.invoke('quit', { discard });
+  function closeQuestion() {
+    if (!S || !S.file.dirty) return quit(false);
+    if (!$('#sheetScrim').hidden && $('#sheet').dataset.k === 'close') return;
+    const sh = $('#sheet'); sh.className = 'sheet'; sh.dataset.k = 'close';
+    sh.innerHTML = `<header><h3>Save changes to “${esc(S.file.name)}” before closing?</h3><p>If you don't save, your changes will be lost.</p></header>
+      <footer><button class="btn left" data-nosave>Don't save</button><button class="btn" data-close>Cancel</button><button class="btn primary" data-ok>Save</button></footer>`;
+    sheetCtx = {}; $('#sheetScrim').hidden = false; $('#sheet [data-ok]').focus();
+  }
+  window.__stitchlineClose = closeQuestion;
   function promptSheet(title, text, value, fn) {
     const sh = $('#sheet'); sh.className = 'sheet'; sh.dataset.k = 'prompt';
     sh.innerHTML = `<header><h3>${title}</h3><p>${text}</p></header><div class="body"><span class="field wide"><input id="pv" value="${esc(value)}"></span></div><footer><button class="btn" data-close>Cancel</button><button class="btn primary" data-ok>OK</button></footer>`;
@@ -1302,6 +1313,7 @@
       }
     },
     confirm: () => sheetCtx.fn(),
+    close: async () => { closeSheet(); const d = await api('save'); if (d && !d.file.dirty) quit(false); },
     prompt: () => { const v = $('#pv').value.trim(); if (v) sheetCtx.fn(v); },
     add: async () => {
       let layer = $('#aLayer').value;
@@ -1362,6 +1374,7 @@
       return;
     }
     const s = t.closest('.switch'); if (s) { s.setAttribute('aria-checked', s.getAttribute('aria-checked') !== 'true'); return; }
+    if (t.closest('[data-nosave]')) { closeSheet(); return quit(true); }
     if (t.closest('[data-ok]')) { const r = await SHEET_OK[k]?.(); if (r !== false) closeSheet(); else if (k === 'marks') openSheet('marks'); return; }
     if (t.closest('[data-clear]')) {
       if (k === 'ref') { await api('set_ref', { which: 'r1', id: null }, { quiet: true }); await api('set_ref', { which: 'r2', id: null }, { quiet: true }); await api('set_ref', { which: 'align', id: null }, { quiet: true }); closeSheet(); }
