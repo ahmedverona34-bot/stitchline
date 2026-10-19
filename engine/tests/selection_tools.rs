@@ -41,8 +41,7 @@ fn session(save: Option<String>) -> Session {
     static LOCK: Mutex<usize> = Mutex::new(0);
     let mut n = LOCK.lock().unwrap();
     *n += 1;
-    std::env::set_var("STITCHLINE_HOME", tmp().join(format!("home{}", *n)));
-    Session::new(Box::new(Scripted { save }))
+    Session::with_dir(Box::new(Scripted { save }), tmp().join(format!("home{}", *n)))
 }
 
 /// A session with a drawing that has open polylines, closed shapes, circles and arcs (curves come in as points).
@@ -238,9 +237,9 @@ fn save_and_reopen_keeps_moved_and_resized_shapes() {
 fn moving_a_shape_moves_its_stitches_without_changing_them() {
     let mut s = with_drawing("s3_closed.dxf");
     let id = s.job.shapes[0].id;
-    let before = stitches::stitch_job(&s.job, None);
+    let before = stitches::stitch_job(&s.job, None).unwrap();
     s.handle("move", &json!({ "ids": [id], "dx": 4.0, "dy": -8.0 })).unwrap();
-    let after = stitches::stitch_job(&s.job, None);
+    let after = stitches::stitch_job(&s.job, None).unwrap();
     let (pa, fa) = &before[&id];
     let (pb, fb) = &after[&id];
     assert_eq!(fa, fb, "same stitch kinds (tack, corner, ...)");
@@ -251,7 +250,7 @@ fn moving_a_shape_moves_its_stitches_without_changing_them() {
 }
 
 fn records(s: &Session) -> Vec<Record> {
-    let st = stitches::stitch_job(&s.job, None);
+    let st = stitches::stitch_job(&s.job, None).unwrap();
     machine::build_records(&s.job, &st, "job.slw", Some(1_700_000_000)).unwrap()
 }
 
@@ -281,7 +280,7 @@ fn machine_file_is_the_same_when_the_whole_job_moves() {
 fn resized_job_writes_a_valid_machine_file_that_reads_back() {
     let mut s = with_drawing("p3_circles_arcs.dxf");
     let read_back = |s: &Session| {
-        let st = stitches::stitch_job(&s.job, None);
+        let st = stitches::stitch_job(&s.job, None).unwrap();
         let (bytes, n) = machine::slw_bytes(&s.job, &st, "resized.slw", Some(1_700_000_000)).unwrap();
         assert!(n > 0);
         machine::read_slw(&bytes).unwrap()
@@ -314,6 +313,6 @@ fn legacy_machine_file_opens_and_moves() {
         same_except_points(p, q);
         assert!(p.pts.iter().zip(&q.pts).all(|(u, v)| close(v.0 - u.0, -1.5) && close(v.1 - u.1, 2.5)));
     }
-    let v: Value = s.state(false);
+    let v: Value = s.state(false).unwrap();
     assert_eq!(v["can_undo"], json!(true));
 }

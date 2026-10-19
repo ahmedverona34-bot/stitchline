@@ -145,9 +145,28 @@ fn exists(p: &str) -> bool {
     Path::new(p).exists()
 }
 
+/// Write through a temporary file, so a crash while writing never leaves half a file.
+fn write_atomic(path: &Path, data: &[u8]) -> std::io::Result<()> {
+    let mut tmp = path.as_os_str().to_owned();
+    tmp.push(".tmp");
+    std::fs::write(&tmp, data)?;
+    std::fs::rename(&tmp, path)
+}
+
+/// Stitch a job that is not the session's yet: Err when it is too large; else the stitch cache for it.
+fn stitch_check(job: &Job) -> Res<HashMap<i64, (u64, Stitched)>> {
+    let mut cache = HashMap::new();
+    stitches::stitch_job(job, Some(&mut cache))?;
+    Ok(cache)
+}
+
 impl Session {
     pub fn new(dialogs: Box<dyn Dialogs>) -> Session {
-        let dir = app_dir();
+        Session::with_dir(dialogs, app_dir())
+    }
+
+    /// A session that keeps prefs.json and the autosave in `dir`.
+    pub fn with_dir(dialogs: Box<dyn Dialogs>, dir: PathBuf) -> Session {
         let mut s = Session {
             prefs: Map::new(),
             job: Job::new(),
@@ -191,7 +210,7 @@ impl Session {
         let mut ser = serde_json::Serializer::with_formatter(&mut buf, serde_json::ser::PrettyFormatter::with_indent(b" "));
         serde::Serialize::serialize(&Value::Object(self.prefs.clone()), &mut ser).unwrap();
         let text = String::from_utf8(buf).unwrap().replace('\n', "\r\n");
-        std::fs::write(self.prefs_path(), text).map_err(|e| Error::Unexpected(platform::os_error(&e, &self.prefs_path())))
+        write_atomic(&self.prefs_path(), text.as_bytes()).map_err(|e| Error::Unexpected(platform::os_error(&e, &self.prefs_path())))
     }
 
     fn last_dir(&self) -> String {
@@ -220,36 +239,58 @@ impl Session {
         self.cache = None;
     }
 
+    /// The job changed: mark it unsaved and autosave it.
     pub fn touch(&mut self) {
-        self.dirty = true;
         self.cache = None;
+        self.changed();
+    }
+
+    /// touch() for a change already stitched by check(), so the stitches are not computed again.
+    fn changed(&mut self) {
+        self.dirty = true;
+        self.autosave();
+    }
+
+    /// Keep the job, its file and whether it is saved, for the next start (restore_autosave).
+    fn autosave(&self) {
         let mut d = self.job.to_dict();
         if let Value::Object(m) = &mut d {
             m.insert("_path".into(), json!(self.path));
+            m.insert("_dirty".into(), json!(self.dirty));
         }
         if std::fs::create_dir_all(&self.dir).is_ok() {
-            let _ = std::fs::write(self.autosave_path(), serde_json::to_vec(&d).unwrap());
+            let _ = write_atomic(&self.autosave_path(), &serde_json::to_vec(&d).unwrap());
         }
     }
 
     /// (stitches, program steps, stats), recomputed after a change; only changed shapes are re-stitched.
-    fn computed(&mut self) -> &(StitchMap, Vec<Value>, Value) {
+    /// Err when the job is too large to stitch (the stitch cache is then left as it was).
+    fn computed(&mut self) -> Res<&(StitchMap, Vec<Value>, Value)> {
         if self.cache.is_none() {
-            let st = stitches::stitch_job(&self.job, Some(&mut self.stitch_cache));
+            let st = stitches::stitch_job(&self.job, Some(&mut self.stitch_cache))?;
             let (steps, stats) = program::build(&self.job, &st);
             self.cache = Some((st, steps, stats));
         }
-        self.cache.as_ref().unwrap()
+        Ok(self.cache.as_ref().unwrap())
+    }
+
+    /// Stitch the changed job; Err when it is too large.
+    fn check(&mut self) -> Res<()> {
+        self.cache = None;
+        self.computed().map(|_| ())
     }
 
     pub fn restore_autosave(&mut self) {
         let Ok(b) = std::fs::read(self.autosave_path()) else { return };
         let Ok(d) = serde_json::from_slice::<Value>(&b) else { return };
-        if let Ok(job) = Job::from_dict(&d) {
-            let path = d.get("_path").and_then(|v| v.as_str()).map(String::from);
-            self.reset(job, path);
-            self.dirty = true;
-        }
+        let Ok(job) = Job::from_dict(&d) else { return };
+        // a job too large to stitch would stop Stitchline again at every start
+        let Ok(cache) = stitch_check(&job) else { return };
+        let path = d.get("_path").and_then(|v| v.as_str()).map(String::from);
+        self.reset(job, path);
+        self.stitch_cache = cache;
+        // autosaves written before "_dirty" was kept are of unsaved changes
+        self.dirty = d.get("_dirty").and_then(|v| v.as_bool()).unwrap_or(true);
     }
 
     fn remember(&mut self, path: &str) -> Res<()> {
@@ -265,8 +306,8 @@ impl Session {
     }
 
     /// The whole state the window draws from.
-    pub fn state(&mut self, full: bool) -> Value {
-        self.computed();
+    pub fn state(&mut self, full: bool) -> Res<Value> {
+        self.computed()?;
         let job = &self.job;
         let (_, steps, stats) = self.cache.as_ref().unwrap();
         let mut out = match job.to_dict() {
@@ -324,7 +365,7 @@ impl Session {
         m.insert("events".into(), json!(program::EVENTS));
         m.insert("defaults".into(), Value::Object(program::job_defaults(job)));
         m.insert("message".into(), json!(self.message));
-        Value::Object(m)
+        Ok(Value::Object(m))
     }
 
     // ------------------------------------------------------------------ file actions
@@ -336,7 +377,9 @@ impl Session {
             let data = std::fs::read(path).map_err(|e| Error::Unexpected(platform::os_error(&e, Path::new(path))))?;
             let d: Value = serde_json::from_slice(&data).map_err(|e| Error::Op(e.to_string()))?;
             let job = Job::from_dict(&d).map_err(Error::Op)?;
+            let cache = stitch_check(&job)?;
             self.reset(job, Some(path.to_string()));
+            self.stitch_cache = cache;
             if keep_in_recent {
                 self.remember(path)?;
             }
@@ -352,7 +395,9 @@ impl Session {
         job.source = Some(path.to_string());
         let settings = job.settings.clone();
         let (_, removed, joined) = ops::load_paths(&mut job, paths, &settings, "");
+        let cache = stitch_check(&job)?;
         self.reset(job, None);
+        self.stitch_cache = cache;
         self.dirty = true;
         if keep_in_recent {
             self.remember(path)?;
@@ -382,12 +427,13 @@ impl Session {
         self.path = Some(path.clone());
         self.dirty = false;
         self.job.name = platform::splitext(&platform::basename(&path)).0;
+        self.autosave();
         self.remember(&path)?;
         Ok(Some(format!("Saved {}", platform::basename(&path))))
     }
 
     fn export(&mut self, kind: &str, args: &Value) -> Res<Option<String>> {
-        let st = self.computed().0.clone();
+        let st = self.computed()?.0.clone();
         let base = if self.job.name.is_empty() { "job".to_string() } else { self.job.name.clone() };
         let mode = match args.get("mode") {
             Some(Value::String(s)) => s.clone(),
@@ -434,7 +480,7 @@ impl Session {
         if self.job.sewn_shapes().is_empty() {
             return Err(Error::op("Nothing to sew: turn on at least one layer."));
         }
-        let st = self.computed().0.clone();
+        let st = self.computed()?.0.clone();
         let src = if self.job.name.is_empty() { "job" } else { self.job.name.as_str() };
         let name: String = truncate(&src.chars().filter(|&c| is_alnum(c) || c == '-' || c == '_').collect::<String>(), 12);
         let name = if name.is_empty() { "job".to_string() } else { name };
@@ -615,7 +661,7 @@ impl Session {
         let mut msg: Option<String> = None;
         match op {
             "state" => {
-                let st = self.state(true);
+                let st = self.state(true)?;
                 return Ok(self.with_message(st, None));
             }
             "ping" => return Ok(json!({"ok": true})),
@@ -623,6 +669,7 @@ impl Session {
                 let mut nj = Job::new();
                 nj.settings = self.job.settings.clone();
                 self.reset(nj, None);
+                self.autosave();
                 msg = Some("New job".into());
             }
             "open" => {
@@ -632,14 +679,24 @@ impl Session {
                 };
                 if let Some(p) = p {
                     msg = Some(self.open_path(&p, true)?);
+                    self.autosave();
                 }
             }
             "insert" => {
                 if let Some(p) = self.ask_open("Insert a drawing into this job", INSERT_TYPES) {
                     self.job.snapshot();
                     let settings = self.job.settings.clone();
-                    let (n, rem, jn) = ops::insert_file(&mut self.job, &p, &settings)?;
-                    self.touch();
+                    let r = ops::insert_file(&mut self.job, &p, &settings).and_then(|r| self.check().map(|_| r));
+                    let (n, rem, jn) = match r {
+                        Ok(r) => r,
+                        Err(e) => {
+                            self.job.undo();
+                            self.cache = None;
+                            return Err(e);
+                        }
+                    };
+                    self.redo.clear();
+                    self.changed();
                     msg = Some(format!("Inserted {} shapes from {}", n as i64 - jn as i64 - rem as i64, platform::basename(&p)));
                 }
             }
@@ -667,26 +724,28 @@ impl Session {
             }
             _ => {
                 self.job.snapshot();
-                let r = match self.edit(op, a) {
+                // an edit that leaves the job too large to stitch is undone like one that fails
+                let r = match self.edit(op, a).and_then(|r| self.check().map(|_| r)) {
                     Ok(r) => r,
                     Err(e) => {
                         self.job.undo();
+                        self.cache = None;
                         return Err(e);
                     }
                 };
                 self.redo.clear();
-                self.touch();
+                self.changed();
                 match r {
                     Some(EditOut::Msg(m)) => msg = Some(m),
                     Some(EditOut::NewId(id)) => {
                         self.message = None;
-                        let mut st = self.state(false);
+                        let mut st = self.state(false)?;
                         st["new_id"] = json!(id);
                         return Ok(self.with_message(st, None));
                     }
                     Some(EditOut::Duplicated(new)) => {
                         if !new.is_empty() {
-                            let mut st = self.state(false);
+                            let mut st = self.state(false)?;
                             st["new_ids"] = json!(new);
                             return Ok(self.with_message(st, Some("Shape duplicated".into())));
                         }
@@ -695,7 +754,7 @@ impl Session {
                 }
             }
         }
-        let st = self.state(false);
+        let st = self.state(false)?;
         Ok(self.with_message(st, msg))
     }
 
@@ -723,7 +782,8 @@ impl Session {
             self.path = None; // a dropped job file: Save asks where to keep it
         }
         self.job.source = Some(name);
-        let st = self.state(false);
+        self.autosave();
+        let st = self.state(false)?;
         Ok(self.with_message(st, Some(msg)))
     }
 }
