@@ -114,7 +114,7 @@ fn name_bytes(r: &[Record]) -> (u16, Vec<u8>) {
 fn build(src: &Path, ref_path: &Path, save_name: &str, stamp: Option<i64>) -> (Job, Vec<Record>) {
     let r = read_ref(ref_path);
     let mut j = job_like_original(src, ref_path.to_string_lossy().ends_with(".stitch.slw"));
-    let st = stitches::stitch_job(&j, None);
+    let st = stitches::stitch_job(&j, None).unwrap();
     align_order(&mut j, &st, &r);
     let recs = machine::build_records(&j, &st, save_name, stamp).unwrap();
     (j, recs)

@@ -3,6 +3,7 @@
 //! A stitched shape is a list of points (mm, y up) plus a flag string with one character per point:
 //!   s = normal stitch   b = back-tack   d = dense stitch   w = slow (corner)   z = zigzag   x = special length
 //!   p = shape collapsed to a single point   r = closed-shape reinforcement / overlap
+use crate::error::{Error, Res};
 use crate::geom::{self, P};
 use crate::model::{get_b, get_bd, get_f, get_i, Job, Map, Shape};
 use crate::py;
@@ -12,6 +13,24 @@ use std::hash::{Hash, Hasher};
 
 pub type Stitched = (Vec<P>, String);
 pub type StitchMap = HashMap<i64, Stitched>;
+
+/// Most needle positions a job may have. More means a wrong size or setting, and would run out of memory.
+pub const MAX_STITCHES: usize = 2_000_000;
+/// Farthest a point may be from the origin (mm); machine files keep positions in 32 bits of micrometres.
+pub const MAX_COORD: f64 = 1_000_000.0;
+
+pub fn too_many_stitches() -> Error {
+    Error::op("This job would have more than 2,000,000 needle positions. Check the size of the drawing and the stitch settings.")
+}
+
+pub fn too_large() -> Error {
+    Error::op("The drawing is too large: every point must be within 1,000,000 mm of the origin.")
+}
+
+/// Err when `n` more positions (a float, so huge counts do not overflow) would pass MAX_STITCHES.
+fn budget(n: f64) -> Res<()> {
+    if n <= MAX_STITCHES as f64 { Ok(()) } else { Err(too_many_stitches()) }
+}
 
 fn cum_of(pts: &[P]) -> Vec<f64> {
     let mut out = Vec::with_capacity(pts.len());
@@ -97,7 +116,7 @@ fn in_marks<'a>(marks: &'a [Map], d: f64, kind: &str) -> Option<&'a Map> {
 }
 
 /// Equal-length stitches between break points (corners and section marks).
-fn base_stitches(pts: &[P], ls: &Map, marks: &[Map], corners: &[f64]) -> (Vec<(P, u8)>, Vec<f64>) {
+fn base_stitches(pts: &[P], ls: &Map, marks: &[Map], corners: &[f64]) -> Res<(Vec<(P, u8)>, Vec<f64>)> {
     let cum = cum_of(pts);
     let total = cum[cum.len() - 1];
     let l = 0.1f64.max(get_f(ls, "stitch_len", 0.0));
@@ -150,9 +169,12 @@ fn base_stitches(pts: &[P], ls: &Map, marks: &[Map], corners: &[f64]) -> (Vec<(P
             // alternate the normal length with the double length on odd / even stitches
             let mut d = a;
             while b - d > 1e-6 {
+                budget(out.len() as f64)?;
                 k += 1;
                 let usev = (k % 2 == 1 && get_b(ls, "double_odd")) || (k % 2 == 0 && get_b(ls, "double_even"));
                 let s = if usev { get_f(ls, "double_len", step) } else { step };
+                // a double length of 0 or less would never get to the end: use the normal length
+                let s = if s > 0.0 { s } else { step };
                 d = b.min(d + s);
                 if b - d < s * 0.35 {
                     d = b;
@@ -161,20 +183,22 @@ fn base_stitches(pts: &[P], ls: &Map, marks: &[Map], corners: &[f64]) -> (Vec<(P
             }
             continue;
         }
+        budget(out.len() as f64 + (b - a) / step)?;
         let n = std::cmp::max(1, py::round_int((b - a) / step));
         for i in 1..=n {
             out.push((at(pts, &cum, a + (b - a) * i as f64 / n as f64), flag));
         }
     }
-    (out, cum)
+    Ok((out, cum))
 }
 
 /// Split the given stitch intervals (index i = between point i and i+1) into `factor` parts.
-fn densify(st: Vec<(P, u8)>, intervals: &HashSet<i64>, factor: f64, flag: u8) -> Vec<(P, u8)> {
+fn densify(st: Vec<(P, u8)>, intervals: &HashSet<i64>, factor: f64, flag: u8) -> Res<Vec<(P, u8)>> {
     if intervals.is_empty() || factor <= 1.0 {
-        return st;
+        return Ok(st);
     }
     let f = std::cmp::max(2, py::round_int(factor));
+    budget(st.len() as f64 + intervals.len() as f64 * (f as f64 - 1.0))?;
     let mut out = vec![st[0]];
     for i in 1..st.len() {
         let (a, b) = (st[i - 1].0, st[i].0);
@@ -188,10 +212,10 @@ fn densify(st: Vec<(P, u8)>, intervals: &HashSet<i64>, factor: f64, flag: u8) ->
             out.push(st[i]);
         }
     }
-    out
+    Ok(out)
 }
 
-fn zigzag(pts: &[P], cum: &[f64], m: &Map) -> Vec<(P, u8)> {
+fn zigzag(pts: &[P], cum: &[f64], m: &Map) -> Res<Vec<(P, u8)>> {
     let w = get_f(m, "width", 2.4) / 2.0;
     let span = 0.2f64.max(get_f(m, "span", 2.0));
     let shape = m.get("shape").map(|v| v.as_str().unwrap_or("?")).unwrap_or("V");
@@ -202,11 +226,13 @@ fn zigzag(pts: &[P], cum: &[f64], m: &Map) -> Vec<(P, u8)> {
     if start == "right" {
         side = -1.0;
     }
+    let inc = if shape == "V" { span / 2.0 } else { span / 4.0 };
+    budget((b - a) / inc)?;
     let mut seq = vec![];
     let mut d = a;
     while d <= b + 1e-6 {
         seq.push(d);
-        d += if shape == "V" { span / 2.0 } else { span / 4.0 };
+        d += inc;
     }
     for (i, &d) in seq.iter().enumerate() {
         let p = at(pts, cum, d);
@@ -224,22 +250,23 @@ fn zigzag(pts: &[P], cum: &[f64], m: &Map) -> Vec<(P, u8)> {
         }
         out.push(((p.0 + nx * off, p.1 + ny * off), b'z'));
     }
-    out
+    Ok(out)
 }
 
 /// Back-and-forth over the first k+1 points `reps` times; ends where it started.
-fn tack(path_pts: &[P], k: i64, reps: i64, flag: u8) -> Vec<(P, u8)> {
-    let end = ((k + 1).max(0) as usize).min(path_pts.len());
+fn tack(path_pts: &[P], k: i64, reps: i64, flag: u8) -> Res<Vec<(P, u8)>> {
+    let end = (k.saturating_add(1).max(0) as usize).min(path_pts.len());
     let seg = &path_pts[..end];
     if seg.len() < 2 || reps <= 0 {
-        return vec![];
+        return Ok(vec![]);
     }
+    budget(reps as f64 * 2.0 * seg.len() as f64)?;
     let mut out = vec![];
     for _ in 0..reps {
         out.extend(seg[1..].iter().map(|&p| (p, flag)));
         out.extend(seg[..seg.len() - 1].iter().rev().map(|&p| (p, flag)));
     }
-    out
+    Ok(out)
 }
 
 fn nearest_index(st: &[(P, u8)], p: P) -> usize {
@@ -260,21 +287,25 @@ fn sl(len: usize, lo: i64, hi: i64) -> (usize, usize) {
 }
 
 /// (points, flags) for one shape with layer settings ls and job settings j.
-pub fn stitch_shape(shape: &Shape, ls: &Map, jset: &Map) -> Stitched {
+/// Err for a shape too large to stitch (see MAX_COORD and MAX_STITCHES).
+pub fn stitch_shape(shape: &Shape, ls: &Map, jset: &Map) -> Res<Stitched> {
+    if shape.pts.iter().any(|p| !(p.0.abs() <= MAX_COORD && p.1.abs() <= MAX_COORD)) {
+        return Err(too_large());
+    }
     let pts = path_of(shape);
     if pts.is_empty() {
-        return (vec![], String::new());
+        return Ok((vec![], String::new()));
     }
     let closed = shape.closed;
     if pts.len() == 1 {
-        return (vec![pts[0]], "p".into());
+        return Ok((vec![pts[0]], "p".into()));
     }
     if closed && get_b(jset, "points_on") {
         let (x0, y0, x1, y1) = geom::bbox([pts.as_slice()]);
         let size = if (y1 - y0) > (x1 - x0) { y1 - y0 } else { x1 - x0 };
         if size <= get_f(jset, "points_range", 50.0) + 1e-9 {
             // the machine program includes the limit
-            return (vec![((x0 + x1) / 2.0, (y0 + y1) / 2.0)], "p".into());
+            return Ok((vec![((x0 + x1) / 2.0, (y0 + y1) / 2.0)], "p".into()));
         }
     }
     let mut st: Vec<(P, u8)>;
@@ -283,7 +314,7 @@ pub fn stitch_shape(shape: &Shape, ls: &Map, jset: &Map) -> Stitched {
     } else {
         let marks = &shape.marks;
         let corners = corner_distances(&pts, closed, get_f(ls, "corner_angle", 45.0));
-        let (s0, cum) = base_stitches(&pts, ls, marks, &corners);
+        let (s0, cum) = base_stitches(&pts, ls, marks, &corners)?;
         st = s0;
         // corner index positions in the stitch list
         let mut cidx: Vec<i64> = vec![];
@@ -296,10 +327,9 @@ pub fn stitch_shape(shape: &Shape, ls: &Map, jset: &Map) -> Stitched {
         if get_b(ls, "corner_dense") && !cidx.is_empty() {
             let k = get_i(ls, "corner_dense_n", 5);
             for &c in &cidx {
-                for i in (c - k)..(c + k) {
-                    if 0 <= i && i < n_int {
-                        dense.insert(i);
-                    }
+                // only the indexes inside the stitch list (a huge count would otherwise loop for ever)
+                for i in c.saturating_sub(k).max(0)..c.saturating_add(k).min(n_int) {
+                    dense.insert(i);
                 }
             }
         }
@@ -308,7 +338,7 @@ pub fn stitch_shape(shape: &Shape, ls: &Map, jset: &Map) -> Stitched {
             for i in 0..k.min(n_int) {
                 dense.insert(i);
             }
-            for i in 0.max(n_int - k)..n_int {
+            for i in 0.max(n_int.saturating_sub(k))..n_int {
                 dense.insert(i);
             }
         }
@@ -318,15 +348,15 @@ pub fn stitch_shape(shape: &Shape, ls: &Map, jset: &Map) -> Stitched {
         } else {
             get_f(ls, "se_dense_f", 2.0)
         };
-        st = densify(st, &dense, factor, b'd');
+        st = densify(st, &dense, factor, b'd')?;
         if get_b(ls, "corner_slow") && !cidx.is_empty() {
             let k = get_i(ls, "corner_slow_n", 5);
             // recompute corner positions after densify
             let marks_pts: Vec<P> = corners.iter().map(|&c| at(&pts, &cum, c)).collect();
             for p in marks_pts {
                 let ci = nearest_index(&st, p) as i64;
-                let lo = 0.max(ci - k);
-                let hi = (st.len() as i64).min(ci + k + 1);
+                let lo = 0.max(ci.saturating_sub(k));
+                let hi = (st.len() as i64).min(ci.saturating_add(k).saturating_add(1));
                 for i in lo..hi {
                     let i = i as usize;
                     if st[i].1 == b's' {
@@ -339,7 +369,7 @@ pub fn stitch_shape(shape: &Shape, ls: &Map, jset: &Map) -> Stitched {
         for m in marks {
             let kind = mark_kind(m);
             if kind == "zigzag" {
-                let zz = zigzag(&pts, &cum, m);
+                let zz = zigzag(&pts, &cum, m)?;
                 let (ma, mb) = mark_ab(m);
                 let (pa, pb) = (at(&pts, &cum, ma), at(&pts, &cum, mb));
                 let ia = nearest_index(&st, pa);
@@ -372,13 +402,14 @@ pub fn stitch_shape(shape: &Shape, ls: &Map, jset: &Map) -> Stitched {
     if closed {
         let (ks, rs) = (get_i(ls, "cl_start", 0), get_i(ls, "cl_start_rep", 1));
         let (ke, re) = (get_i(ls, "cl_end", 0), get_i(ls, "cl_end_rep", 1));
-        head = if ks > 0 { tack(&plain, ks, rs, b'r') } else { vec![] };
+        head = if ks > 0 { tack(&plain, ks, rs, b'r')? } else { vec![] };
         tail = vec![];
         if ke > 0 {
-            let (a, b) = sl(plain.len(), 1, ke + 1);
+            let (a, b) = sl(plain.len(), 1, ke.saturating_add(1));
             let lp = &plain[a..b]; // overlap past the start point
             let (c, d) = sl(plain.len(), 0, ke);
             let back: Vec<P> = plain[c..d].iter().rev().copied().collect();
+            budget(1.max(re) as f64 * lp.len().max(back.len()) as f64)?;
             for r in 0..1.max(re) {
                 if r % 2 == 0 {
                     tail.extend(lp.iter().map(|&p| (p, b'r')));
@@ -389,23 +420,24 @@ pub fn stitch_shape(shape: &Shape, ls: &Map, jset: &Map) -> Stitched {
         }
         let rep = get_i(ls, "end_repeat", 0);
         if rep > 0 {
-            let (a, b) = sl(plain.len(), 1, rep + 1);
+            let (a, b) = sl(plain.len(), 1, rep.saturating_add(1));
             tail.extend(plain[a..b].iter().map(|&p| (p, b'r')));
         }
     } else {
         let (ks, rs) = (get_i(ls, "bt_start", 0), get_i(ls, "bt_start_rep", 0));
         let (ke, re) = (get_i(ls, "bt_end", 0), get_i(ls, "bt_end_rep", 0));
-        head = if ks > 0 { tack(&plain, ks, rs, b'b') } else { vec![] };
+        head = if ks > 0 { tack(&plain, ks, rs, b'b')? } else { vec![] };
         let rev: Vec<P> = plain.iter().rev().copied().collect();
-        tail = if ke > 0 { tack(&rev, ke, re, b'b') } else { vec![] };
+        tail = if ke > 0 { tack(&rev, ke, re, b'b')? } else { vec![] };
     }
+    budget((st.len() + head.len() + tail.len()) as f64)?;
     let mut res = Vec::with_capacity(st.len() + head.len() + tail.len());
     res.push(st[0]);
     res.extend(head);
     res.extend_from_slice(&st[1..]);
     res.append(&mut tail);
     let flags: String = res.iter().map(|&(_, f)| f as char).collect();
-    (res.into_iter().map(|(p, _)| p).collect(), flags)
+    Ok((res.into_iter().map(|(p, _)| p).collect(), flags))
 }
 
 /// Everything a shape's stitches depend on; equal keys give equal stitches.
@@ -426,17 +458,22 @@ pub fn shape_key(s: &Shape, ls: &Map, j: &Map) -> u64 {
     h.finish()
 }
 
-/// {shape id: (points, flags)} for every shape. `cache` ({id: (key, result)}) skips unchanged shapes.
-pub fn stitch_job(job: &Job, cache: Option<&mut HashMap<i64, (u64, Stitched)>>) -> StitchMap {
+/// {shape id: (points, flags)} for every shape. `cache` ({id: (key, result)}) skips unchanged shapes and is
+/// left as it was when the job is too large to stitch.
+pub fn stitch_job(job: &Job, cache: Option<&mut HashMap<i64, (u64, Stitched)>>) -> Res<StitchMap> {
     let j = &job.settings;
     let layers: HashMap<&str, &Map> = job.layers.iter().map(|l| (l.id.as_str(), &l.settings)).collect();
     let empty = Map::new();
     let mut out = StitchMap::new();
+    let mut total = 0usize;
     match cache {
         None => {
             for s in &job.shapes {
                 let ls = layers.get(s.layer.as_str()).copied().unwrap_or(&empty);
-                out.insert(s.id, stitch_shape(s, ls, j));
+                let res = stitch_shape(s, ls, j)?;
+                total += res.0.len();
+                budget(total as f64)?;
+                out.insert(s.id, res);
             }
         }
         Some(cache) => {
@@ -446,15 +483,17 @@ pub fn stitch_job(job: &Job, cache: Option<&mut HashMap<i64, (u64, Stitched)>>) 
                 let k = shape_key(s, ls, j);
                 let res = match cache.get(&s.id) {
                     Some((hk, r)) if *hk == k => r.clone(),
-                    _ => stitch_shape(s, ls, j),
+                    _ => stitch_shape(s, ls, j)?,
                 };
+                total += res.0.len();
+                budget(total as f64)?;
                 fresh.insert(s.id, (k, res.clone()));
                 out.insert(s.id, res);
             }
             *cache = fresh;
         }
     }
-    out
+    Ok(out)
 }
 
 pub fn value_is_null(v: Option<&Value>) -> bool {

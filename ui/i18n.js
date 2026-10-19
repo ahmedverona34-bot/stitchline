@@ -211,6 +211,11 @@
     'That would remove the whole line.': 'ده هيمسح الخط كله.', 'Pick a point in the middle of the line to split it.': 'اختر نقطة في منتصف الخط لتقسيمه.',
     'A job needs at least one layer.': 'الشغلانة تحتاج طبقة واحدة على الأقل.', 'This is the only layer; there is nowhere to move its shapes.': 'دي الطبقة الوحيدة؛ لا يوجد مكان لنقل أشكالها.',
     'This file has no drawing in it.': 'هذا الملف لا يحتوي على رسمة.', 'That item no longer exists.': 'هذا العنصر لم يعد موجوداً.',
+    'Double length must be more than 0 mm.': 'الطول المزدوج يجب أن يكون أكبر من 0 مم.',
+    'This job would have more than 2,000,000 needle positions. Check the size of the drawing and the stitch settings.':
+      'الشغلانة دي هيكون فيها أكثر من 2,000,000 نقطة إبرة. راجع مقاس الرسمة وإعدادات الغرز.',
+    'The drawing is too large: every point must be within 1,000,000 mm of the origin.':
+      'الرسمة كبيرة جداً: كل نقطة يجب أن تكون في حدود 1,000,000 مم من نقطة الأصل.',
   };
 
   // text with names or numbers in it

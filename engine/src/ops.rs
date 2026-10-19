@@ -577,6 +577,9 @@ pub fn update_layer(job: &mut Job, lid: &str, fields: &Map) -> Res<()> {
         match s {
             Value::Object(m) => {
                 for (k, v) in m {
+                    if k == "double_len" && py::to_float(v).is_some_and(|d| d <= 0.0) {
+                        return Err(Error::op("Double length must be more than 0 mm."));
+                    }
                     if defaults.contains_key(k) {
                         l.settings.insert(k.clone(), v.clone());
                     }

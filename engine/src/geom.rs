@@ -26,14 +26,19 @@ pub fn bbox<'a, I: IntoIterator<Item = &'a [P]>>(pts_list: I) -> (f64, f64, f64,
 /// Points of a counter-clockwise arc from angle a0 to a1 (degrees).
 pub fn arc_points(cx: f64, cy: f64, r: f64, a0: f64, a1: f64) -> Vec<P> {
     let step_deg = 4.0;
+    if !(a0.is_finite() && a1.is_finite()) {
+        return vec![(cx, cy)];
+    }
     if (a1 - a0).abs() < 1e-12 {
         return vec![(cx + r * py::cos(py::radians(a0)), cy + r * py::sin(py::radians(a0)))];
     }
-    let mut a1 = a1;
+    // huge angles come from a broken file: adding 360 below would take for ever (or change nothing)
+    let (a0, mut a1) = if a0.abs() > 1e6 || a1.abs() > 1e6 { (a0.rem_euclid(360.0), a1.rem_euclid(360.0)) } else { (a0, a1) };
     while a1 <= a0 {
         a1 += 360.0;
     }
-    let sweep = a1 - a0;
+    // more than two turns is a broken file too: draw the whole circle once
+    let sweep = if a1 - a0 > 720.0 { 360.0 } else { a1 - a0 };
     let n = std::cmp::max(2, (sweep / step_deg) as i64 + 1);
     (0..=n)
         .map(|i| {
@@ -75,9 +80,17 @@ pub fn bulge_points(p0: P, p1: P, bulge: f64) -> Vec<P> {
 #[allow(clippy::too_many_arguments)]
 pub fn ellipse_points(cx: f64, cy: f64, mx: f64, my: f64, ratio: f64, t0: f64, t1: f64) -> Vec<P> {
     let step_deg = 4.0;
-    let mut t1 = t1;
+    if !(t0.is_finite() && t1.is_finite()) {
+        return vec![(cx, cy)];
+    }
+    // as in arc_points: bring a broken file's huge angles back to one turn, and draw many turns once
+    let tau = 2.0 * py::PI;
+    let (t0, mut t1) = if t0.abs() > 1e6 || t1.abs() > 1e6 { (t0.rem_euclid(tau), t1.rem_euclid(tau)) } else { (t0, t1) };
     while t1 <= t0 {
-        t1 += 2.0 * py::PI;
+        t1 += tau;
+    }
+    if t1 - t0 > 2.0 * tau {
+        t1 = t0 + tau;
     }
     let major = py::hypot(mx, my);
     let rot = py::atan2(my, mx);
@@ -197,4 +210,26 @@ pub fn nearest_on_path(pts: &[P], q: P) -> (f64, f64) {
         acc += seg;
     }
     best
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn broken_arc_angles_end() {
+        // angles from a broken file: adding 360 would never pass a0 (or take for ever), or make millions of points
+        for (a0, a1) in [(1e20, 0.0), (0.0, -1e20), (0.0, 1e9), (-5e6, 5e6)] {
+            let p = arc_points(0.0, 0.0, 1.0, a0, a1);
+            assert!(p.len() <= 182 && p.iter().all(|q| q.0.is_finite() && q.1.is_finite()), "{} {}: {}", a0, a1, p.len());
+        }
+        assert_eq!(arc_points(3.0, 4.0, 1.0, f64::NEG_INFINITY, 0.0), vec![(3.0, 4.0)]);
+        for (t0, t1) in [(1e20, 0.0), (0.0, 1e9), (0.0, f64::INFINITY)] {
+            let p = ellipse_points(0.0, 0.0, 2.0, 0.0, 0.5, t0, t1);
+            assert!(p.len() <= 182 && p.iter().all(|q| q.0.is_finite() && q.1.is_finite()), "{} {}: {}", t0, t1, p.len());
+        }
+        // ordinary angles are unchanged
+        assert_eq!(arc_points(0.0, 0.0, 1.0, 45.0, 405.0).len(), 92);
+        assert_eq!(arc_points(0.0, 0.0, 1.0, 350.0, 10.0).len(), 7);
+    }
 }

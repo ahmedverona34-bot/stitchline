@@ -1,6 +1,6 @@
 """Run the same UI actions through the Python app and the Rust engine and compare everything they produce:
 every reply the window would get (state, program, stats, stitches, messages, errors), every file written
-(SLW byte for byte, DXF, PLT, SVG, CSV, job files) and the prefs / autosave files.
+(SLW byte for byte, DXF, PLT, SVG, CSV, job files) and the prefs file.
 
     python tests/compare_with_python.py              all scenarios
     python tests/compare_with_python.py edits -v     one scenario, show every difference
@@ -276,7 +276,9 @@ def compare(name, scripts, verbose=False):
             elif a != b:
                 k = next((i for i in range(min(len(a), len(b))) if a[i] != b[i]), min(len(a), len(b)))
                 problems.append('file %s differs at byte %d (sizes %d, %d)' % (fn, k, len(a), len(b)))
-        for fn in ('prefs.json', 'autosave.stitchline'):
+        # not autosave.stitchline: Stitchline (Rust) also autosaves on open / new / save and keeps "_dirty",
+        # the Python version only after edits. The session scenario still checks what a restored autosave gives.
+        for fn in ('prefs.json',):
             a, b = os.path.join(hp, fn), os.path.join(hr, fn)
             if os.path.exists(a) != os.path.exists(b):
                 problems.append('%s exists only on one side' % fn)
