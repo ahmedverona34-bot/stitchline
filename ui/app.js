@@ -662,9 +662,10 @@
     const screen = () => ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     const dots = stitchMode && k >= 0.9;
     ctx.lineJoin = ctx.lineCap = 'round';
+    const box = drag && drag.kind === 'box' ? boxWorld(drag) : null;
     for (const s of S.job.shapes) {
       const bb = s._bb || (s._bb = bounds([s]));
-      const isSel = sel.has(s.id);
+      const isSel = sel.has(s.id) || (box && inBox(s, box));
       const d = isSel ? off : [0, 0];
       if (bb[2] + d[0] < vx0 || bb[0] + d[0] > vx1 || bb[3] + d[1] < vy0 || bb[1] + d[1] > vy1) continue;   // off screen
       const L = layerOf(s);
@@ -738,9 +739,10 @@
     if (sim.on) drawSim();
     // rubber band / measure
     if (drag && drag.kind === 'box') {
-      ctx.fillStyle = colors['accent-soft']; ctx.strokeStyle = colors.accent; ctx.lineWidth = 1;
+      // translucent so the pieces under the box stay visible
       const x = Math.min(drag.x0, drag.x), y = Math.min(drag.y0, drag.y), w = Math.abs(drag.x - drag.x0), h = Math.abs(drag.y - drag.y0);
-      ctx.fillRect(x, y, w, h); ctx.strokeRect(x + .5, y + .5, w, h);
+      ctx.fillStyle = colors.accent; ctx.globalAlpha = 0.1; ctx.fillRect(x, y, w, h); ctx.globalAlpha = 1;
+      ctx.strokeStyle = colors.accent; ctx.lineWidth = 1; ctx.setLineDash([5, 3]); ctx.strokeRect(x + .5, y + .5, w, h); ctx.setLineDash([]);
     }
     if (measure) {
       const { x0, y0, x1, y1 } = measure; ctx.strokeStyle = colors.accent; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
@@ -752,6 +754,12 @@
       ctx.fillStyle = colors.fg; ctx.beginPath(); ctx.roundRect(lx - 8, ly - 15, tw2 + 16, 22, 8); ctx.fill();
       ctx.fillStyle = colors.canvas; ctx.fillText(label, lx, ly);
     }
+  }
+  // rubber band in world coords, and whether a shape is fully inside it
+  function boxWorld(d) { return [wx(Math.min(d.x0, d.x)), wy(Math.max(d.y0, d.y)), wx(Math.max(d.x0, d.x)), wy(Math.min(d.y0, d.y))]; }
+  function inBox(s, [xa, ya, xb, yb]) {
+    if (viewMode === 'layer' && s.layer !== curLayer) return false;
+    return s.pts.every(([x, y]) => x >= xa && x <= xb && y >= ya && y <= yb);
   }
   function drawGrid() {
     let step = 1; while (step * view.k < 9) step *= step % 10 === 1 || step === 1 ? 5 : 2;
@@ -865,12 +873,9 @@
       else draw();
     } else if (d.kind === 'box') {
       if (Math.hypot(d.x - d.x0, d.y - d.y0) < 4) { if (!d.add) { sel.clear(); selChanged(); } return; }
-      const xa = wx(Math.min(d.x0, d.x)), xb = wx(Math.max(d.x0, d.x)), ya = wy(Math.max(d.y0, d.y)), yb = wy(Math.min(d.y0, d.y));
       if (!d.add) sel.clear();
-      for (const s of S.job.shapes) {
-        if (viewMode === 'layer' && s.layer !== curLayer) continue;
-        if (s.pts.every(([x, y]) => x >= xa && x <= xb && y >= ya && y <= yb)) sel.add(s.id);
-      }
+      const box = boxWorld(d);
+      for (const s of S.job.shapes) if (inBox(s, box)) sel.add(s.id);
       const f = selected()[0]; if (f) curLayer = f.layer;
       selChanged();
     } else draw();
