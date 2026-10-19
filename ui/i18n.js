@@ -66,8 +66,7 @@
     'No recent files yet. Drawings and jobs you open or save show up here.': 'لا توجد ملفات أخيرة بعد. الرسومات والشغلانات اللي تفتحها أو تحفظها هتظهر هنا.',
     'No recent file matches this filter.': 'لا يوجد ملف أخير يطابق هذه التصفية.',
     'Name the job and set the size of the machine table.': 'سمّ الشغلانة وحدد مقاس طاولة الماكينة.', 'Job name': 'اسم الشغلانة', 'Untitled': 'بدون اسم',
-    'Table width': 'عرض الطاولة', 'Table height': 'ارتفاع الطاولة', 'Save first': 'احفظ الأول', 'Create': 'إنشاء',
-    'The current job has changes that are not saved. Save it first if you want to keep them.': 'الشغلانة الحالية فيها تعديلات غير محفوظة. احفظها الأول لو عايز تحتفظ بيها.',
+    'Table width': 'عرض الطاولة', 'Table height': 'ارتفاع الطاولة', 'Create': 'إنشاء',
     'The table size must be more than 0 mm.': 'مقاس الطاولة لازم يكون أكبر من 0 مم.', 'The table size must be between 1 mm and 100 m.': 'مقاس الطاولة لازم يكون بين 1 مم و100 م.',
     // ---------------------------------------------------------------- empty state
     'Start a sewing job': 'ابدأ شغلانة خياطة', 'Open a pattern drawing, or drop the file anywhere in this window.': 'افتح رسمة الباترون، أو اسحب الملف وأفلته في أي مكان في الشباك.',
@@ -199,10 +198,12 @@
     'Example: put everything that is embroidered in one layer on Needle 1, and the laser cut lines in another layer on Needle 3.':
       'مثال: ضع كل التطريز في طبقة على الإبرة 1، وخطوط القص بالليزر في طبقة أخرى على الإبرة 3.',
     'New job?': 'شغلانة جديدة؟', 'The current job closes. Save it first if you want to keep it.': 'الشغلانة الحالية ستُغلق. احفظها أولاً لو عايز تحتفظ بيها.', 'New job': 'شغلانة جديدة',
-    "If you don't save, your changes will be lost.": 'لو قفلت من غير حفظ، التعديلات هتضيع.', "Don't save": 'لا تحفظ',
+    "If you don't save, your changes will be lost.": 'لو قفلت من غير حفظ، التعديلات هتضيع.',
+    "Opening a file or starting a new job replaces this one. If you don't save, your changes will be lost.": 'فتح ملف أو بدء شغلانة جديدة هيستبدل الشغلانة دي. لو ما حفظتش، التعديلات هتضيع.', "Don't save": 'لا تحفظ',
     'Job name': 'اسم الشغلانة', 'Used for the machine file and exports': 'يُستخدم لملف الماكينة والتصدير', 'New layer?': 'طبقة جديدة؟',
     // ---------------------------------------------------------------- command palette
     'Search tools, e.g. back-tack, mirror, machine file': 'ابحث عن أداة، مثلاً: رجوع، عكس، ملف الماكينة', 'Esc': 'Esc',
+    'No tool matches. Try “stitch”, “mirror” or “USB”.': 'لا توجد أداة مطابقة. جرّب "غرز" أو "عكس" أو "USB".',
     'Open file': 'فتح ملف', 'Insert another drawing into the job': 'إدراج رسمة أخرى في الشغلانة', 'Save job': 'حفظ الشغلانة', 'Save job as…': 'حفظ الشغلانة باسم…',
     'Remove overlapping shapes on open': 'حذف الأشكال المتداخلة عند الفتح', 'Work without reference point': 'العمل بدون نقطة مرجعية', 'Drawing resolution (dpi)': 'دقة الرسمة (dpi)',
     'Calculate scale from a measurement': 'حساب المقياس من قياس', 'Machine table size': 'مقاس طاولة الماكينة',
@@ -301,6 +302,7 @@
     [/^(\d+) selected shapes? move into a new layer with its own needle\.$/, (m, a) => `${a} شكل محدد هيتنقل لطبقة جديدة بإبرة خاصة بيها.`],
     [/^Layer “(.+)” is for alignment only \(not sewn\)$/, (m, a) => `الطبقة "${a}" للمحاذاة فقط (لا تُخاط)`],
     [/^Save changes to “(.+)” before closing\?$/, (m, a) => `حفظ التعديلات في "${a}" قبل الإغلاق؟`],
+    [/^Save changes to “(.+)” first\?$/, (m, a) => `حفظ التعديلات في "${a}" الأول؟`],
     [/^“(.+)” and all of its shapes will be removed\. You can undo this\.$/, (m, a) => `"${a}" وكل أشكالها سيتم حذفها. يمكنك التراجع عن ذلك.`],
     [/^Opened (.+?)((?: · .+)*)$/, (m, a, b) => `تم فتح ${a}` + b.replace(/ · (\d+) shapes/, ' · $1 شكل').replace(/ · (\d+) overlaps removed/, ' · حذف $1 تداخل').replace(/ · (\d+) lines joined/, ' · ربط $1 خط')],
     [/^Saved machine file (.+) \((\d+) records\)$/, (m, a, b) => `تم حفظ ملف الماكينة ${a} (${b} سجل)`],

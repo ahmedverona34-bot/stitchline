@@ -60,9 +60,13 @@
       const r = await fetch('/api/upload', { method: 'POST', headers: { 'X-File-Name': encodeURIComponent(file.name) }, body: await file.arrayBuffer() });
       const d = await r.json();
       if (!r.ok) return toast(d.error || 'That file could not be opened.', true);
-      sel.clear(); apply(d); hideHome(); fitView(); if (d.message) toast(d.message);
-      if (stage === 'import') setStage('arrange');
+      sel.clear(); apply(d); opened(); if (d.message) toast(d.message);
     } finally { $('#busy').hidden = true; }
+  }
+  // a file was opened (or dropped) in place of the job
+  function opened() {
+    pristine = true; sel.clear(); hideHome(); fitView();
+    if (stage === 'import') setStage('arrange');
   }
 
   let stitchCache = {};
@@ -554,7 +558,8 @@
     const c = J().comp || {};
     setJob({ comp: { on: on ?? !!c.on, 'x-': num('cxm'), 'x+': num('cxp'), 'y-': num('cym'), 'y+': num('cyp') } });
   }
-  $('#insp').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.tagName === 'INPUT') e.target.blur(); });
+  // Enter commits the field (on blur) and stops there: the window's own Enter (Move: type the distance) must not see it
+  $('#insp').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.target.blur(); e.stopPropagation(); } });
 
   /* ------------------------------------------------------------------ transform again, clipboard */
   // the last move / rotate / mirror / resize / copy-while-moving: Ctrl+D does it again to the selection
@@ -601,8 +606,8 @@
 
   /* ------------------------------------------------------------------ actions (buttons with data-act) */
   const ACT = {
-    open: () => api('open', {}, { busy: 'Waiting for the file…' }).then(d => { if (d && d.message) { sel.clear(); hideHome(); fitView(); if (stage === 'import') setStage('arrange'); } }),
-    openRecent: b => api('open', { path: b.dataset.path }).then(d => { if (d) { sel.clear(); hideHome(); fitView(); if (stage === 'import') setStage('arrange'); } }),
+    open: () => guardUnsaved(() => api('open', {}, { busy: 'Waiting for the file…' }).then(d => { if (d && d.message) opened(); })),
+    openRecent: b => guardUnsaved(() => api('open', { path: b.dataset.path }).then(d => { if (d) opened(); })),
     insert: () => api('insert', {}, { busy: 'Waiting for the file…' }).then(d => d && fitView()),
     save: () => api('save', { as_new: !S.file.path }),
     selectAll: () => { sel = new Set(S.job.shapes.map(s => s.id)); selChanged(); },
@@ -1332,13 +1337,12 @@
   const keyCaps = k => k === '← ↑ → ↓' ? `<kbd>${k}</kbd>` : k.startsWith('Shift ←') ? `<kbd>Shift</kbd><kbd>← ↑ → ↓</kbd>` : k.split(' ').map(x => `<kbd>${x}</kbd>`).join('');
   const SHEETS = {
     newjob: () => {
-      const w = sheetCtx.w ?? +J().table_w, h = sheetCtx.h ?? +J().table_h, lose = S.file.dirty && S.job.shapes.length > 0;
+      const w = sheetCtx.w ?? +J().table_w, h = sheetCtx.h ?? +J().table_h;
       return `<header><h3>New job</h3><p>Name the job and set the size of the machine table.</p></header>
       <div class="body"><div style="display:grid;gap:6px"><label class="eyebrow" for="njName">Job name</label><span class="field wide"><input id="njName" placeholder="Untitled" autocomplete="off" maxlength="80"></span></div>
       <div style="display:grid;gap:6px"><span class="eyebrow">Machine table</span><div class="nj-presets" id="njPresets">${tableSizes().map(([a, b]) => `<button class="btn sm" data-njsize="${a}x${b}" aria-pressed="${a === w && b === h}">${sizeTxt(a, b)}</button>`).join('')}</div></div>
-      ${row('Table width', fld('njW', +(+w).toFixed(3)))}${row('Table height', fld('njH', +(+h).toFixed(3)))}
-      ${lose ? '<p class="hint warn">The current job has changes that are not saved. Save it first if you want to keep them.</p>' : ''}</div>
-      <footer>${lose ? '<button class="btn left" data-njsave>Save first</button>' : ''}<button class="btn" data-close>Cancel</button><button class="btn primary" data-ok>Create</button></footer>`;
+      ${row('Table width', fld('njW', +(+w).toFixed(3)))}${row('Table height', fld('njH', +(+h).toFixed(3)))}</div>
+      <footer><button class="btn" data-close>Cancel</button><button class="btn primary" data-ok>Create</button></footer>`;
     },
     keys: () => `<header><h3>Keyboard shortcuts</h3><p>The same keys as Adobe Illustrator. Point at any button to see its shortcut.</p></header>
       <div class="body"><div class="keys-grid">${[[KEYS[0], KEYS[4]], [KEYS[1]], [KEYS[2], KEYS[3]]].map(col => `<div>${col.map(([g, list]) => `<h4>${g}</h4>${list.map(([n, k, isNew]) => `<div class="k"><span>${n}${isNew ? '<span class="new">new</span>' : ''}</span><span data-notr>${keyCaps(k)}</span></div>`).join('')}`).join('')}</div>`).join('')}</div></div>
@@ -1446,17 +1450,31 @@
     sh.innerHTML = `<header><h3>${title}</h3><p>${text}</p></header><footer><button class="btn" data-close>Cancel</button><button class="btn primary" data-ok>${okText}</button></footer>`;
     sheetCtx = { fn }; $('#sheetScrim').hidden = false; $('#sheet [data-ok]').focus();
   }
-  /* Closing the window with unsaved changes (the engine stops the close and calls this): Save / Don't save / Cancel */
+  /* Unsaved changes that would be lost: Save / Don't save / Cancel. Asked when the window closes (the engine stops
+     the close and calls closeQuestion) and before anything replaces the job: open, drop, recent file, new job */
   const quit = discard => window.__TAURI_INTERNALS__?.invoke('quit', { discard });
+  // the job is a drawing opened (or a new job made) in this window and not edited since: the file it came from still
+  // has all of it, so replacing it asks nothing. After a restart the autosave is always treated as work to keep.
+  let pristine = false;
+  const unsaved = () => S.file.dirty && S.job.shapes.length > 0 && !(pristine && !S.can_undo && !S.can_redo);
+  function askSave(title, text, saved, discard, closing = false) {
+    const sh = $('#sheet'); sh.className = 'sheet'; sh.dataset.k = 'unsaved';
+    sh.innerHTML = `<header><h3>${title}</h3><p>${text}</p></header>
+      <footer><button class="btn left" data-nosave>Don't save</button><button class="btn" data-close>Cancel</button><button class="btn primary" data-ok>Save</button></footer>`;
+    sheetCtx = { saved, discard, closing }; $('#sheetScrim').hidden = false; $('#sheet [data-ok]').focus();
+  }
   function closeQuestion() {
     if (!S || !S.file.dirty) return quit(false);
-    if (!$('#sheetScrim').hidden && $('#sheet').dataset.k === 'close') return;
-    const sh = $('#sheet'); sh.className = 'sheet'; sh.dataset.k = 'close';
-    sh.innerHTML = `<header><h3>Save changes to “${esc(S.file.name)}” before closing?</h3><p>If you don't save, your changes will be lost.</p></header>
-      <footer><button class="btn left" data-nosave>Don't save</button><button class="btn" data-close>Cancel</button><button class="btn primary" data-ok>Save</button></footer>`;
-    sheetCtx = {}; $('#sheetScrim').hidden = false; $('#sheet [data-ok]').focus();
+    if (!$('#sheetScrim').hidden && sheetCtx.closing) return;
+    askSave(`Save changes to “${esc(S.file.name)}” before closing?`, "If you don't save, your changes will be lost.", () => quit(false), () => quit(true), true);
   }
   window.__stitchlineClose = closeQuestion;
+  /** Runs go() at once, or after the user saved or dropped the unsaved changes it would replace (false while asking). */
+  function guardUnsaved(go) {
+    if (!unsaved()) return go();
+    askSave(`Save changes to “${esc(S.file.name)}” first?`, "Opening a file or starting a new job replaces this one. If you don't save, your changes will be lost.", go, go);
+    return false;
+  }
   function promptSheet(title, text, value, fn) {
     const sh = $('#sheet'); sh.className = 'sheet'; sh.dataset.k = 'prompt';
     sh.innerHTML = `<header><h3>${title}</h3><p>${text}</p></header><div class="body"><span class="field wide"><input id="pv" value="${esc(value)}"></span></div><footer><button class="btn" data-close>Cancel</button><button class="btn primary" data-ok>OK</button></footer>`;
@@ -1467,11 +1485,13 @@
 
   const SHEET_OK = {
     newjob: async () => {
-      const w = num('njW'), h = num('njH');
+      const w = num('njW'), h = num('njH'), name = $('#njName').value.trim();
       if (!(w > 0 && h > 0)) { toast('The table size must be more than 0 mm.', true); return false; }
-      const d = await api('new', { name: $('#njName').value.trim(), table_w: w, table_h: h }, { quiet: true });
-      if (!d) return false;
-      rememberSize(w, h); sel.clear(); hideHome(); setStage('import'); fitView(); toast('New job');
+      return guardUnsaved(async () => {
+        const d = await api('new', { name, table_w: w, table_h: h }, { quiet: true });
+        if (!d) return false;
+        rememberSize(w, h); pristine = true; sel.clear(); hideHome(); setStage('import'); fitView(); toast('New job');
+      });
     },
     group: async () => {
       const laser = segVal('gKind') === 'laser';
@@ -1482,7 +1502,7 @@
       }
     },
     confirm: () => sheetCtx.fn(),
-    close: async () => { closeSheet(); const d = await api('save'); if (d && !d.file.dirty) quit(false); },
+    unsaved: async () => { const { saved } = sheetCtx; closeSheet(); const d = await api('save'); if (d && !d.file.dirty) saved(); },
     prompt: () => { const v = $('#pv').value.trim(); if (v) sheetCtx.fn(v); },
     add: async () => {
       let layer = $('#aLayer').value;
@@ -1543,10 +1563,9 @@
       return;
     }
     const s = t.closest('.switch'); if (s) { s.setAttribute('aria-checked', s.getAttribute('aria-checked') !== 'true'); return; }
-    if (t.closest('[data-nosave]')) { closeSheet(); return quit(true); }
+    if (t.closest('[data-nosave]')) { const { discard } = sheetCtx; closeSheet(); return discard(); }
     const nz = t.closest('[data-njsize]');
     if (nz) { const [w, h] = nz.dataset.njsize.split('x'); $('#njW').value = w; $('#njH').value = h; $$('#njPresets button').forEach(b => b.setAttribute('aria-pressed', b === nz)); return; }
-    if (t.closest('[data-njsave]')) { const name = $('#njName').value, w = $('#njW').value, h = $('#njH').value; const d = await ACT.save(); if (d && !d.file.dirty) { openSheet('newjob', { w: +w, h: +h }); $('#njName').value = name; } return; }
     if (t.closest('[data-ok]')) { const r = await SHEET_OK[k]?.(); if (r !== false) closeSheet(); else if (k === 'marks') openSheet('marks'); return; }
     if (t.closest('[data-clear]')) {
       if (k === 'ref') { await api('set_ref', { which: 'r1', id: null }, { quiet: true }); await api('set_ref', { which: 'r2', id: null }, { quiet: true }); await api('set_ref', { which: 'align', id: null }, { quiet: true }); closeSheet(); }
@@ -1591,9 +1610,14 @@
   ];
   const NAMES = { import: 'Import', arrange: 'Arrange', stitch: 'Stitch', sequence: 'Sequence', output: 'Output' };
   let hits = [], hi = 0;
+  // lower case, and Arabic as people type it: any alef, ة / ه and ى / ي alike, no diacritics
+  const fold = s => s.toLowerCase().replace(/[\u064B-\u0652\u0640]/g, '').replace(/[أإآٱ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي');
   function renderPalette() {
-    const q = $('#pq').value.trim().toLowerCase();
-    hits = TOOLS.filter(([n, s]) => !q || q.split(/\s+/).every(w => n.toLowerCase().includes(w) || NAMES[s].toLowerCase().includes(w)));
+    const q = fold($('#pq').value.trim());
+    // a tool is found by its English name and by the name shown (the Arabic one when the interface is in Arabic)
+    const t = window.tr || (x => x);
+    const words = ([n, s]) => fold([n, t(n), NAMES[s], t(NAMES[s])].join(' '));
+    hits = TOOLS.filter(tl => { const ws = words(tl); return !q || q.split(/\s+/).every(w => ws.includes(w)); });
     hi = Math.min(hi, Math.max(0, hits.length - 1));
     $('#plist').innerHTML = hits.map(([n, s], i) => `<li class="${i === hi ? 'on' : ''}" data-i="${i}"><span>${n}</span><span class="st">${NAMES[s]}</span></li>`).join('') || '<li><span class="st">No tool matches. Try “stitch”, “mirror” or “USB”.</span></li>';
     $('#pcount').textContent = `${hits.length} of ${TOOLS.length} tools`;
@@ -1716,7 +1740,8 @@
   addEventListener('drop', e => {
     if (!e.dataTransfer?.files.length) return;
     e.preventDefault(); dragDepth = 0; document.body.classList.remove('dropping');
-    upload(e.dataTransfer.files[0]);
+    const f = e.dataTransfer.files[0];
+    if (S) guardUnsaved(() => upload(f)); else upload(f);
   });
 
   /* ------------------------------------------------------------------ home: the start screen */
@@ -1853,7 +1878,7 @@
     } finally { home.loading = false; }
   }
   function openFromHome(path) {
-    api('open', { path }).then(d => { if (d) { sel.clear(); hideHome(); fitView(); if (stage === 'import') setStage('arrange'); } else if (homeOpen()) refreshHome(); });
+    guardUnsaved(() => api('open', { path }).then(d => { if (d) opened(); else if (homeOpen()) refreshHome(); }));
   }
   const HOME_ACT = {
     new: () => openSheet('newjob'),
