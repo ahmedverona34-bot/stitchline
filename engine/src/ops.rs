@@ -133,9 +133,15 @@ pub fn mirror(job: &mut Job, ids: &[i64], axis: &str) -> Res<()> {
     Ok(())
 }
 
-pub fn scale(job: &mut Job, ids: &[i64], sx: f64, sy: f64) -> Res<()> {
+/// Resize about `origin` (the fixed point: a bounding-box corner or edge when dragging a handle),
+/// or about the centre of the shapes when None. Every point gets the same affine map, so the
+/// point count, order, start point and closed flag stay as they are.
+pub fn scale(job: &mut Job, ids: &[i64], sx: f64, sy: f64, origin: Option<P>) -> Res<()> {
+    if !sx.is_finite() || !sy.is_finite() || sx.abs() < 1e-9 || sy.abs() < 1e-9 {
+        return op("The size must be more than 0.");
+    }
     let idx = sel(job, ids)?;
-    let (cx, cy) = centre(job, &idx);
+    let (cx, cy) = origin.unwrap_or_else(|| centre(job, &idx));
     for i in idx {
         for p in job.shapes[i].pts.iter_mut() {
             *p = (cx + (p.0 - cx) * sx, cy + (p.1 - cy) * sy);

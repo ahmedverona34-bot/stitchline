@@ -642,7 +642,9 @@
     ctx.fillStyle = colors.canvas; ctx.fillRect(0, 0, W, H);
     drawGrid();
     const stitchMode = showStitch && (stage === 'stitch' || stage === 'sequence' || stage === 'output');
-    const off = drag && drag.kind === 'move' ? [wx(drag.x) - wx(drag.x0), wy(drag.y) - wy(drag.y0)] : [0, 0];
+    // live preview of a move or resize in progress; the engine applies the same map when the drag ends
+    const xf = dragXF(), scaling = SL.isScale(xf);
+    const T = xf ? (x, y) => SL.apply(xf, x, y) : null;
     // machine origin & table
     const [bx0, by0, bx1, by1] = bounds(S.job.shapes);
     const o = J().origin || 'bl';
@@ -662,15 +664,19 @@
     const screen = () => ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     const dots = stitchMode && k >= 0.9;
     ctx.lineJoin = ctx.lineCap = 'round';
+    const band = drag && drag.kind === 'box' ? boxWorld(drag) : null;   // shapes a rubber band will pick light up
     for (const s of S.job.shapes) {
       const bb = s._bb || (s._bb = bounds([s]));
-      const isSel = sel.has(s.id);
-      const d = isSel ? off : [0, 0];
-      if (bb[2] + d[0] < vx0 || bb[0] + d[0] > vx1 || bb[3] + d[1] < vy0 || bb[1] + d[1] > vy1) continue;   // off screen
+      const isSel = sel.has(s.id) || !!(band && inBox(s, band));
+      const t = sel.has(s.id) ? T : null;               // this shape follows the drag
+      const vb = t ? SL.applyBox(xf, bb) : bb;
+      if (vb[2] < vx0 || vb[0] > vx1 || vb[3] < vy0 || vb[1] > vy1) continue;   // off screen
       const L = layerOf(s);
       const dim = viewMode === 'layer' && s.layer !== curL;
       const alpha = dim ? 0.12 : 1;
-      const P = pathOf(s);
+      const P0 = pathOf(s);
+      const P = t && scaling ? P0.map(([x, y]) => t(x, y)) : P0;   // a move only shifts the cached path
+      const d = t && !scaling ? [xf.dx, xf.dy] : [0, 0];
       const guide = !isSewn(s);
       if (P.length === 1) {
         screen(); ctx.globalAlpha = alpha;
@@ -678,19 +684,25 @@
         ctx.beginPath(); ctx.arc(sx(P[0][0] + d[0]), sy(P[0][1] + d[1]), isSel ? 5 : 4, 0, 7); ctx.fill();
         continue;
       }
-      if (!s._p) { s._p = new Path2D(); P.forEach(([x, y], i) => i ? s._p.lineTo(x, y) : s._p.moveTo(x, y)); }
+      if (!s._p) { s._p = new Path2D(); P0.forEach(([x, y], i) => i ? s._p.lineTo(x, y) : s._p.moveTo(x, y)); }
+      let path = s._p;
+      if (P !== P0) { path = new Path2D(); P.forEach(([x, y], i) => i ? path.lineTo(x, y) : path.moveTo(x, y)); }
       world(d[0], d[1]);
-      if (isSel || s.id === hoverId) { ctx.globalAlpha = alpha; ctx.strokeStyle = colors['accent-soft']; ctx.lineWidth = (isSel ? 9 : 6) / k; ctx.stroke(s._p); }
-      if (guide) { ctx.globalAlpha = alpha; ctx.setLineDash([5 / k, 4 / k]); ctx.strokeStyle = colors.guide; ctx.lineWidth = 1 / k; ctx.stroke(s._p); ctx.setLineDash([]); continue; }
+      if (isSel || s.id === hoverId) { ctx.globalAlpha = alpha; ctx.strokeStyle = colors['accent-soft']; ctx.lineWidth = (isSel ? 9 : 6) / k; ctx.stroke(path); }
+      // White arrow: the selected path is drawn dashed (gaps cut in the canvas colour) inside its glow:
+      // no box, no handles, no points
+      const directMark = () => { if (isSel && tool === 'direct') { ctx.globalAlpha = alpha; ctx.setLineDash([5 / k, 4 / k]); ctx.strokeStyle = colors.canvas; ctx.lineWidth = 2.6 / k; ctx.stroke(path); ctx.setLineDash([]); } };
+      if (guide) { ctx.globalAlpha = alpha; ctx.setLineDash([5 / k, 4 / k]); ctx.strokeStyle = colors.guide; ctx.lineWidth = 1 / k; ctx.stroke(path); ctx.setLineDash([]); directMark(); continue; }
       const laser = isLaser(L);
       if (laser) {
-        ctx.globalAlpha = alpha; ctx.strokeStyle = colors['laser-glow']; ctx.lineWidth = 6 / k; ctx.stroke(s._p);
-        ctx.strokeStyle = isSel && !stitchMode ? colors.accent : colors.laser; ctx.lineWidth = 1.4 / k; ctx.stroke(s._p);
+        ctx.globalAlpha = alpha; ctx.strokeStyle = colors['laser-glow']; ctx.lineWidth = 6 / k; ctx.stroke(path);
+        ctx.strokeStyle = isSel && !stitchMode ? colors.accent : colors.laser; ctx.lineWidth = 1.4 / k; ctx.stroke(path);
       } else {
         ctx.strokeStyle = isSel && !stitchMode ? colors.accent : L.color;
-        ctx.lineWidth = (stitchMode ? 1 : 1.8) / k; ctx.globalAlpha = alpha * (stitchMode && dots ? 0.45 : 1); ctx.stroke(s._p);
+        ctx.lineWidth = (stitchMode ? 1 : 1.8) / k; ctx.globalAlpha = alpha * (stitchMode && dots ? 0.45 : 1); ctx.stroke(path);
       }
       ctx.globalAlpha = alpha;
+      directMark();
       for (const m of s.marks || []) {
         const seg = subPath(P, m.a, m.b); if (seg.length < 2) continue;
         const mp = new Path2D(); seg.forEach(([x, y], i) => i ? mp.lineTo(x, y) : mp.moveTo(x, y));
@@ -706,7 +718,8 @@
             const fl = f[j]; const c = fl === 's' ? L.color : (flagColor(fl) || L.color);
             if (c !== last) { ctx.fillStyle = c; last = c; }
             const rr = fl === 's' ? r : r * 1.3;
-            ctx.fillRect(sx(p[i] + d[0]) - rr, sy(p[i + 1] + d[1]) - rr, rr * 2, rr * 2);
+            const q = t ? t(p[i], p[i + 1]) : [p[i], p[i + 1]];
+            ctx.fillRect(sx(q[0]) - rr, sy(q[1]) - rr, rr * 2, rr * 2);
           }
         }
       }
@@ -725,6 +738,18 @@
     }
     screen();
     ctx.globalAlpha = 1;
+    // Black arrow: bounding box of the selection with its eight resize handles
+    const box = selBox();
+    if (box) {
+      const X0 = Math.round(sx(box[0])) + .5, X1 = Math.round(sx(box[2])) + .5, Yt = Math.round(sy(box[3])) + .5, Yb = Math.round(sy(box[1])) + .5;
+      ctx.strokeStyle = colors.accent; ctx.lineWidth = 1;
+      ctx.strokeRect(X0, Yt, X1 - X0, Yb - Yt);
+      ctx.fillStyle = colors.canvas;
+      for (const [hk, X, Y] of handlesOn(box)) {
+        const r = hk === hoverHandle ? HS + 1 : HS;
+        ctx.fillRect(X - r, Y - r, r * 2, r * 2); ctx.strokeRect(Math.round(X - r) + .5, Math.round(Y - r) + .5, Math.round(r * 2), Math.round(r * 2));
+      }
+    }
     // reference points
     for (const k of ['r1', 'r2']) {
       const s = S.job.refs[k] != null && shapeById(S.job.refs[k]); if (!s) continue;
@@ -738,9 +763,10 @@
     if (sim.on) drawSim();
     // rubber band / measure
     if (drag && drag.kind === 'box') {
-      ctx.fillStyle = colors['accent-soft']; ctx.strokeStyle = colors.accent; ctx.lineWidth = 1;
+      // translucent so the pieces under the box stay visible
       const x = Math.min(drag.x0, drag.x), y = Math.min(drag.y0, drag.y), w = Math.abs(drag.x - drag.x0), h = Math.abs(drag.y - drag.y0);
-      ctx.fillRect(x, y, w, h); ctx.strokeRect(x + .5, y + .5, w, h);
+      ctx.fillStyle = colors.accent; ctx.globalAlpha = 0.1; ctx.fillRect(x, y, w, h); ctx.globalAlpha = 1;
+      ctx.strokeStyle = colors.accent; ctx.lineWidth = 1; ctx.setLineDash([5, 3]); ctx.strokeRect(x + .5, y + .5, w, h); ctx.setLineDash([]);
     }
     if (measure) {
       const { x0, y0, x1, y1 } = measure; ctx.strokeStyle = colors.accent; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
@@ -752,6 +778,12 @@
       ctx.fillStyle = colors.fg; ctx.beginPath(); ctx.roundRect(lx - 8, ly - 15, tw2 + 16, 22, 8); ctx.fill();
       ctx.fillStyle = colors.canvas; ctx.fillText(label, lx, ly);
     }
+  }
+  // rubber band in world coords, and whether a shape is fully inside it
+  function boxWorld(d) { return [wx(Math.min(d.x0, d.x)), wy(Math.max(d.y0, d.y)), wx(Math.max(d.x0, d.x)), wy(Math.min(d.y0, d.y))]; }
+  function inBox(s, [xa, ya, xb, yb]) {
+    if (viewMode === 'layer' && s.layer !== curLayer) return false;
+    return s.pts.every(([x, y]) => x >= xa && x <= xb && y >= ya && y <= yb);
   }
   function drawGrid() {
     let step = 1; while (step * view.k < 9) step *= step % 10 === 1 || step === 1 ? 5 : 2;
@@ -794,6 +826,51 @@
     ctx.textAlign = 'start'; ctx.textBaseline = 'alphabetic';
   }
 
+  /* selection tools: black arrow (tool 'select', V) moves and resizes whole shapes inside a bounding box;
+     white arrow (tool 'direct', A) selects single paths and only moves them: no box, no handles, no point editing */
+  const SL = window.STL_SEL;
+  const HS = 4.5;                                    // half the size of a resize handle, in screen pixels
+  let hoverHandle = null;
+  /** Bounding box of the selection as drawn now (following a drag in progress), or null when there is none. */
+  function selBox() {
+    if (tool !== 'select' || !sel.size) return null;
+    const ss = selected(); if (!ss.length) return null;
+    let bb = [Infinity, Infinity, -Infinity, -Infinity];
+    for (const s of ss) { const b = s._bb || (s._bb = bounds([s])); bb = [Math.min(bb[0], b[0]), Math.min(bb[1], b[1]), Math.max(bb[2], b[2]), Math.max(bb[3], b[3])]; }
+    const xf = dragXF();
+    return xf ? SL.applyBox(xf, bb) : bb;
+  }
+  /** [handle, screen x, screen y] for the handles the box shows. */
+  const handlesOn = bb => SL.visibleHandles(bb, (bb[2] - bb[0]) * view.k, (bb[3] - bb[1]) * view.k)
+    .map(hk => { const [x, y] = SL.handlePos(bb, hk); return [hk, sx(x), sy(y)]; });
+  function hitHandle(px, py) {
+    if (drag) return null;
+    const bb = selBox(); if (!bb) return null;
+    // corners first: on a small box the corner handles win over the edge handles next to them
+    const hs = handlesOn(bb).sort((a, b) => b[0].length - a[0].length);
+    const r = HS + 3;
+    return hs.find(([, X, Y]) => Math.abs(px - X) <= r && Math.abs(py - Y) <= r)?.[0] || null;
+  }
+  function insideSel(px, py) {
+    const bb = selBox(); if (!bb) return false;
+    const x = wx(px), y = wy(py), tol = 3 / view.k;
+    return x >= bb[0] - tol && x <= bb[2] + tol && y >= bb[1] - tol && y <= bb[3] + tol;
+  }
+  /** The transform of the drag in progress (null before it has moved past the click threshold). */
+  function dragXF(d = drag) {
+    if (!d || !d.moved) return null;
+    const dx = wx(d.x) - d.w0[0], dy = wy(d.y) - d.w0[1];   // drawing mm, right at any zoom
+    if (d.kind === 'move') return SL.translation(dx, dy);
+    if (d.kind === 'resize') return SL.resize(d.bb, d.h, dx, dy, d.shift, d.alt);
+    return null;
+  }
+  function cancelDrag() {
+    if (!drag) return false;
+    if (drag.kind === 'measure') measure = null;
+    drag = null; cv.classList.remove('panning'); cv.className = ''; draw();
+    return true;
+  }
+
   /* hit testing */
   function hit(px, py) {
     const tol = 7 / view.k, x = wx(px), y = wy(py);
@@ -815,10 +892,28 @@
   }
 
   /* pointer */
-  let spaceDown = false, hoverQueued = false;
+  let spaceDown = false, hoverQueued = false, hoverAt = null;
+  /** what is under the pointer: highlight and cursor */
+  function hover(px, py) {
+    if (!S) return;
+    const arrow = tool === 'select' || tool === 'direct';
+    const h = (arrow || tool === 'start') ? hit(px, py) : null;
+    const hh = tool === 'select' && !spaceDown ? hitHandle(px, py) : null;
+    const id = h && !hh ? h.id : null;
+    if (id !== hoverId || hh !== hoverHandle) { hoverId = id; hoverHandle = hh; draw(); }
+    cv.className = tool === 'pan' || spaceDown ? 'pan'
+      : !arrow ? 'pick'
+      : hh ? 'rs-' + SL.CURSOR[hh]
+      : h ? (sel.has(h.id) ? 'movable' : 'hover')
+      : tool === 'select' && insideSel(px, py) ? 'movable' : '';
+  }
   cv.addEventListener('pointerdown', e => {
     if (!S) return;
     $('#ctx').hidden = true;
+    if (drag) {
+      if (e.button !== 0 || (e.buttons & 6)) return;   // another button while a drag is going on
+      cancelDrag();                                     // a left press during a left drag: that drag never got its release
+    }
     cv.setPointerCapture(e.pointerId);
     const panning = e.button === 1 || tool === 'pan' || spaceDown;
     if (panning) { drag = { kind: 'pan', x0: e.clientX, y0: e.clientY, cx: view.cx, cy: view.cy }; cv.classList.add('panning'); return; }
@@ -830,47 +925,60 @@
       sel = new Set([s.id]); api('set_start', { id: s.id, x: wx(e.clientX), y: wy(e.clientY) }, { quiet: true }).then(d => d && toast('Start point set'));
       return;
     }
+    const at = { x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, w0: [wx(e.clientX), wy(e.clientY)], moved: false };
+    // black arrow: a handle of the selection box resizes, before anything else is picked
+    const hh = tool === 'select' ? hitHandle(e.clientX, e.clientY) : null;
+    // (a click on a handle without dragging still picks the shape under it: see pointerup)
+    if (hh) { drag = { kind: 'resize', h: hh, bb: selBox(), ids: [...sel], shift: e.shiftKey, alt: e.altKey, under: s, ctrl: e.ctrlKey || e.metaKey, ...at }; return; }
     if (s) {
       if (e.ctrlKey || e.metaKey) { sel.has(s.id) ? sel.delete(s.id) : sel.add(s.id); selChanged(); return; }
       if (!sel.has(s.id)) { if (!e.shiftKey) sel.clear(); sel.add(s.id); curLayer = s.layer; selChanged(); }
-      drag = { kind: 'move', x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY };
+      drag = { kind: 'move', ids: [...sel], ...at };
+    } else if (tool === 'select' && !e.shiftKey && !e.ctrlKey && insideSel(e.clientX, e.clientY)) {
+      drag = { kind: 'move', ids: [...sel], empty: true, ...at };   // black arrow: anywhere inside the box moves the selection
     } else {
-      drag = { kind: 'box', x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, add: e.ctrlKey || e.shiftKey };
+      drag = { kind: 'box', add: e.ctrlKey || e.shiftKey, ...at };
     }
   });
   cv.addEventListener('pointermove', e => {
     if (!S) return;
     $('#cx').textContent = wx(e.clientX).toFixed(3); $('#cy').textContent = wy(e.clientY).toFixed(3);
     if (!drag) {
-      if (hoverQueued) return;
-      hoverQueued = true; requestAnimationFrame(() => { hoverQueued = false; });
-      const h = (tool === 'select' || tool === 'start') ? hit(e.clientX, e.clientY) : null;
-      const id = h ? h.id : null;
-      if (id !== hoverId) { hoverId = id; draw(); }
-      cv.className = tool === 'pan' || spaceDown ? 'pan' : tool === 'select' ? (h ? 'hover' : '') : 'pick';
+      // hover once per frame, always for the latest pointer position (a move between frames is not lost)
+      hoverAt = [e.clientX, e.clientY];
+      if (!hoverQueued) { hoverQueued = true; requestAnimationFrame(() => { hoverQueued = false; if (!drag && hoverAt) hover(...hoverAt); }); }
       return;
     }
     if (drag.kind === 'pan') { autoFit = false; view.cx = drag.cx - (e.clientX - drag.x0) / view.k; view.cy = drag.cy + (e.clientY - drag.y0) / view.k; draw(); return; }
     if (drag.kind === 'measure') { measure.x1 = wx(e.clientX); measure.y1 = wy(e.clientY); draw(); return; }
+    if (!(e.buttons & 1)) { cancelDrag(); return; }   // the button came up where this window could not see it
     drag.x = e.clientX; drag.y = e.clientY;
-    if (drag.kind === 'move') cv.className = 'moving';
+    if (!drag.moved && Math.hypot(drag.x - drag.x0, drag.y - drag.y0) > 3) drag.moved = true;   // a click is not a drag
+    if (drag.kind === 'resize') { drag.shift = e.shiftKey; drag.alt = e.altKey; }
+    if (drag.moved && drag.kind === 'move') cv.className = 'moving';
+    if (drag.moved && drag.kind === 'resize') { cv.className = 'rs-' + SL.CURSOR[drag.h]; updateReadout(); }
     draw();
   });
+  // a drag the system takes away (touch cancelled) changes nothing. (Not lostpointercapture: WebView2 can drop
+  // the capture in the middle of a drag that still ends with a normal pointerup.)
+  cv.addEventListener('pointercancel', cancelDrag);
   cv.addEventListener('pointerup', e => {
     if (!drag) return;
     const d = drag; drag = null; cv.classList.remove('panning');
-    if (d.kind === 'move') {
-      const dx = wx(d.x) - wx(d.x0), dy = wy(d.y) - wy(d.y0);
-      if (Math.hypot(d.x - d.x0, d.y - d.y0) > 3) api('move', { ids: [...sel], dx, dy }, { quiet: true });
+    if (d.kind === 'move' || d.kind === 'resize') {
+      const xf = dragXF(d);
+      if (!xf && d.empty) { sel.clear(); selChanged(); }   // a click (not a drag) on empty space deselects
+      else if (!xf && d.under && !sel.has(d.under.id)) pick(d.under.id, d.ctrl, d.shift);   // a click on a handle that covers a shape
+      else if (!xf) draw();
+      // one engine edit per drag: one undo step; the shapes keep their points, order, start and closed flag
+      else if (d.kind === 'move') api('move', { ids: d.ids, dx: xf.dx, dy: xf.dy }, { quiet: true });
+      else if (SL.isScale(xf)) api('scale', { ids: d.ids, sx: xf.sx, sy: xf.sy, ox: xf.ax, oy: xf.ay }, { quiet: true });
       else draw();
     } else if (d.kind === 'box') {
       if (Math.hypot(d.x - d.x0, d.y - d.y0) < 4) { if (!d.add) { sel.clear(); selChanged(); } return; }
-      const xa = wx(Math.min(d.x0, d.x)), xb = wx(Math.max(d.x0, d.x)), ya = wy(Math.max(d.y0, d.y)), yb = wy(Math.min(d.y0, d.y));
       if (!d.add) sel.clear();
-      for (const s of S.job.shapes) {
-        if (viewMode === 'layer' && s.layer !== curLayer) continue;
-        if (s.pts.every(([x, y]) => x >= xa && x <= xb && y >= ya && y <= yb)) sel.add(s.id);
-      }
+      const band = boxWorld(d);
+      for (const s of S.job.shapes) if (inBox(s, band)) sel.add(s.id);
       const f = selected()[0]; if (f) curLayer = f.layer;
       selChanged();
     } else draw();
@@ -914,9 +1022,13 @@
 
   /* dock */
   function setTool(t) {
+    if (t !== tool) cancelDrag();
     tool = t; $$('[data-tool]').forEach(x => x.setAttribute('aria-pressed', x.dataset.tool === t));
-    cv.className = t === 'pan' ? 'pan' : t === 'select' ? '' : 'pick';
-    if (t !== 'measure') { measure = null; draw(); }
+    cv.className = t === 'pan' ? 'pan' : t === 'select' || t === 'direct' ? '' : 'pick';
+    cv.dataset.tool = t;                              // arrow cursors (app.css)
+    hoverHandle = null;
+    if (t !== 'measure') measure = null;
+    draw();                                           // the selection keeps; only the black arrow shows its box
     if (t === 'start') toast('Click a shape where its sewing should start.');
   }
   $$('.rail [data-tool]').forEach(b => b.addEventListener('click', () => setTool(b.dataset.tool)));
@@ -1056,7 +1168,7 @@
   const KEYS = [
     ['File', [['Open a drawing or job', 'Ctrl O'], ['Save job', 'Ctrl S'], ['Save job as…', 'Ctrl Shift S'], ['Save machine file', 'Ctrl E'], ['New job', 'Ctrl N', 1], ['Insert a drawing', 'Ctrl I', 1]]],
     ['Edit', [['Undo', 'Ctrl Z'], ['Redo', 'Ctrl Y'], ['Select all', 'Ctrl A'], ['Clear the selection', 'Esc'], ['Duplicate', 'Ctrl D'], ['Delete selected', 'Delete'], ['Nudge the selection', '← ↑ → ↓'], ['Nudge ×10', 'Shift ← ↑ → ↓'], ['Reverse direction', 'R'], ['Make a layer from the selection', 'Ctrl G'], ['Delete layer, keep its shapes', 'Ctrl Shift G']]],
-    ['View and tools', [['Select and move', 'V'], ['Pan', 'H'], ['Pan while held', 'Space'], ['Set start point', 'S'], ['Measure', 'M'], ['Fit the drawing', 'F'], ['Zoom in / out', '+ −'], ['Show stitches', 'T'], ['Show sewing order', 'O'], ['Find any tool', 'Ctrl K'], ['Light / dark', 'Ctrl Shift L', 1], ['Keyboard shortcuts', '?', 1]]],
+    ['View and tools', [['Selection: move and resize whole shapes', 'V'], ['Direct selection: move one path', 'A', 1], ['Resize keeping proportions', 'Shift', 1], ['Resize from the centre', 'Alt', 1], ['Pan', 'H'], ['Pan while held', 'Space'], ['Set start point', 'S'], ['Measure', 'M'], ['Fit the drawing', 'F'], ['Zoom in / out', '+ −'], ['Show stitches', 'T'], ['Show sewing order', 'O'], ['Find any tool', 'Ctrl K'], ['Light / dark', 'Ctrl Shift L', 1], ['Keyboard shortcuts', '?', 1]]],
     ['Stages', [['Import', '1'], ['Arrange', '2'], ['Stitch', '3'], ['Sequence', '4'], ['Output', '5']]],
   ];
   const keyCaps = k => k === '← ↑ → ↓' ? `<kbd>${k}</kbd>` : k.startsWith('Shift ←') ? `<kbd>Shift</kbd><kbd>← ↑ → ↓</kbd>` : k.split(' ').map(x => `<kbd>${x}</kbd>`).join('');
@@ -1267,7 +1379,7 @@
   /* ------------------------------------------------------------------ keyboard */
   document.addEventListener('keydown', e => {
     if (!S) return;
-    const typing = /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName);
+    const typing = /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName) || !!document.activeElement?.isContentEditable;
     const ctrl = e.ctrlKey || e.metaKey;
     // the physical key, so shortcuts also work with the Arabic keyboard layout (Ctrl+Z types ئ there)
     const k = /^(Key[A-Z]|Digit[0-9])$/.test(e.code || '') ? e.code.slice(-1).toLowerCase() : e.key.toLowerCase();
@@ -1288,13 +1400,19 @@
     if (ctrl && e.shiftKey && k === 'l') { e.preventDefault(); return $('#theme').click(); }
     if (e.key === 'F1') { e.preventDefault(); return openSheet('keys'); }
     if (typing) return;
+    // during a move or resize: Esc cancels it, Shift / Alt change the resize at once, other keys wait
+    if (drag && (drag.kind === 'move' || drag.kind === 'resize')) {
+      if (e.key === 'Escape') { e.preventDefault(); cancelDrag(); }
+      else if (drag.kind === 'resize' && (e.key === 'Shift' || e.key === 'Alt')) { e.preventDefault(); drag.shift = e.shiftKey; drag.alt = e.altKey; draw(); }
+      return;
+    }
     if (e.key === '?' || e.key === '؟') { e.preventDefault(); return openSheet('keys'); }
     if (ctrl && k === 'z') { e.preventDefault(); return api(e.shiftKey ? 'redo' : 'undo', {}, { quiet: true }); }
     if (ctrl && k === 'y') { e.preventDefault(); return api('redo', {}, { quiet: true }); }
     if (ctrl && k === 'a') { e.preventDefault(); return ACT.selectAll(); }
     if (ctrl && k === 'g') { e.preventDefault(); if (e.shiftKey) { const L = layerById(curLayer); if (L) api('ungroup', { id: L.id }, { quiet: true }); } else ACT.groupSheet(); return; }
     if (ctrl && k === 'd') { e.preventDefault(); if (needSel()) api('duplicate', { ids: [...sel], dx: 5, dy: -5 }); return; }
-    if (e.key === 'Escape') { $('#ctx').hidden = true; if (sim.on) return stopSim(); if (tool !== 'select') return setTool('select'); sel.clear(); selChanged(); return; }
+    if (e.key === 'Escape') { $('#ctx').hidden = true; if (sim.on) return stopSim(); if (tool !== 'select' && tool !== 'direct') return setTool('select'); sel.clear(); selChanged(); return; }
     if ((e.key === 'Delete' || e.key === 'Backspace') && sel.size) return api('delete', { ids: [...sel] }, { quiet: true });
     if (e.key.startsWith('Arrow') && sel.size) {
       e.preventDefault(); const st = (parseFloat(store.get('nudge', '0.10')) || 0.1) * (e.shiftKey ? 10 : 1);
@@ -1303,13 +1421,16 @@
     }
     if (e.key === ' ' && !spaceDown) { spaceDown = true; cv.className = 'pan'; e.preventDefault(); return; }
     if (ctrl) return;
-    if (k === 'v') setTool('select'); if (k === 'h') setTool('pan'); if (k === 's') setTool('start'); if (k === 'm') setTool('measure');
+    if (k === 'v') setTool('select'); if (k === 'a') setTool('direct'); if (k === 'h') setTool('pan'); if (k === 's') setTool('start'); if (k === 'm') setTool('measure');
     if (k === 'f') fitView(); if (k === '+' || k === '=') zoomAt(1.25); if (k === '-') zoomAt(0.8);
     if (k === 'o') $('#showOrder').click(); if (k === 't') $('#showStitch').click();
     if (k === 'r' && sel.size) api('reverse', { ids: [...sel] }, { quiet: true });
     if (/^[1-5]$/.test(k)) setStage(STAGES[+k - 1]);
   });
-  document.addEventListener('keyup', e => { if (e.key === ' ') { spaceDown = false; cv.className = tool === 'pan' ? 'pan' : ''; } });
+  document.addEventListener('keyup', e => {
+    if (e.key === ' ') { spaceDown = false; cv.className = tool === 'pan' ? 'pan' : ''; }
+    if (drag && drag.kind === 'resize' && (e.key === 'Shift' || e.key === 'Alt')) { e.preventDefault(); drag.shift = e.shiftKey; drag.alt = e.altKey; draw(); }
+  });
 
   /* ------------------------------------------------------------------ drag & drop files */
   let dragDepth = 0;

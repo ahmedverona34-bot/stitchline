@@ -35,6 +35,11 @@
     'New layer': 'طبقة جديدة', 'New layer…': 'طبقة جديدة…', 'Name of the new layer': 'اسم الطبقة الجديدة', 'Name of the new empty layer': 'اسم الطبقة الجديدة الفاضية',
     // ---------------------------------------------------------------- canvas, dock, readout
     'Drawing canvas': 'لوحة الرسم', 'Canvas tools': 'أدوات اللوحة', 'Select and move (V)': 'تحديد وتحريك (V)',
+    'Selection: move and resize whole shapes (V)': 'التحديد: تحريك الأشكال كاملة وتغيير مقاسها (V)', 'Selection': 'التحديد',
+    'Direct selection: move one path (A)': 'التحديد المباشر: تحريك مسار واحد (A)', 'Direct selection': 'التحديد المباشر',
+    'Selection: move and resize whole shapes': 'التحديد: تحريك الأشكال كاملة وتغيير مقاسها', 'Direct selection: move one path': 'التحديد المباشر: تحريك مسار واحد',
+    'Resize keeping proportions': 'تغيير المقاس مع الحفاظ على النسب', 'Resize from the centre': 'تغيير المقاس من المنتصف',
+    'The size must be more than 0.': 'المقاس لازم يكون أكبر من 0.',
     'Pan (H, or hold Space)': 'تحريك العرض (H أو اضغط Space)', 'Set start point (S)': 'تحديد نقطة البداية (S)', 'Start': 'البداية',
     'Measure (M)': 'قياس (M)', 'Zoom out (−)': 'تصغير (−)', 'Zoom out': 'تصغير', 'Zoom in (+)': 'تكبير (+)', 'Zoom in': 'تكبير',
     'Fit (F)': 'ملاءمة (F)', 'Fit': 'ملاءمة', 'Show': 'عرض', 'Show all layers': 'عرض كل الطبقات', 'Show only the current layer': 'عرض الطبقة الحالية فقط',

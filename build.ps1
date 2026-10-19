@@ -21,6 +21,7 @@ $env:CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER = Join-Path $selfContained 'x86_6
 if ($Test) {
     $env:CARGO_TARGET_DIR = Join-Path $PSScriptRoot 'target\engine'
     cargo test -p stitchline-engine; if ($LASTEXITCODE) { throw 'engine tests failed' }
+    node --test tests\selection.test.mjs; if ($LASTEXITCODE) { throw 'UI tests failed' }
     cargo build -p stitchline-engine --bin stitchline-cli; if ($LASTEXITCODE) { throw 'cli build failed' }
     python tests\compare_with_python.py; if ($LASTEXITCODE) { throw 'Rust and Python differ' }
     Remove-Item Env:\CARGO_TARGET_DIR

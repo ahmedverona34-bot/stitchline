@@ -94,6 +94,13 @@ input, textarea { user-select: text; }
 
 /* ---------- canvas ---------- */
 #cv { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; touch-action: none; }
+/* arrow cursors: black arrow (V) and white arrow (A); the small square means "a shape is under the pointer" */
+#cv[data-tool="select"] { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cpath d='M4 2v15.5l4.1-4 2.8 6.2 2.7-1.2-2.8-6.1H16.5z' fill='%23111' stroke='%23fff' stroke-width='1.2' stroke-linejoin='round'/%3E%3C/svg%3E") 4 2, default; }
+#cv[data-tool="direct"] { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cpath d='M4 2v15.5l4.1-4 2.8 6.2 2.7-1.2-2.8-6.1H16.5z' fill='%23fff' stroke='%23111' stroke-width='1.2' stroke-linejoin='round'/%3E%3C/svg%3E") 4 2, default; }
+#cv[data-tool="select"].hover { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cpath d='M4 2v15.5l4.1-4 2.8 6.2 2.7-1.2-2.8-6.1H16.5z' fill='%23111' stroke='%23fff' stroke-width='1.2' stroke-linejoin='round'/%3E%3Crect x='16.5' y='16.5' width='5' height='5' fill='%23111' stroke='%23fff'/%3E%3C/svg%3E") 4 2, pointer; }
+#cv[data-tool="direct"].hover, #cv[data-tool="direct"].movable { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cpath d='M4 2v15.5l4.1-4 2.8 6.2 2.7-1.2-2.8-6.1H16.5z' fill='%23fff' stroke='%23111' stroke-width='1.2' stroke-linejoin='round'/%3E%3Crect x='16.5' y='16.5' width='5' height='5' fill='%23fff' stroke='%23111'/%3E%3C/svg%3E") 4 2, pointer; }
+#cv.movable { cursor: move; }
+#cv.rs-nwse { cursor: nwse-resize; } #cv.rs-nesw { cursor: nesw-resize; } #cv.rs-ns { cursor: ns-resize; } #cv.rs-ew { cursor: ew-resize; }
 #cv.pan { cursor: grab; } #cv.panning { cursor: grabbing; } #cv.pick { cursor: crosshair; } #cv.hover { cursor: pointer; } #cv.moving { cursor: move; }
 
 /* ---------- top bar ---------- */
@@ -153,6 +160,11 @@ svg.i, .icon-btn svg, .tool svg, .btn svg { width: 16px; height: 16px; stroke: c
 .rail .tool[aria-pressed="true"] { background: var(--rail-on); color: var(--rail-on-fg); }
 .rail .tool[data-key]::after { content: attr(data-key); position: absolute; bottom: 1px; inset-inline-end: 3px; font: 9px/1 var(--mono); color: var(--rail-fg-2); }
 .rail .tool[aria-pressed="true"][data-key]::after { color: var(--fg-2); }
+/* the two arrows stay black and white in both themes (the pressed tool shows by its background); on a dark rail
+   the black arrow gets a light outline so it can be seen */
+.rail .tool svg.arrow-black { width: 18px; height: 18px; fill: #141417; stroke: #141417; stroke-width: 1.2; }
+.rail .tool svg.arrow-white { width: 18px; height: 18px; fill: #fff; stroke: #141417; stroke-width: 1.3; }
+:root[data-theme="dark"] .rail .tool svg.arrow-black { stroke: #e9e9ee; }
 .rail-sep { width: 20px; height: 1px; background: var(--rail-line); margin: 4px 0; }
 
 /* ---------- side panels ---------- */

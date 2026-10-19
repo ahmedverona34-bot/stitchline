@@ -471,7 +471,14 @@ impl Session {
                 let axis = str_arg(a, "axis")?;
                 ops::mirror(j, &ids(a, "ids")?, &axis)?
             }
-            "scale" => ops::scale(j, &ids(a, "ids")?, f(a, "sx", 1.0)?, f(a, "sy", 1.0)?)?,
+            "scale" => {
+                // ox / oy: the fixed point of a bounding-box handle drag; without them, the centre
+                let origin = match (a.get("ox"), a.get("oy")) {
+                    (Some(_), Some(_)) => Some((f(a, "ox", 0.0)?, f(a, "oy", 0.0)?)),
+                    _ => None,
+                };
+                ops::scale(j, &ids(a, "ids")?, f(a, "sx", 1.0)?, f(a, "sy", 1.0)?, origin)?
+            }
             "scale_all" => ops::scale_all(j, f(a, "sx", 1.0)?, f(a, "sy", 1.0)?),
             "reverse" => ops::reverse(j, &ids(a, "ids")?)?,
             "set_start" => ops::set_start(j, sid(a, "id")?, f(a, "x", 0.0)?, f(a, "y", 0.0)?)?,

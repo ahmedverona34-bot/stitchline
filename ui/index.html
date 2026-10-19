@@ -45,7 +45,8 @@
 </header>
 
 <nav class="rail" role="toolbar" aria-label="Canvas tools" aria-orientation="vertical">
-  <button class="tool" aria-pressed="true" data-tool="select" data-key="V" title="Select and move (V)" aria-label="Select and move"><svg viewBox="0 0 24 24"><path d="m5 3 14 8-6 2-2 6z"/></svg></button>
+  <button class="tool" aria-pressed="true" data-tool="select" data-key="V" title="Selection: move and resize whole shapes (V)" aria-label="Selection"><svg class="arrow-black" viewBox="0 0 24 24"><path d="M6 3v15.5l4.1-4 2.8 6.2 2.7-1.2-2.8-6.1H18.5z"/></svg></button>
+  <button class="tool" aria-pressed="false" data-tool="direct" data-key="A" title="Direct selection: move one path (A)" aria-label="Direct selection"><svg class="arrow-white" viewBox="0 0 24 24"><path d="M6 3v15.5l4.1-4 2.8 6.2 2.7-1.2-2.8-6.1H18.5z"/></svg></button>
   <button class="tool" aria-pressed="false" data-tool="pan" data-key="H" title="Pan (H, or hold Space)" aria-label="Pan"><svg viewBox="0 0 24 24"><path d="M8 11V5.5a1.5 1.5 0 0 1 3 0V10m0-4.5a1.5 1.5 0 0 1 3 0V10m0-3a1.5 1.5 0 0 1 3 0v6.5A6.5 6.5 0 0 1 10.5 20h0A6.5 6.5 0 0 1 5 17l-1.7-3a1.5 1.5 0 0 1 2.6-1.5L8 15"/></svg></button>
   <button class="tool" aria-pressed="false" data-tool="start" data-key="S" title="Set start point (S)" aria-label="Set start point"><svg viewBox="0 0 24 24"><circle cx="7" cy="17" r="3"/><path d="M10 14 19 5M14 5h5v5"/></svg></button>
   <button class="tool" aria-pressed="false" data-tool="measure" data-key="M" title="Measure (M)" aria-label="Measure"><svg viewBox="0 0 24 24"><path d="m3 17 14-14 4 4L7 21z"/><path d="m7 13 2 2M10 10l2 2M13 7l2 2"/></svg></button>
@@ -129,6 +130,7 @@
 <div class="busy" id="busy" hidden><span class="spin"></span><span id="busyTxt">Working…</span></div>
 
 <script src="i18n.js"></script>
+<script src="selection.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
