@@ -215,7 +215,8 @@ svg.i, .icon-btn svg, .tool svg, .btn svg { width: 16px; height: 16px; stroke: c
 .p-foot { display: flex; gap: 6px; padding: 10px; border-top: 1px solid var(--line); }
 
 .layer { margin: 1px 6px; }
-.layer-row { display: grid; grid-template-columns: 16px 12px minmax(0, 1fr) auto auto; align-items: center; gap: 8px; padding: 6px 8px; border-radius: var(--r-sm); font-weight: 500; }
+/* a layer's row stays at the top of the list while its shapes scroll under it */
+.layer-row { display: grid; grid-template-columns: 16px 12px minmax(0, 1fr) auto auto; align-items: center; gap: 8px; padding: 6px 8px; border-radius: var(--r-sm); font-weight: 500; position: sticky; top: 0; z-index: 1; background: var(--app); }
 .layer-row:hover { background: var(--well); }
 .layer.cur > .layer-row { background: var(--accent-soft); }
 .layer-row .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: default; }
@@ -306,8 +307,6 @@ input[type="range"] { width: 100%; accent-color: var(--thread); }
 .row { display: flex; align-items: center; gap: 10px; min-height: 30px; }
 .row > label, .row > .lbl { flex: 1; color: var(--fg-2); min-width: 0; }
 .big-slider { display: grid; gap: 6px; }
-.big-slider .val { font: 600 28px/1 var(--font-d); font-variant-numeric: tabular-nums; }
-.big-slider .val small { font-size: 13px; color: var(--fg-3); font-weight: 500; margin-left: 3px; }
 .pad { display: grid; grid-template-columns: repeat(3, 34px); grid-template-rows: repeat(3, 34px); gap: 4px; }
 .pad button { border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--app); display: grid; place-items: center; color: var(--fg-2); }
 .pad button:hover { color: var(--accent); background: var(--accent-soft); }

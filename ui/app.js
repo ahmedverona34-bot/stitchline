@@ -237,7 +237,7 @@
       ['Select all shapes in this layer', () => { sel = new Set(S.job.shapes.filter(s => s.layer === id).map(s => s.id)); selChanged(); }],
       ['Rename…', () => $(`[data-rename="${id}"]`).dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))],
       isLaser(layerById(id)) ? ['Make this a sewing layer', () => setKind(id, 'sew')] : ['Make this a laser cut layer', () => setKind(id, 'laser')],
-      ['Use these stitch settings for every layer', () => api('copy_layer_settings', { id })],
+      ...(isLaser(layerById(id)) ? [] : [['Use these stitch settings for every layer', () => copySettings(id)]]),
       ...(gi > 0 ? [['Move layer up', () => api('move_group', { id, delta: -1 }, { quiet: true })]] : []),
       ...(gi < S.job.layers.length - 1 ? [['Move layer down', () => api('move_group', { id, delta: 1 }, { quiet: true })]] : []),
       null,
@@ -327,9 +327,6 @@
             ${row('Horizontal (X)', jf('scale_x', '×'))}${row('Vertical (Y)', jf('scale_y', '×'))}
             ${row('Apply when opening a file', jsw('scale_on_open'))}
             <div class="grid2"><button class="btn" data-act="scaleNow">Scale drawing now</button><button class="btn" data-act="sheet" data-sheet="calc">From a measurement…</button></div>`)}
-          ${sec('display', 'Display', window.STL_LANG === 'ar' ? 'العربية' : 'English', `
-            ${row('Language', `<div class="seg" role="group"><button aria-pressed="${window.STL_LANG === 'ar'}" data-act="lang" data-v="ar" data-notr>العربية</button><button aria-pressed="${window.STL_LANG !== 'ar'}" data-act="lang" data-v="en" data-notr>English</button></div>`)}
-            ${row('Light / dark (Ctrl+Shift+L)', `<button class="btn sm" data-act="theme">Switch</button>`)}`)}
           ${sec('table', 'Machine table', `${J().table_w} × ${J().table_h} mm`, `${row('Width', jf('table_w'))}${row('Height', jf('table_h'))}`)}`,
         foot: `<button class="btn primary big" data-goto="arrange" ${S.job.shapes.length ? '' : 'disabled'}>Continue to Arrange</button>`,
       };
@@ -398,8 +395,7 @@
           </div></div>
           ${L.needle === 3 ? laserSpeedSection(L) : ''}
           <div class="sec plain" ${isLaser(L) ? 'hidden' : ''}><div class="sec-body">
-            <div class="big-slider"><span style="color:var(--fg-2)">Stitch length</span>
-              <div class="val"><span id="lenVal">${fmt(s.stitch_len, 1)}</span><small>mm</small></div>
+            <div class="big-slider">${row('Stitch length', fld('lenNum', +(+s.stitch_len).toFixed(2), 'mm', '', 'layer:stitch_len'), 'lenNum')}
               <input type="range" id="lenRange" min="0.5" max="12" step="0.1" value="${s.stitch_len}" aria-label="Stitch length">
               <p class="hint">${n.toLocaleString()} needle positions in this layer</p></div>
             ${row('Convert lines to stitches', lsw('convert'))}
@@ -435,7 +431,7 @@
             ${row('X− / X+', `<span style="display:flex;gap:4px">${fld('cxm', comp['x-'] ?? 0, 'mm', 'sm')}${fld('cxp', comp['x+'] ?? 0, 'mm', 'sm')}</span>`)}
             ${row('Y− / Y+', `<span style="display:flex;gap:4px">${fld('cym', comp['y-'] ?? 0, 'mm', 'sm')}${fld('cyp', comp['y+'] ?? 0, 'mm', 'sm')}</span>`)}`)}
           <div class="callout"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg><div><div class="legend"><span><i style="background:var(--thread)"></i>stitch</span><span><i style="background:var(--tack)"></i>back-tack</span><span><i style="background:var(--dense)"></i>dense</span><span><i style="background:var(--warn)"></i>slow</span><span><i style="background:var(--zig)"></i>zigzag</span><span><i style="background:var(--special)"></i>special</span></div></div></div>
-          <div style="padding:0 10px"><button class="btn ghost" data-act="copySettings" style="width:100%">Use these settings for every layer</button></div>`,
+          ${isLaser(L) ? '' : `<div style="padding:0 10px"><button class="btn ghost" data-act="copySettings" style="width:100%">Use these settings for every layer</button></div>`}`,
         foot: `<button class="btn primary big" data-goto="sequence">Continue to Sequence</button>`,
       };
     },
@@ -504,24 +500,47 @@
     return 'end';
   }
 
+  // the focused control, found again after the panel is rebuilt: by its id, or by its data-* attributes (buttons)
+  const focusKey = el => el.id ? '#' + CSS.escape(el.id) : Object.entries(el.dataset).map(([k, v]) => `[data-${k.replace(/[A-Z]/g, c => '-' + c.toLowerCase())}="${CSS.escape(v)}"]`).join('') || null;
   function renderInspector() {
     const sc = $('#insp').scrollTop;
     const osc = $('#order')?.scrollTop;   // the sewing order list scrolls on its own; keep its place across re-renders
+    // a value committed with Tab re-renders the panel while the next field has focus: keep that field focused
+    const fa = document.activeElement, fk = fa && fa.closest('.inspector') && focusKey(fa);
+    const fv = fk && fa.tagName === 'INPUT' ? { v: fa.value, typed: fa.value !== fa.defaultValue, s: fa.selectionStart, e: fa.selectionEnd } : null;
     const p = PANELS[stage]();
     $('#insp').innerHTML = `<div class="i-title"><h2>${p.title}</h2><p>${p.sub}</p>${p.pick || ''}</div>${p.body}`;
     $('#ifoot').innerHTML = p.foot;
     $('#ifoot').hidden = !p.foot;
     $('#insp').scrollTop = sc;
     if (osc != null && $('#order')) $('#order').scrollTop = osc;
+    const nf = fk && $('.inspector ' + fk);
+    if (nf) {
+      nf.focus({ preventScroll: true });
+      if (fv?.typed) nf.value = fv.v;   // typed into while the engine was busy
+      if (fv && fv.s != null) try { fv.s === 0 && fv.e === fv.v.length ? nf.select() : nf.setSelectionRange(fv.s, fv.e); } catch {}
+    }
     $$('#insp details[data-key]').forEach(d => d.addEventListener('toggle', () => { openSecs[d.dataset.key] = d.open; store.set('openSecs', openSecs); }));
     const r = $('#lenRange');
     if (r) {
       let t;
-      r.addEventListener('input', () => { $('#lenVal').textContent = (+r.value).toFixed(1); clearTimeout(t); t = setTimeout(() => setLayer({ stitch_len: +r.value }), 220); });
+      r.addEventListener('input', () => { $('#lenNum').value = (+r.value).toFixed(1); clearTimeout(t); t = setTimeout(() => setLayer({ stitch_len: +r.value }), 220); });
+      $('#lenNum').addEventListener('input', () => { const v = num('lenNum'); if (v > 0) r.value = v; });   // the slider follows what is typed; Tab or Enter saves it
     }
     const ol = $('#order'); if (ol) wireOrder(ol);
   }
 
+  /* every layer takes this layer's stitch settings, after asking. Never from a laser layer: that would switch off the
+     stitches and back-tack of every sewing layer */
+  function copySettings(id) {
+    const L = layerById(id); if (!L) return;
+    if (isLaser(L)) return toast('Pick a sewing layer to copy its stitch settings.', true);
+    const same = o => Object.keys({ ...o, ...L.settings }).every(k => JSON.stringify(o[k]) === JSON.stringify(L.settings[k]));
+    const n = S.job.layers.filter(l => l.id !== id && !same(l.settings)).length;
+    if (!n) return toast('Every layer already uses these stitch settings');
+    confirmSheet('Use these settings for every layer?', `${n} ${n === 1 ? 'layer gets' : 'layers get'} the stitch settings of “${esc(L.name)}”. You can undo this.`, 'Use for every layer',
+      () => api('copy_layer_settings', { id }, { quiet: true }).then(d => d && toast('Every layer now uses these stitch settings')));
+  }
   function setLayer(settings) { return api('update_layer', { id: curLayer, fields: { settings } }, { quiet: true }); }
   function setJob(values) { return api('set_job', { values }, { quiet: true }); }
 
@@ -537,6 +556,7 @@
       v = parseFloat(String(el.value).replace(',', '.'));
       if (!Number.isFinite(v)) { toast('Enter a number.', true); renderInspector(); return; }
       if (/(_n|_start|_end|_rep|end_repeat|bt_|cl_)/.test(key) && !/_len|_f$/.test(key)) v = Math.max(0, Math.round(v));
+      if (key === 'stitch_len') v = Math.min(12, Math.max(0.5, v));   // the slider's range
     }
     scope === 'layer' ? setLayer({ [key]: v }) : setJob({ [key]: v });
   }
@@ -624,17 +644,15 @@
     short: () => needSel() && api('delete_short', { ids: [...sel], min: num('sl') }),
     join: () => needSel() && api('join', { ids: [...sel], tol: num('jt') }),
     tool: b => setTool(b.dataset.tool),
-    theme: () => toggleTheme(),
     sheet: b => openSheet(b.dataset.sheet),
     groupSheet: () => needSel() && openSheet('group'),
     dpi: b => setJob({ dpi: +b.dataset.v }),
     gotoLaser: b => { curLayer = b.dataset.l; setStage('stitch'); },
     laserFix: () => api('laser_fix', { id: curLayer }).then(d => { if (d) fitView(); }),
-    lang: b => { if (b.dataset.v !== window.STL_LANG) setLang(b.dataset.v); },
     kind: b => setKind(curLayer, b.dataset.kind),
     scaleNow: () => api('scale_all', { sx: J().scale_x, sy: J().scale_y }).then(d => d && fitView()),
     origin: b => setJob({ origin: b.dataset.c }),
-    copySettings: () => api('copy_layer_settings', { id: curLayer }).then(d => d && toast('Every layer now uses these stitch settings')),
+    copySettings: () => copySettings(curLayer),
     sort: b => api('sort', { dir: b.dataset.dir, spacing: J().row_spacing, by_end: J().sort_by_end }).then(d => d && toast('Sewing order updated')),
     nearest: () => api('nearest').then(d => d && toast('Sewing order updated for the shortest travel')),
     byGroup: () => api('order_by_group').then(d => d && toast('Sewing order now follows the layer list')),
@@ -1186,7 +1204,8 @@
   $('#groupSel').onclick = () => ACT.groupSheet();
   $('#addLayer').onclick = () => promptSheet('New layer', 'Name of the new empty layer', 'Layer ' + ((S?.job.layers.length || 0) + 1), name => api('add_layer', { name }, { quiet: true }).then(d => { if (d) curLayer = d.job.layers.at(-1).id; renderAll(); }));
   $('#fileChip').onclick = () => promptSheet('Job name', 'Used for the machine file and exports', S.job.name, name => api('rename_job', { name }, { quiet: true }));
-  function setLang(l) { store.set('lang', l); location.reload(); }
+  // the page reloads in the other language and comes back to the same place: Home if it was open, else the editor
+  function setLang(l) { store.set('lang', l); try { sessionStorage.setItem('stl.langReload', homeOpen() ? 'home' : 'editor'); } catch {} location.reload(); }
   function setTheme(t) { document.documentElement.dataset.theme = t; store.set('theme', t); syncSettings(); draw(); }
   function toggleTheme() { setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'); }
   { const th = store.get('theme', null); document.documentElement.dataset.theme = th || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); }
@@ -1440,15 +1459,29 @@
     const sh = $('#sheet');
     sh.className = 'sheet' + (k === 'points' || k === 'defaults' ? ' wide' : k === 'keys' ? ' keys' : '');
     sh.innerHTML = SHEETS[k](); sh.dataset.k = k;
-    $('#sheetScrim').hidden = false;
+    showSheet();
     if (k === 'resize') { rzFill(sheetCtx.w, sheetCtx.h); const f = $('#rzW').disabled ? $('#rzH') : $('#rzW'); f.focus(); f.select(); return; }
     ($('#sheet input') || $('#sheet [data-ok]') || $('#sheet [data-close]'))?.focus();
   }
-  const closeSheet = () => { $('#sheetScrim').hidden = true; };
+  // a dialog is named by its heading; closing it puts the focus back where it was before
+  let sheetFrom = null;
+  function showSheet() {
+    if ($('#sheetScrim').hidden) sheetFrom = document.activeElement;
+    const h = $('#sheet h3'); if (h) h.id = 'sheetTitle';
+    $('#sheetScrim').hidden = false;
+  }
+  const closeSheet = () => { $('#sheetScrim').hidden = true; if (sheetFrom?.isConnected) sheetFrom.focus({ preventScroll: true }); sheetFrom = null; };
+  // Tab and Shift+Tab go round the open dialog's own controls, never to the window behind it
+  function trapTab(e) {
+    if (e.key !== 'Tab') return;
+    const f = $$('#sheet button, #sheet input, #sheet select').filter(x => !x.disabled && x.offsetParent);
+    const i = f.indexOf(document.activeElement);
+    if (f.length && (i < 0 || (e.shiftKey ? i === 0 : i === f.length - 1))) { e.preventDefault(); f[e.shiftKey ? f.length - 1 : 0].focus(); }
+  }
   function confirmSheet(title, text, okText, fn) {
     const sh = $('#sheet'); sh.className = 'sheet'; sh.dataset.k = 'confirm';
     sh.innerHTML = `<header><h3>${title}</h3><p>${text}</p></header><footer><button class="btn" data-close>Cancel</button><button class="btn primary" data-ok>${okText}</button></footer>`;
-    sheetCtx = { fn }; $('#sheetScrim').hidden = false; $('#sheet [data-ok]').focus();
+    sheetCtx = { fn }; showSheet(); $('#sheet [data-ok]').focus();
   }
   /* Unsaved changes that would be lost: Save / Don't save / Cancel. Asked when the window closes (the engine stops
      the close and calls closeQuestion) and before anything replaces the job: open, drop, recent file, new job */
@@ -1461,7 +1494,7 @@
     const sh = $('#sheet'); sh.className = 'sheet'; sh.dataset.k = 'unsaved';
     sh.innerHTML = `<header><h3>${title}</h3><p>${text}</p></header>
       <footer><button class="btn left" data-nosave>Don't save</button><button class="btn" data-close>Cancel</button><button class="btn primary" data-ok>Save</button></footer>`;
-    sheetCtx = { saved, discard, closing }; $('#sheetScrim').hidden = false; $('#sheet [data-ok]').focus();
+    sheetCtx = { saved, discard, closing }; showSheet(); $('#sheet [data-ok]').focus();
   }
   function closeQuestion() {
     if (!S || !S.file.dirty) return quit(false);
@@ -1478,7 +1511,7 @@
   function promptSheet(title, text, value, fn) {
     const sh = $('#sheet'); sh.className = 'sheet'; sh.dataset.k = 'prompt';
     sh.innerHTML = `<header><h3>${title}</h3><p>${text}</p></header><div class="body"><span class="field wide"><input id="pv" value="${esc(value)}"></span></div><footer><button class="btn" data-close>Cancel</button><button class="btn primary" data-ok>OK</button></footer>`;
-    sheetCtx = { fn }; $('#sheetScrim').hidden = false; const i = $('#pv'); i.focus(); i.select();
+    sheetCtx = { fn }; showSheet(); const i = $('#pv'); i.focus(); i.select();
   }
   const segVal = id => $(`#${id} button[aria-pressed="true"]`)?.dataset.k;
   const swOn = id => $('#' + id)?.getAttribute('aria-checked') === 'true';
@@ -1552,8 +1585,10 @@
   };
   $('#sheetScrim').addEventListener('click', async e => {
     const t = e.target;
-    if (t === e.currentTarget || t.closest('[data-close]')) return closeSheet();
     const k = $('#sheet').dataset.k;
+    // a click outside closes only the dialogs that change nothing, so it never throws away what was typed
+    if (t === e.currentTarget) return ['keys', 'confirm', 'unsaved'].includes(k) && closeSheet();
+    if (t.closest('[data-close]')) return closeSheet();
     const sb = t.closest('.seg button');
     if (sb) {
       $$('button', sb.parentElement).forEach(b => b.setAttribute('aria-pressed', b === sb));
@@ -1590,7 +1625,7 @@
     }
     rzPct();
   });
-  $('#sheet').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); $('#sheet [data-ok]')?.click(); } e.stopPropagation(); if (e.key === 'Escape') closeSheet(); });
+  $('#sheet').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); $('#sheet [data-ok]')?.click(); } e.stopPropagation(); trapTab(e); if (e.key === 'Escape') closeSheet(); });
 
   /* ------------------------------------------------------------------ command palette */
   const TOOLS = [
@@ -1650,6 +1685,7 @@
       return;
     }
     if (!$('#sheetScrim').hidden) {
+      trapTab(e);
       if (e.key === 'Escape') closeSheet();
       if (e.key === 'Enter' && $('#sheet').dataset.k === 'newjob' && e.target.tagName === 'INPUT') { e.preventDefault(); $('#sheet [data-ok]').click(); }
       return;
@@ -1934,6 +1970,7 @@
   setInterval(() => fetch('/api/ping', { method: 'POST', body: '{}' }).catch(() => {}), 5000);
   resize();
   setTool('select');
-  if (store.get('homeOnStart', true)) $('#home').hidden = false;
+  { let back = null; try { back = sessionStorage.getItem('stl.langReload'); sessionStorage.removeItem('stl.langReload'); } catch {}
+    if (back ? back === 'home' : store.get('homeOnStart', true)) $('#home').hidden = false; }
   api('state', {}, { quiet: true }).then(d => { if (d) { if (!d.job.shapes.length && stage !== 'import') setStage('import'); fitView(); if (homeOpen()) showHome(); } });
 })();
