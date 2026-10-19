@@ -452,7 +452,7 @@
     sequence: () => {
       const all = S.job.order.map(shapeById).filter(Boolean);
       return {
-        title: 'Sewing order', sub: 'Drag to reorder. The numbers on the drawing follow this list.',
+        title: 'Sewing order', sub: 'Drag to reorder. Point at a shape to see its number and the shapes sewn before and after it.',
         body: `
           <div class="sec plain"><div class="sec-body">
             <ol class="order" id="order">${all.map((s, i) => `<li draggable="true" data-id="${s.id}" class="${sel.has(s.id) ? 'sel' : ''}" style="${isSewn(s) ? '' : 'opacity:.45'}"><span class="badge" style="background:${esc(layerOf(s).color)};color:${inkOn(layerOf(s).color)}">${i + 1}</span>${thumb(s.pts, s.closed)}<span class="nm">${esc(nameOf(s))}</span><span class="mono" style="color:var(--fg-3);font-size:11px">${esc(layerOf(s).name)}</span></li>`).join('')}</ol>
@@ -720,6 +720,8 @@
       api('reorder', { ids: order }, { quiet: true });
     });
     ol.addEventListener('click', e => { const li = e.target.closest('li'); if (li) pick(+li.dataset.id, e.ctrlKey, e.shiftKey); });
+    ol.addEventListener('mouseover', e => { const id = +e.target.closest('li')?.dataset.id; if (id >= 0 && id !== hoverId) { hoverId = id; draw(); } });
+    ol.addEventListener('mouseleave', () => { if (hoverId != null) { hoverId = null; draw(); } });
   }
 
   /* ------------------------------------------------------------------ stages */
@@ -987,20 +989,49 @@
     }
     return out;
   }
+  /* sewing order on the drawing. Numbers would pile up where pieces start close together, so each badge looks for a free
+     spot around its start point and is left out when there is none; the shape under the pointer (or the selection)
+     always shows its number, those of the shapes sewn just before and after it, and the travel moves between them */
   function drawOrder() {
-    const seq = S.job.order.map(shapeById).filter(s => s && isSewn(s));
-    let prev = null;
-    ctx.font = '600 11px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    seq.forEach((s, i) => {
-      const st = S.stitched[s.id]; if (!st || !st.p.length) return;
-      const a = [st.p[0], st.p[1]];
-      if (prev) { ctx.strokeStyle = colors['fg-3']; ctx.lineWidth = 1; ctx.setLineDash([3, 4]); ctx.beginPath(); ctx.moveTo(sx(prev[0]), sy(prev[1])); ctx.lineTo(sx(a[0]), sy(a[1])); ctx.stroke(); ctx.setLineDash([]); }
-      const X = sx(a[0]) - 12, Y = sy(a[1]) - 12;
-      ctx.fillStyle = colors.fg; ctx.beginPath(); ctx.arc(X, Y, 9, 0, 7); ctx.fill();
-      ctx.fillStyle = colors.canvas; ctx.fillText(String(i + 1), X, Y + .5);
-      prev = [st.p.at(-2), st.p.at(-1)];
+    const items = [];
+    S.job.order.forEach((id, n) => {
+      const s = shapeById(id), st = s && isSewn(s) && S.stitched[s.id];
+      if (st && st.p.length) items.push({ id, n: n + 1, a: [sx(st.p[0]), sy(st.p[1])], z: [sx(st.p.at(-2)), sy(st.p.at(-1))] });
     });
-    ctx.textAlign = 'start'; ctx.textBaseline = 'alphabetic';
+    const focus = new Set(hoverId != null ? [hoverId] : sel.size <= 3 ? sel : []);   // a big selection would bring the pile back
+    const near = new Set();
+    items.forEach((it, i) => { if (focus.has(it.id)) { near.add(i); if (i) near.add(i - 1); if (i + 1 < items.length) near.add(i + 1); } });
+    // travel moves: quiet dashed lines, the ones next to the focused shape solid with an arrow
+    items.forEach((it, i) => {
+      if (!i) return;
+      const [x0, y0] = items[i - 1].z, [x1, y1] = it.a, on = focus.has(it.id) || focus.has(items[i - 1].id);
+      ctx.strokeStyle = on ? colors.accent : colors['fg-3']; ctx.globalAlpha = on ? 1 : (focus.size ? .25 : .5);
+      ctx.lineWidth = on ? 1.5 : 1; ctx.setLineDash(on ? [] : [3, 4]);
+      ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke(); ctx.setLineDash([]);
+      if (on && Math.hypot(x1 - x0, y1 - y0) > 40) {
+        const ang = Math.atan2(y1 - y0, x1 - x0), mx = (x0 + x1) / 2, my = (y0 + y1) / 2;
+        ctx.fillStyle = colors.accent; ctx.beginPath(); ctx.moveTo(mx + Math.cos(ang) * 6, my + Math.sin(ang) * 6);
+        ctx.lineTo(mx + Math.cos(ang + 2.4) * 6, my + Math.sin(ang + 2.4) * 6); ctx.lineTo(mx + Math.cos(ang - 2.4) * 6, my + Math.sin(ang - 2.4) * 6); ctx.fill();
+      }
+    });
+    ctx.globalAlpha = 1;
+    // badges: the focused shape and its neighbours first, so they always find a place
+    const OFF = [[-12, -12], [12, -12], [-12, 12], [12, 12], [0, -17], [17, 0], [0, 17], [-17, 0]];
+    const placed = [], rank = i => focus.has(items[i].id) ? 0 : near.has(i) ? 1 : 2;
+    const idx = items.map((_, i) => i).sort((p, q) => rank(p) - rank(q) || p - q);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    for (const i of idx) {
+      const it = items[i], big = rank(i) === 0, r = big ? 11 : 9;
+      const free = ([dx, dy]) => placed.every(([X, Y, R]) => Math.hypot(it.a[0] + dx - X, it.a[1] + dy - Y) > r + R + 2);
+      const off = OFF.find(free) || (rank(i) < 2 ? OFF[0] : null);
+      if (!off) continue;
+      const X = it.a[0] + off[0], Y = it.a[1] + off[1];
+      placed.push([X, Y, r]);
+      ctx.globalAlpha = focus.size && rank(i) === 2 ? .3 : 1;
+      ctx.fillStyle = big ? colors.accent : colors.fg; ctx.beginPath(); ctx.arc(X, Y, r, 0, 7); ctx.fill();
+      ctx.fillStyle = colors.canvas; ctx.font = `600 ${big ? 12 : 11}px system-ui`; ctx.fillText(String(it.n), X, Y + .5);
+    }
+    ctx.globalAlpha = 1; ctx.textAlign = 'start'; ctx.textBaseline = 'alphabetic';
   }
 
   /* selection tools: black arrow (tool 'select', V) moves and resizes whole shapes inside a bounding box;
