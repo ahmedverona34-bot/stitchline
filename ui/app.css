@@ -202,10 +202,10 @@ svg.i, .icon-btn svg, .tool svg, .btn svg { width: 16px; height: 16px; stroke: c
 .insp-off .inspector { visibility: hidden; border: 0; }
 .insp-toggle {
   position: fixed; z-index: 11; top: calc(var(--top) + 14px); inset-inline-end: calc(var(--inspw) - 1px); width: 18px; height: 40px; padding: 0;
-  display: grid; place-items: center; border: 1px solid var(--line); border-inline-end: 0; border-start-start-radius: 8px; border-end-start-radius: 8px;
-  background: var(--app); color: var(--fg-3); box-shadow: var(--shadow);
+  display: grid; place-items: center; border: 1px solid var(--accent-bg); border-inline-end: 0; border-start-start-radius: 8px; border-end-start-radius: 8px;
+  background: var(--accent-bg); color: var(--accent-fg); box-shadow: var(--shadow);
 }
-.insp-toggle:hover { color: var(--fg); background: var(--well); }
+.insp-toggle:hover { filter: brightness(1.1); }
 .insp-toggle svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .insp-off .insp-toggle svg, [dir="rtl"] .insp-toggle svg { transform: scaleX(-1); }
 [dir="rtl"].insp-off .insp-toggle svg { transform: none; }
