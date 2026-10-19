@@ -179,6 +179,8 @@
     'Select and move': 'تحديد وتحريك', 'Pan': 'تحريك العرض', 'Pan while held': 'تحريك العرض وهو مضغوط', 'Set start point': 'تحديد نقطة البداية',
     'Measure': 'قياس', 'Fit the drawing': 'الرسمة كلها في الشاشة', 'Zoom in / out': 'تكبير / تصغير', 'Show stitches': 'عرض الغرز',
     'Show sewing order': 'عرض ترتيب الخياطة',
+    'Hide the panel (Shift+Tab)': 'إخفاء اللوحة (Shift+Tab)', 'Show the panel (Shift+Tab)': 'إظهار اللوحة (Shift+Tab)',
+    'Hide / show the stage panel': 'إخفاء / إظهار لوحة المرحلة', 'Hide / show the stage panel (Shift+Tab)': 'إخفاء / إظهار لوحة المرحلة (Shift+Tab)',
     'Cancel': 'إلغاء', 'Done': 'تم', 'OK': 'موافق', 'Close': 'إغلاق', 'Apply': 'تطبيق', 'Add': 'إضافة', 'Remove': 'حذف', 'Reset': 'إعادة ضبط',
     'Places a new shape at an exact position (mm).': 'يضع شكلاً جديداً في موضع محدد (مم).', 'Point': 'نقطة', 'Line': 'خط', 'Rectangle': 'مستطيل', 'Circle': 'دائرة',
     'Position X': 'الموضع X', 'Position Y': 'الموضع Y', 'Length / width / radius': 'الطول / العرض / نصف القطر', 'Height (rectangle)': 'الارتفاع (مستطيل)',

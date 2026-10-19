@@ -1255,7 +1255,7 @@
       ['Pan', 'H'], ['Pan while held', 'Space'], ['Rotate: type the angle', 'R', 1], ['Mirror left–right', 'O', 1], ['Mirror up–down', 'Shift O', 1], ['Resize: type the size', 'S', 1], ['Move: type the distance', 'Enter', 1],
       ['Set start point', 'C', 1], ['Measure', 'I', 1], ['Add shape', 'M', 1]]],
     ['View', [['Fit the drawing', 'Ctrl 0', 1], ['Real size (100%)', 'Ctrl 1', 1], ['Zoom in', 'Ctrl +', 1], ['Zoom out', 'Ctrl −', 1], ['Show stitches', 'Ctrl Y', 1], ['Show sewing order', 'Ctrl H', 1],
-      ['Find any tool', 'Ctrl K'], ['Light / dark', 'Ctrl Shift L'], ['Keyboard shortcuts', 'Ctrl Alt Shift K', 1], ['Keyboard shortcuts', '?']]],
+      ['Hide / show the stage panel', 'Shift Tab', 1], ['Find any tool', 'Ctrl K'], ['Light / dark', 'Ctrl Shift L'], ['Keyboard shortcuts', 'Ctrl Alt Shift K', 1], ['Keyboard shortcuts', '?']]],
     ['Stages', [['Import', '1'], ['Arrange', '2'], ['Stitch', '3'], ['Sequence', '4'], ['Output', '5']]],
   ];
   const keyCaps = k => k === '← ↑ → ↓' ? `<kbd>${k}</kbd>` : k.startsWith('Shift ←') ? `<kbd>Shift</kbd><kbd>← ↑ → ↓</kbd>` : k.split(' ').map(x => `<kbd>${x}</kbd>`).join('');
@@ -1509,6 +1509,7 @@
     ['Add shape (point, line, rectangle, circle)', 'arrange', () => openSheet('add')], ['Duplicate', 'arrange', () => openSheet('dup')], ['Move shape to another layer', 'arrange'], ['New empty layer', 'arrange', () => $('#addLayer').click()], ['Reference point', 'arrange', () => openSheet('ref')], ['Nudge / move', 'arrange'], ['Rotate', 'arrange'], ['Mirror', 'arrange'], ['Resize selected shapes', 'arrange', () => openSheet('resize')], ['Pick start point', 'arrange', () => setTool('start')], ['Reverse direction', 'arrange', () => ACT.op({ dataset: { op: 'reverse' } })], ['Extend or shorten ends', 'arrange'], ['Edit points one by one', 'arrange', () => openSheet('points')], ['Split a shape', 'arrange'], ['Merge close points', 'arrange'], ['Delete short lines', 'arrange'], ['Join line ends', 'arrange'], ['Select all', 'arrange', () => ACT.selectAll()], ['Delete selected', 'arrange', () => ACT.op({ dataset: { op: 'delete' } })], ['Start every shape at top / bottom / left / right', 'arrange'], ['Sections: zigzag, back-tack, special length', 'arrange', () => openSheet('marks')], ['Measure distance', 'arrange', () => setTool('measure')], ['Undo', 'arrange', () => api('undo')], ['Redo', 'arrange', () => api('redo')],
     ['Make a layer from the selection (Ctrl+G)', 'arrange', () => ACT.groupSheet()], ['Delete layer, keep its shapes (Ctrl+Shift+G)', 'arrange'], ['Set the needle of a layer', 'arrange'],
     ['Light / dark (Ctrl+Shift+L)', 'import', () => toggleTheme()],
+    ['Hide / show the stage panel (Shift+Tab)', 'import', () => toggleInspector()],
     ['Keyboard shortcuts', 'import', () => openSheet('keys')],
     ['Language: العربية / English', 'import', () => setLang(window.STL_LANG === 'ar' ? 'en' : 'ar')],
     ['Make a layer laser cut', 'stitch', () => setKind(curLayer, 'laser')],
@@ -1590,6 +1591,7 @@
       return;
     }
     if (e.key === '?' || e.key === '؟') { e.preventDefault(); return openSheet('keys'); }
+    if (e.key === 'Tab' && e.shiftKey && !ctrl && !e.altKey) { e.preventDefault(); return toggleInspector(); }
     // edit
     if (ctrl && k === 'z') { e.preventDefault(); return api(e.shiftKey ? 'redo' : 'undo', {}, { quiet: true }); }
     if (ctrl && k === 'a') { e.preventDefault(); if (e.shiftKey) { sel.clear(); selChanged(); } else ACT.selectAll(); return; }
@@ -1824,6 +1826,15 @@
 
   /* ------------------------------------------------------------------ boot */
   addEventListener('resize', () => { resize(); if (autoFit) fitView(); });
+  function setInspector(open) {
+    document.documentElement.classList.toggle('insp-off', !open); store.set('inspOff', !open);
+    const b = $('#inspToggle'), t = `${open ? 'Hide' : 'Show'} the panel (Shift+Tab)`;
+    b.setAttribute('aria-expanded', open); b.title = t; b.setAttribute('aria-label', t);
+    if (autoFit) fitView(); else draw();
+  }
+  const toggleInspector = () => setInspector(document.documentElement.classList.contains('insp-off'));
+  $('#inspToggle').addEventListener('click', toggleInspector);
+  setInspector(!store.get('inspOff', false));
   setInterval(() => fetch('/api/ping', { method: 'POST', body: '{}' }).catch(() => {}), 5000);
   resize();
   setTool('select');

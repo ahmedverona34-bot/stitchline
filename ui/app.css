@@ -197,6 +197,18 @@ svg.i, .icon-btn svg, .tool svg, .btn svg { width: 16px; height: 16px; stroke: c
 .side, .inspector { position: fixed; top: var(--top); bottom: 0; z-index: 10; background: var(--app); display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
 .side { inset-inline-start: var(--railw); width: var(--sidew); border-inline-end: 1px solid var(--line); }
 .inspector { inset-inline-end: 0; width: var(--inspw); border-inline-start: 1px solid var(--line); }
+/* the tab on the inspector's edge hides it (Shift+Tab) so the drawing gets the whole width; the same tab brings it back */
+:root.insp-off { --inspw: 0px; }
+.insp-off .inspector { visibility: hidden; border: 0; }
+.insp-toggle {
+  position: fixed; z-index: 11; top: calc(var(--top) + 14px); inset-inline-end: calc(var(--inspw) - 1px); width: 18px; height: 40px; padding: 0;
+  display: grid; place-items: center; border: 1px solid var(--line); border-inline-end: 0; border-start-start-radius: 8px; border-end-start-radius: 8px;
+  background: var(--app); color: var(--fg-3); box-shadow: var(--shadow);
+}
+.insp-toggle:hover { color: var(--fg); background: var(--well); }
+.insp-toggle svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.insp-off .insp-toggle svg, [dir="rtl"] .insp-toggle svg { transform: scaleX(-1); }
+[dir="rtl"].insp-off .insp-toggle svg { transform: none; }
 .scroll { overflow-y: auto; flex: 1; min-height: 0; padding-bottom: 6px; }
 .p-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 8px 6px 14px; }
 .eyebrow { font-size: 11.5px; font-weight: 500; color: var(--fg-3); }
