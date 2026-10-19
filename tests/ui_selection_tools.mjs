@@ -54,7 +54,7 @@ async function mapping() {
   throw new Error('the view does not settle');
 }
 async function mapping1() {
-  const at = async (x, y) => { await move(x, y); return js(`[+document.getElementById('cx').textContent, +document.getElementById('cy').textContent]`); };
+  const at = async (x, y) => { await move(x, y); return js(`[+document.getElementById('cx').textContent * 10, +document.getElementById('cy').textContent * 10]`); };   // readout in cm
   // the readout follows the pointer only over the canvas, so both points must be on bare canvas (not under a panel)
   const [p, q] = await js(`(() => { const cv = document.getElementById('cv'), ok = (x, y) => document.elementFromPoint(x, y) === cv, pts = [];
     for (let fy = 0.3; fy <= 0.7; fy += 0.05) for (let fx = 0.2; fx <= 0.8; fx += 0.05) { const x = Math.round(innerWidth * fx), y = Math.round(innerHeight * fy); if (ok(x, y)) pts.push([x, y]); }

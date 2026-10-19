@@ -9,6 +9,7 @@
     set(k, v) { try { localStorage.setItem('stl.' + k, JSON.stringify(v)); } catch {} },
   };
   const fmt = (v, n = 2) => (+v).toFixed(n);
+  const cm = mm => (mm / 10).toFixed(4);   // the canvas readout shows centimetres (the drawing itself is in mm)
 
   /* ------------------------------------------------------------------ state */
   let S = null;                          // last state from the engine
@@ -942,7 +943,7 @@
   });
   cv.addEventListener('pointermove', e => {
     if (!S) return;
-    $('#cx').textContent = wx(e.clientX).toFixed(3); $('#cy').textContent = wy(e.clientY).toFixed(3);
+    $('#cx').textContent = cm(wx(e.clientX)); $('#cy').textContent = cm(wy(e.clientY));
     if (!drag) {
       // hover once per frame, always for the latest pointer position (a move between frames is not lost)
       hoverAt = [e.clientX, e.clientY];
@@ -1016,7 +1017,7 @@
   function updateReadout() {
     const list = sel.size ? selected() : S.job.shapes;
     const [x0, y0, x1, y1] = list.length ? bounds(list) : [0, 0, 0, 0];
-    $('#rw').textContent = (x1 - x0).toFixed(3); $('#rh').textContent = (y1 - y0).toFixed(3);
+    $('#rw').textContent = cm(x1 - x0); $('#rh').textContent = cm(y1 - y0);
     $('#rsel').textContent = sel.size ? `${sel.size} selected` : '';
   }
 

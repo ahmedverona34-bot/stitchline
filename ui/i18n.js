@@ -14,7 +14,7 @@
     // ---------------------------------------------------------------- window, stages, top bar
     'Stitchline': 'ستيتشلاين',
     'Import': 'استيراد', 'Arrange': 'ترتيب', 'Stitch': 'الغرز', 'Sequence': 'التسلسل', 'Output': 'الإخراج',
-    'Workflow': 'مراحل العمل', 'Inspector': 'لوحة الخصائص', 'mm': 'مم', 'Find any tool': 'ابحث عن أي أداة', 'Ctrl K': 'Ctrl K',
+    'Workflow': 'مراحل العمل', 'Inspector': 'لوحة الخصائص', 'mm': 'مم', 'cm': 'سم', 'Find any tool': 'ابحث عن أي أداة', 'Ctrl K': 'Ctrl K',
     'Open (Ctrl+O)': 'فتح (Ctrl+O)', 'Open': 'فتح', 'Save job (Ctrl+S)': 'حفظ الشغلانة (Ctrl+S)', 'Save': 'حفظ',
     'Undo (Ctrl+Z)': 'تراجع (Ctrl+Z)', 'Undo': 'تراجع', 'Redo (Ctrl+Y)': 'إعادة (Ctrl+Y)', 'Redo': 'إعادة',
     'Light / dark': 'فاتح / داكن', 'Switch light or dark': 'التبديل بين الفاتح والداكن', 'Rename job': 'تغيير اسم الشغلانة',
