@@ -505,6 +505,54 @@ pub fn duplicate(job: &mut Job, ids: &[i64], dx: f64, dy: f64, mirror_h: bool, m
     Ok(new)
 }
 
+/// Shapes copied in the window (layer, pts, closed, marks, name), added again moved by dx / dy.
+/// A layer that no longer exists falls back to `layer_id`, then the first layer. `back`: first in the sewing order.
+pub fn paste(job: &mut Job, shapes: &[Value], dx: f64, dy: f64, layer_id: Option<String>, back: bool) -> Res<Vec<i64>> {
+    let mut new = vec![];
+    for (k, v) in shapes.iter().enumerate() {
+        let pts: Vec<P> = v
+            .get("pts")
+            .and_then(|p| p.as_array())
+            .map(|a| {
+                a.iter()
+                    .filter_map(|p| {
+                        let p = p.as_array()?;
+                        Some((p.first()?.as_f64()? + dx, p.get(1)?.as_f64()? + dy))
+                    })
+                    .collect()
+            })
+            .unwrap_or_default();
+        if pts.is_empty() {
+            continue;
+        }
+        let want = v.get("layer").and_then(|l| l.as_str()).unwrap_or("");
+        let layer = if job.layers.iter().any(|l| l.id == want) {
+            want.to_string()
+        } else if let Some(l) = layer_id.clone().filter(|l| job.layers.iter().any(|x| &x.id == l)) {
+            l
+        } else {
+            match job.layers.first() {
+                Some(l) => l.id.clone(),
+                None => job.ensure_layer("Layer1"),
+            }
+        };
+        let closed = py::truthy(v.get("closed"));
+        let n = job.add_shape(&layer, pts, closed, if back { Some(k) } else { None });
+        let s = job.shape_mut(n).unwrap();
+        if let Some(Value::Array(m)) = v.get("marks") {
+            s.marks = m.iter().filter_map(|x| x.as_object().cloned()).collect();
+        }
+        if let Some(name) = v.get("name").and_then(|x| x.as_str()) {
+            s.name = name.chars().take(80).collect();
+        }
+        new.push(n);
+    }
+    if new.is_empty() {
+        return op("Nothing to paste.");
+    }
+    Ok(new)
+}
+
 #[allow(clippy::too_many_arguments)]
 pub fn add_shape(job: &mut Job, kind: &str, x: f64, y: f64, size: f64, layer_id: Option<String>, w: Option<f64>, h: Option<f64>) -> Res<i64> {
     let (pts, closed): (Vec<P>, bool) = match kind {
