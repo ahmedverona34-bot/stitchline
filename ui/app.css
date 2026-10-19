@@ -245,6 +245,13 @@ svg.i, .icon-btn svg, .tool svg, .btn svg { width: 16px; height: 16px; stroke: c
 .shape-row[aria-selected="true"] { background: var(--accent-bg); color: var(--accent-fg); }
 .shape-row[aria-selected="true"] .meta { color: rgba(255,255,255,.85); }
 .layer.off .layer-row .name { color: var(--fg-3); }
+/* drag in the layers list: a line above / below the row it will land next to, a ring on the layer it will go into */
+.layer.drag, .shape-row.drag { opacity: .4; }
+.shape-row.over { box-shadow: inset 0 2px 0 var(--accent); }
+.shape-row.under { box-shadow: inset 0 -2px 0 var(--accent); }
+.layer.over { box-shadow: 0 -2px 0 var(--accent); }
+.layer.under { box-shadow: 0 2px 0 var(--accent); }
+.layer-row.into { box-shadow: inset 0 0 0 2px var(--accent); }
 .more { padding: 4px 8px; color: var(--fg-3); font-size: 12px; }
 
 /* ---------- buttons & fields ---------- */

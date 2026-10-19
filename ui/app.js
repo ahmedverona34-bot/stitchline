@@ -110,14 +110,27 @@
     const pp = pts.filter((_, i) => i % step === 0 || i === pts.length - 1).map(([x, y]) => `${(11 + (x - (x0 + x1) / 2) * k).toFixed(1)},${(8 - (y - (y0 + y1) / 2) * k).toFixed(1)}`).join(' ');
     return `<svg viewBox="0 0 22 16"><${closed ? 'polygon' : 'polyline'} points="${pp}" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
   };
+  // a newly selected shape opens its layer once; after that only the caret decides, so a layer closes over a selection
+  let seenSel = new Set();
+  function openForNewSel() {
+    const fresh = [...sel].filter(id => !seenSel.has(id));
+    seenSel = new Set(sel);
+    if (!fresh.length) return;
+    const layerOfId = new Map(S.job.shapes.map(s => [s.id, s.layer]));
+    const n = openLayers.size;
+    fresh.forEach(id => layerOfId.has(id) && openLayers.add(layerOfId.get(id)));
+    if (openLayers.size !== n) store.set('openLayers', [...openLayers]);
+  }
   function renderLayers() {
     const max = 300;
+    openForNewSel();
+    const rank = new Map(S.job.order.map((id, i) => [id, i]));   // shapes are listed in sewing order
     $('#layers').innerHTML = S.job.layers.map(L => {
-      const shapes = S.job.shapes.filter(s => s.layer === L.id);
-      const open = openLayers.has(L.id) || shapes.some(s => sel.has(s.id));
+      const shapes = S.job.shapes.filter(s => s.layer === L.id).sort((a, b) => (rank.get(a.id) ?? 1e15) - (rank.get(b.id) ?? 1e15));
+      const open = openLayers.has(L.id);
       const align = S.job.refs.align === L.id;
       return `<div class="layer ${open ? '' : 'closed'} ${L.output ? '' : 'off'} ${L.id === curLayer ? 'cur' : ''}" data-l="${L.id}">
-        <div class="layer-row" data-layer="${L.id}">
+        <div class="layer-row" data-layer="${L.id}" draggable="true">
           <button class="caret-btn" data-toggle="${L.id}" aria-label="Show shapes"><svg class="caret" viewBox="0 0 12 12"><path d="M3 4.5 6 7.5 9 4.5" stroke="currentColor" fill="none" stroke-width="1.5"/></svg></button>
           <span class="swatch" style="background:${esc(L.color)}" title="Layer colour"><input type="color" value="${esc(L.color)}" data-color="${L.id}" aria-label="Layer colour"></span>
           <span class="name" data-rename="${L.id}" title="Double-click to rename">${esc(L.name)}${align ? ' · align' : ''} <span style="color:var(--fg-3);font-weight:400">${shapes.length}</span></span>
@@ -125,7 +138,7 @@
           <button class="switch" role="switch" aria-checked="${L.output}" data-out="${L.id}" aria-label="Sew ${esc(L.name)}" title="Sew this layer"></button>
         </div>
         <div class="shapes">${shapes.slice(0, max).map(s => `
-          <button class="shape-row" data-s="${s.id}" aria-selected="${sel.has(s.id)}">${thumb(s.pts, s.closed)}<span class="nm">${esc(nameOf(s))}</span><span class="meta">${plen(s.pts, s.closed).toFixed(0)} mm</span></button>`).join('')}
+          <button class="shape-row" data-s="${s.id}" draggable="true" aria-selected="${sel.has(s.id)}">${thumb(s.pts, s.closed)}<span class="nm">${esc(nameOf(s))}</span><span class="meta">${plen(s.pts, s.closed).toFixed(0)} mm</span></button>`).join('')}
           ${shapes.length > max ? `<div class="more">+ ${shapes.length - max} more · select them on the drawing</div>` : ''}
         </div>
       </div>`;
@@ -152,11 +165,66 @@
     const r = e.target.closest('[data-rename]'); if (!r) return;
     const L = layerById(r.dataset.rename);
     r.innerHTML = `<input class="rename" value="${esc(L.name)}">`;
+    r.closest('.layer-row').draggable = false;   // so the mouse selects text in the field instead of dragging the layer
     const inp = $('input', r); inp.focus(); inp.select();
     const done = ok => { if (ok && inp.value.trim() && inp.value !== L.name) api('update_layer', { id: L.id, fields: { name: inp.value.trim() } }, { quiet: true }); else renderLayers(); };
     inp.addEventListener('keydown', ev => { if (ev.key === 'Enter') done(true); if (ev.key === 'Escape') done(false); ev.stopPropagation(); });
     inp.addEventListener('blur', () => done(true));
   });
+  /* drag in the layers list. A shape row moves the shape (and the rest of the selection, when it is selected) in the
+     sewing order, into the layer of the row it lands on; dropped on a layer's own row it goes to the end of that layer.
+     A layer row moves the layer. The top half of a row means above it, the bottom half below it. */
+  {
+    const box = $('#layers');
+    let lDrag = null;   // { ids, set } while dragging shapes, { layer } while dragging a layer
+    const below = (e, el) => { const r = el.getBoundingClientRect(); return e.clientY > r.top + r.height / 2; };
+    const clear = () => $$('.over, .under, .into', box).forEach(el => el.classList.remove('over', 'under', 'into'));
+    const target = e => {
+      if (lDrag.layer) {
+        const L = e.target.closest('.layer');
+        return L && L.dataset.l !== lDrag.layer ? { el: L, cls: below(e, L) ? 'under' : 'over', layer: L.dataset.l } : null;
+      }
+      const r = e.target.closest('.shape-row');
+      if (r) return lDrag.set.has(+r.dataset.s) ? null : { el: r, cls: below(e, r) ? 'under' : 'over', shape: +r.dataset.s };
+      const lr = e.target.closest('.layer-row');
+      return lr ? { el: lr, cls: 'into', layer: lr.dataset.layer } : null;
+    };
+    box.addEventListener('dragstart', e => {
+      const sr = e.target.closest('.shape-row'), lr = e.target.closest('.layer-row');
+      if (sr) { const id = +sr.dataset.s; const ids = sel.has(id) ? S.job.order.filter(i => sel.has(i)) : [id]; lDrag = { ids, set: new Set(ids) }; sr.classList.add('drag'); }
+      else if (lr) { lDrag = { layer: lr.dataset.layer }; lr.closest('.layer').classList.add('drag'); }
+      else return;
+      e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', '');
+    });
+    box.addEventListener('dragend', () => { $$('.drag', box).forEach(el => el.classList.remove('drag')); clear(); lDrag = null; });
+    box.addEventListener('dragover', e => {
+      if (!lDrag) return;
+      e.preventDefault(); e.dataTransfer.dropEffect = 'move'; clear();
+      const t = target(e); if (t) t.el.classList.add(t.cls);
+    });
+    box.addEventListener('drop', e => {
+      if (!lDrag) return;
+      e.preventDefault(); clear();
+      const t = target(e); if (!t) return;
+      if (lDrag.layer) {
+        const from = S.job.layers.findIndex(l => l.id === lDrag.layer);
+        const rest = S.job.layers.map(l => l.id).filter(id => id !== lDrag.layer);
+        const to = rest.indexOf(t.layer) + (t.cls === 'under' ? 1 : 0);
+        if (to !== from) api('move_group', { id: lDrag.layer, delta: to - from }, { quiet: true });
+        return;
+      }
+      const { ids, set } = lDrag;
+      const layerOfId = new Map(S.job.shapes.map(s => [s.id, s.layer]));
+      const rest = S.job.order.filter(i => !set.has(i));
+      let at = null, layer;
+      if (t.shape != null) { at = rest.indexOf(t.shape) + (t.cls === 'under' ? 1 : 0); layer = layerOfId.get(t.shape); }
+      else { layer = t.layer; const last = rest.findLastIndex(i => layerOfId.get(i) === layer); if (last >= 0) at = last + 1; }
+      const order = at == null ? S.job.order : [...rest.slice(0, at), ...ids, ...rest.slice(at)];
+      const moved = ids.some(i => layerOfId.get(i) !== layer);
+      if (!moved && order.every((v, i) => v === S.job.order[i])) return;   // dropped where it already was
+      api('place', { ids, order, ...(moved ? { layer } : {}) }, { quiet: true });
+    });
+  }
   $('#layers').addEventListener('contextmenu', e => {
     const row = e.target.closest('[data-layer]'); if (!row) return;
     e.preventDefault(); const id = row.dataset.layer;
@@ -627,10 +695,10 @@
 
   function selChanged() {
     if (!S) return;
-    const open = new Set(selected().map(s => s.layer));
+    openForNewSel();
     $$('#layers .layer').forEach(el => {
       el.classList.toggle('cur', el.dataset.l === curLayer);
-      if (open.has(el.dataset.l)) el.classList.remove('closed');
+      el.classList.toggle('closed', !openLayers.has(el.dataset.l));
     });
     $$('#layers .shape-row').forEach(r => r.setAttribute('aria-selected', sel.has(+r.dataset.s)));
     $('#groupSel').disabled = !sel.size;

@@ -321,3 +321,28 @@ fn home_lists_the_recent_files_and_previews_them() {
     assert!(h["recent"].as_array().unwrap().is_empty());
     assert!(state(&mut s)["recent"].as_array().unwrap().is_empty());
 }
+
+// ------------------------------------------------------------------ the layers list
+
+#[test]
+fn place_moves_shapes_to_a_layer_and_reorders_them_in_one_undo_step() {
+    let (mut s, _) = session(&home("place"));
+    let (a, l1) = add_line(&mut s);
+    let (b, _) = add_line(&mut s);
+    let (c, _) = add_line(&mut s);
+    s.handle("add_layer", &json!({})).unwrap();
+    let l2 = s.job.layers.last().unwrap().id.clone();
+    assert_ne!(l2, l1);
+    let st = s.handle("place", &json!({"ids": [c], "layer": l2, "order": [c, a, b]})).unwrap();
+    assert_eq!(st["job"]["order"], json!([c, a, b]));
+    assert_eq!(s.job.shape(c).unwrap().layer, l2);
+    assert_eq!(s.job.shape(a).unwrap().layer, l1);
+    // without a layer only the order changes
+    s.handle("place", &json!({"ids": [a], "order": [a, c, b]})).unwrap();
+    assert_eq!(s.job.shape(a).unwrap().layer, l1);
+    let st = s.handle("undo", &json!({})).unwrap();
+    assert_eq!(st["job"]["order"], json!([c, a, b]));
+    let st = s.handle("undo", &json!({})).unwrap();
+    assert_eq!(st["job"]["order"], json!([a, b, c]));
+    assert_eq!(s.job.shape(c).unwrap().layer, l1);
+}

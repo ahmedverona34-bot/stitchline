@@ -708,6 +708,13 @@ impl Session {
                 ops::set_ref(j, &which, id)?
             }
             "reorder" => ops::reorder(j, &ids(a, "ids")?),
+            // a drag in the layers list: the shapes go to another layer (optional) and take a new sewing order, one undo step
+            "place" => {
+                if let Some(l) = opt_str(a, "layer") {
+                    ops::set_layer(j, &ids(a, "ids")?, &l)?
+                }
+                ops::reorder(j, &ids(a, "order")?)
+            }
             "sort" => {
                 let dir = str_arg(a, "dir")?;
                 ops::sort_order(j, &dir, f(a, "spacing", 10.0)?, py::truthy(a.get("by_end")))?
