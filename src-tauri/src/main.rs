@@ -7,11 +7,12 @@
 use serde_json::{json, Value};
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::path::PathBuf;
-use std::sync::Mutex;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Mutex, TryLockError};
 use stitchline_engine::session::{app_dir, Dialogs, FileTypes, Session};
 use stitchline_engine::Error;
 use tauri::ipc::{InvokeBody, Request, Response};
-use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder, WindowEvent};
 use tauri_plugin_dialog::DialogExt;
 
 /// fetch('/api/<op>') -> invoke('api' | 'upload'); '/api/ping' answers at once.
@@ -134,6 +135,42 @@ where
         .unwrap_or_else(|e| Err(fail(Error::Unexpected(e.to_string()))))
 }
 
+/// Set once the user has answered the close question (or there was nothing to save): the next close goes through.
+static QUITTING: AtomicBool = AtomicBool::new(false);
+
+/// Close the window after the close question. `discard`: the user chose Don't save, so the next start does not
+/// bring the unsaved job back from the autosave.
+#[tauri::command]
+fn quit(app: AppHandle, discard: bool) {
+    if discard {
+        app.state::<App>().0.lock().unwrap_or_else(|e| e.into_inner()).discard_autosave();
+    }
+    QUITTING.store(true, Ordering::SeqCst);
+    if let Some(w) = app.get_webview_window("main") {
+        let _ = w.close();
+    }
+}
+
+/// The window's X (or Alt+F4) with unsaved changes: keep the window and let the UI ask Save / Don't save / Cancel.
+fn on_close_requested(app: &AppHandle, api: &tauri::CloseRequestApi) {
+    if QUITTING.load(Ordering::SeqCst) {
+        return;
+    }
+    let dirty = match app.state::<App>().0.try_lock() {
+        Ok(s) => s.dirty,
+        Err(TryLockError::Poisoned(e)) => e.into_inner().dirty,
+        Err(TryLockError::WouldBlock) => true, // the engine is busy: let the UI decide
+    };
+    if !dirty {
+        return;
+    }
+    api.prevent_close();
+    if let Some(w) = app.get_webview_window("main") {
+        // a page that failed to load has no close question: close anyway rather than never
+        let _ = w.eval("window.__stitchlineClose ? window.__stitchlineClose() : window.__TAURI_INTERNALS__.invoke('quit', { discard: false })");
+    }
+}
+
 fn percent_decode(s: &str) -> String {
     let b = s.as_bytes();
     let mut out = Vec::with_capacity(b.len());
@@ -155,7 +192,12 @@ fn percent_decode(s: &str) -> String {
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
-        .invoke_handler(tauri::generate_handler![api, upload])
+        .invoke_handler(tauri::generate_handler![api, upload, quit])
+        .on_window_event(|window, event| {
+            if let WindowEvent::CloseRequested { api, .. } = event {
+                on_close_requested(window.app_handle(), api);
+            }
+        })
         .setup(|app| {
             let mut session = Session::new(Box::new(NativeDialogs { app: app.handle().clone() }));
             session.restore_autosave();

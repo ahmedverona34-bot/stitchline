@@ -168,6 +168,7 @@
     'Example: put everything that is embroidered in one layer on Needle 1, and the laser cut lines in another layer on Needle 3.':
       'مثال: ضع كل التطريز في طبقة على الإبرة 1، وخطوط القص بالليزر في طبقة أخرى على الإبرة 3.',
     'New job?': 'شغلانة جديدة؟', 'The current job closes. Save it first if you want to keep it.': 'الشغلانة الحالية ستُغلق. احفظها أولاً لو عايز تحتفظ بيها.', 'New job': 'شغلانة جديدة',
+    "If you don't save, your changes will be lost.": 'لو قفلت من غير حفظ، التعديلات هتضيع.', "Don't save": 'لا تحفظ',
     'Job name': 'اسم الشغلانة', 'Used for the machine file and exports': 'يُستخدم لملف الماكينة والتصدير', 'New layer?': 'طبقة جديدة؟',
     // ---------------------------------------------------------------- command palette
     'Search tools, e.g. back-tack, mirror, machine file': 'ابحث عن أداة، مثلاً: رجوع، عكس، ملف الماكينة', 'Esc': 'Esc',
@@ -264,6 +265,7 @@
     [/^X ([\d.]+) · Y ([\d.]+)$/, (m, a, b) => `X ${a} · Y ${b}`],
     [/^(\d+) selected shapes? move into a new layer with its own needle\.$/, (m, a) => `${a} شكل محدد هيتنقل لطبقة جديدة بإبرة خاصة بيها.`],
     [/^Layer “(.+)” is for alignment only \(not sewn\)$/, (m, a) => `الطبقة "${a}" للمحاذاة فقط (لا تُخاط)`],
+    [/^Save changes to “(.+)” before closing\?$/, (m, a) => `حفظ التعديلات في "${a}" قبل الإغلاق؟`],
     [/^“(.+)” and all of its shapes will be removed\. You can undo this\.$/, (m, a) => `"${a}" وكل أشكالها سيتم حذفها. يمكنك التراجع عن ذلك.`],
     [/^Opened (.+?)((?: · .+)*)$/, (m, a, b) => `تم فتح ${a}` + b.replace(/ · (\d+) shapes/, ' · $1 شكل').replace(/ · (\d+) overlaps removed/, ' · حذف $1 تداخل').replace(/ · (\d+) lines joined/, ' · ربط $1 خط')],
     [/^Saved machine file (.+) \((\d+) records\)$/, (m, a, b) => `تم حفظ ملف الماكينة ${a} (${b} سجل)`],

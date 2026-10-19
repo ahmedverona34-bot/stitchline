@@ -263,6 +263,11 @@ impl Session {
         }
     }
 
+    /// The user closed without saving: start the next time with a new job, not this one.
+    pub fn discard_autosave(&self) {
+        let _ = std::fs::remove_file(self.autosave_path());
+    }
+
     /// (stitches, program steps, stats), recomputed after a change; only changed shapes are re-stitched.
     /// Err when the job is too large to stitch (the stitch cache is then left as it was).
     fn computed(&mut self) -> Res<&(StitchMap, Vec<Value>, Value)> {
