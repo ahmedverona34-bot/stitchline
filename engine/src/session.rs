@@ -554,7 +554,15 @@ impl Session {
             "duplicate" => {
                 let (i, dx, dy) = (ids(a, "ids")?, f(a, "dx", 0.0)?, f(a, "dy", 0.0)?);
                 let new = ops::duplicate(j, &i, dx, dy, py::truthy(a.get("mh")), py::truthy(a.get("mv")))?;
-                return Ok(Some(EditOut::Duplicated(new)));
+                return Ok(Some(EditOut::Duplicated(new, "Shape duplicated")));
+            }
+            "paste" => {
+                let shapes = match arg(a, "shapes")? {
+                    Value::Array(v) => v.clone(),
+                    _ => return Err(Error::Unexpected("shapes must be a list".into())),
+                };
+                let new = ops::paste(j, &shapes, f(a, "dx", 0.0)?, f(a, "dy", 0.0)?, opt_str(a, "layer"), py::truthy(a.get("back")))?;
+                return Ok(Some(EditOut::Duplicated(new, "Pasted")));
             }
             "add_shape" => {
                 let kind = str_arg(a, "kind")?;
@@ -748,11 +756,11 @@ impl Session {
                         st["new_id"] = json!(id);
                         return Ok(self.with_message(st, None));
                     }
-                    Some(EditOut::Duplicated(new)) => {
+                    Some(EditOut::Duplicated(new, m)) => {
                         if !new.is_empty() {
                             let mut st = self.state(false)?;
                             st["new_ids"] = json!(new);
-                            return Ok(self.with_message(st, Some("Shape duplicated".into())));
+                            return Ok(self.with_message(st, Some(m.into())));
                         }
                     }
                     None => {}
@@ -796,5 +804,5 @@ impl Session {
 enum EditOut {
     Msg(String),
     NewId(i64),
-    Duplicated(Vec<i64>),
+    Duplicated(Vec<i64>, &'static str),
 }

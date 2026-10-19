@@ -199,7 +199,7 @@ for (let i = 0; i < 6; i++) await key('z', 'KeyZ', ['ctrl']);
 await sleep(300);
 st = await engine();
 check(JSON.stringify(st.shapes.find(s => s.id === target.id).pts) === JSON.stringify(target.pts), '18. undo (one step per drag) restores the original geometry');
-for (let i = 0; i < 6; i++) await key('y', 'KeyY', ['ctrl']);
+for (let i = 0; i < 6; i++) await key('z', 'KeyZ', ['ctrl', 'shift']);
 await sleep(300);
 check(JSON.stringify((await engine()).shapes) === afterAll, '18. redo restores every move and resize');
 

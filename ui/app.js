@@ -284,13 +284,13 @@
               <div class="pad"><span></span><button data-act="nudge" data-dx="0" data-dy="1" aria-label="Up">${ICO.up}</button><span></span><button data-act="nudge" data-dx="-1" data-dy="0" aria-label="Left">${ICO.left}</button><button data-act="toOrigin" title="Move to the origin (0, 0)" aria-label="Move to origin">${ICO.centre}</button><button data-act="nudge" data-dx="1" data-dy="0" aria-label="Right">${ICO.right}</button><span></span><button data-act="nudge" data-dx="0" data-dy="-1" aria-label="Down">${ICO.down}</button><span></span></div>
               <div style="display:grid;gap:6px;flex:1"><label for="ns" style="color:var(--fg-2)">Step</label>${fld('ns', store.get('nudge', '0.10'))}</div>
             </div>
-            <div class="row">${fld('mvx', '0.000', 'X')}${fld('mvy', '0.000', 'Y')}<button class="btn grow" data-act="moveBy">Move</button></div>`, true)}
+            <div class="row">${fld('mvx', '0.000', 'X')}${fld('mvy', '0.000', 'Y')}<button class="btn grow" data-act="moveBy" title="Move (Enter)">Move</button></div>`, true)}
           ${sec('rot', 'Rotate, mirror & size', '', `
-            <div class="row">${fld('ang', store.get('ang', '90.00'), '°')}<button class="btn grow" data-act="rotate">Rotate</button></div>
-            <div class="grid2"><button class="btn" data-act="mirror" data-axis="h">Mirror left–right</button><button class="btn" data-act="mirror" data-axis="v">Mirror up–down</button></div>
-            <button class="btn" data-act="sheet" data-sheet="resize">Resize…</button>`, true)}
+            <div class="row">${fld('ang', store.get('ang', '90.00'), '°')}<button class="btn grow" data-act="rotate" title="Rotate (R)">Rotate</button></div>
+            <div class="grid2"><button class="btn" data-act="mirror" data-axis="h" title="Mirror left–right (O)">Mirror left–right</button><button class="btn" data-act="mirror" data-axis="v" title="Mirror up–down (Shift+O)">Mirror up–down</button></div>
+            <button class="btn" data-act="sheet" data-sheet="resize" title="Resize (S)">Resize…</button>`, true)}
           ${sec('path', 'Shape path', 'start · direction · ends', `
-            <div class="grid2"><button class="btn" data-act="tool" data-tool="start">Pick start point</button><button class="btn" data-act="op" data-op="reverse">Reverse direction</button></div>
+            <div class="grid2"><button class="btn" data-act="tool" data-tool="start" title="Pick start point (C)">Pick start point</button><button class="btn" data-act="op" data-op="reverse" title="Reverse direction (Ctrl+Alt+R)">Reverse direction</button></div>
             <span class="lbl" style="color:var(--fg-2)">Start every shape at the</span>
             <div class="grid4"><button class="btn sm" data-act="startAt" data-side="top">Top</button><button class="btn sm" data-act="startAt" data-side="bottom">Bottom</button><button class="btn sm" data-act="startAt" data-side="left">Left</button><button class="btn sm" data-act="startAt" data-side="right">Right</button></div>
             ${row('Extend start (+) / shorten (−)', fld('es', '0.000'))}${row('Extend end (+) / shorten (−)', fld('ee', '0.000'))}
@@ -305,7 +305,7 @@
           ${sec('clean', 'Clean up', '', `
             <div class="row">${fld('cp', '0.30')}<button class="btn grow" data-act="merge">Merge close points</button></div>
             <div class="row">${fld('sl', '3.50')}<button class="btn grow" data-act="short">Delete shorter lines</button></div>
-            <div class="row">${fld('jt', '2.00')}<button class="btn grow" data-act="join">Join line ends</button></div>
+            <div class="row">${fld('jt', '2.00')}<button class="btn grow" data-act="join" title="Join line ends (Ctrl+J)">Join line ends</button></div>
             <button class="btn" data-act="op" data-op="remove_overlaps">Remove overlapping copies</button>`)}`,
         foot: `<button class="btn primary big" data-goto="stitch">Continue to Stitch</button>`,
       };
@@ -485,6 +485,49 @@
   }
   $('#insp').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.tagName === 'INPUT') e.target.blur(); });
 
+  /* ------------------------------------------------------------------ transform again, clipboard */
+  // the last move / rotate / mirror / resize / copy-while-moving: Ctrl+D does it again to the selection
+  let lastXf = null;
+  function xform(op, args) {
+    if (!needSel()) return;
+    lastXf = { op, args };
+    return api(op, { ids: [...sel], ...args }, { quiet: true });
+  }
+  const again = () => lastXf ? xform(lastXf.op, lastXf.args) : toast('Move, rotate, mirror or resize something first.', true);
+  // Ctrl+C / X keep the shapes here (not on the system clipboard), so Ctrl+V works after a cut too
+  let clip = null;
+  function copySel(cut) {
+    if (!needSel()) return;
+    clip = selected().map(s => ({ layer: s.layer, pts: s.pts, closed: s.closed, marks: s.marks || [], name: s.name || '' }));
+    if (cut) api('delete', { ids: [...sel] }, { quiet: true }).then(d => d && toast(clip.length > 1 ? `${clip.length} shapes cut` : 'Shape cut'));
+    else toast(clip.length > 1 ? `${clip.length} shapes copied` : 'Shape copied');
+  }
+  // Ctrl+V: the copy lands in the middle of the view; Ctrl+F / Ctrl+B: in place, sewn last / first
+  function paste(where, at = [view.cx, view.cy]) {
+    if (!clip) return toast('Copy a shape first (Ctrl+C).', true);
+    let dx = 0, dy = 0;
+    if (where === 'view') { const [x0, y0, x1, y1] = bounds(clip); dx = at[0] - (x0 + x1) / 2; dy = at[1] - (y0 + y1) / 2; }
+    return api('paste', { shapes: clip, dx, dy, layer: curLayer, back: where === 'back' }, { quiet: true });
+  }
+  // Ctrl+] / Ctrl+[ : one place later / earlier in the sewing order; with Shift: sewn last / first
+  function sewOrder(delta, toEnd) {
+    if (!needSel()) return;
+    let o = [...S.job.order];
+    const picked = o.filter(i => sel.has(i));
+    if (toEnd) o = delta > 0 ? [...o.filter(i => !sel.has(i)), ...picked] : [...picked, ...o.filter(i => !sel.has(i))];
+    else if (delta > 0) { for (let i = o.length - 2; i >= 0; i--) if (sel.has(o[i]) && !sel.has(o[i + 1])) [o[i], o[i + 1]] = [o[i + 1], o[i]]; }
+    else { for (let i = 1; i < o.length; i++) if (sel.has(o[i]) && !sel.has(o[i - 1])) [o[i], o[i - 1]] = [o[i - 1], o[i]]; }
+    if (o.some((v, i) => v !== S.job.order[i])) api('reorder', { ids: o }, { quiet: true });
+  }
+  // R / Enter: the Rotate angle / the Move fields of the Arrange panel, ready to type in
+  function focusField(id) {
+    if (!needSel()) return;
+    if (stage !== 'arrange') setStage('arrange');
+    const f = $('#' + id); if (!f) return;
+    const d = f.closest('details'); if (d) d.open = true;
+    f.focus(); f.select();
+  }
+
   /* ------------------------------------------------------------------ actions (buttons with data-act) */
   const ACT = {
     open: () => api('open', {}, { busy: 'Waiting for the file…' }).then(d => { if (d && d.message) { sel.clear(); fitView(); if (stage === 'import') setStage('arrange'); } }),
@@ -494,11 +537,11 @@
     selectAll: () => { sel = new Set(S.job.shapes.map(s => s.id)); selChanged(); },
     allOp: b => api(b.dataset.op, { ids: S.job.shapes.map(s => s.id), tol: 2 }),
     op: b => needSel() && api(b.dataset.op, { ids: [...sel] }),
-    nudge: b => { if (!needSel()) return; const st = num('ns') || 0.1; store.set('nudge', $('#ns').value); api('move', { ids: [...sel], dx: +b.dataset.dx * st, dy: +b.dataset.dy * st }, { quiet: true }); },
-    moveBy: () => needSel() && api('move', { ids: [...sel], dx: num('mvx'), dy: num('mvy') }, { quiet: true }),
+    nudge: b => { if (!needSel()) return; const st = num('ns') || 0.1; store.set('nudge', $('#ns').value); xform('move', { dx: +b.dataset.dx * st, dy: +b.dataset.dy * st }); },
+    moveBy: () => xform('move', { dx: num('mvx'), dy: num('mvy') }),
     toOrigin: () => { if (!needSel()) return; const bb = bounds(selected()); api('move', { ids: [...sel], dx: -bb[0], dy: -bb[1] }, { quiet: true }); },
-    rotate: () => needSel() && api('rotate', { ids: [...sel], angle: num('ang') }, { quiet: true }),
-    mirror: b => needSel() && api('mirror', { ids: [...sel], axis: b.dataset.axis }, { quiet: true }),
+    rotate: () => xform('rotate', { angle: num('ang') }),
+    mirror: b => xform('mirror', { axis: b.dataset.axis }),
     startAt: b => needSel() && api('start_at', { ids: [...sel], side: b.dataset.side }, { quiet: true }),
     extend: () => needSel() && api('extend', { ids: [...sel], start: num('es'), end: num('ee') }, { quiet: true }),
     merge: () => needSel() && api('merge_points', { ids: [...sel], tol: num('cp') }),
@@ -698,6 +741,7 @@
       if (!s._p) { s._p = new Path2D(); P0.forEach(([x, y], i) => i ? s._p.lineTo(x, y) : s._p.moveTo(x, y)); }
       let path = s._p;
       if (P !== P0) { path = new Path2D(); P.forEach(([x, y], i) => i ? path.lineTo(x, y) : path.moveTo(x, y)); }
+      if (t && drag.copy) { world(0, 0); ctx.globalAlpha = alpha; ctx.strokeStyle = L.color; ctx.lineWidth = 1.4 / k; ctx.stroke(s._p); }   // Alt-drag: the original stays
       world(d[0], d[1]);
       if (isSel || s.id === hoverId) { ctx.globalAlpha = alpha; ctx.strokeStyle = colors['accent-soft']; ctx.lineWidth = (isSel ? 9 : 6) / k; ctx.stroke(path); }
       // White arrow: the selected path is drawn dashed (gaps cut in the canvas colour) inside its glow:
@@ -948,9 +992,9 @@
     if (s) {
       if (e.ctrlKey || e.metaKey) { sel.has(s.id) ? sel.delete(s.id) : sel.add(s.id); selChanged(); return; }
       if (!sel.has(s.id)) { if (!e.shiftKey) sel.clear(); sel.add(s.id); curLayer = s.layer; selChanged(); }
-      drag = { kind: 'move', ids: [...sel], ...at };
+      drag = { kind: 'move', ids: [...sel], copy: e.altKey, ...at };
     } else if (tool === 'select' && !e.shiftKey && !e.ctrlKey && insideSel(e.clientX, e.clientY)) {
-      drag = { kind: 'move', ids: [...sel], empty: true, ...at };   // black arrow: anywhere inside the box moves the selection
+      drag = { kind: 'move', ids: [...sel], empty: true, copy: e.altKey, ...at };   // black arrow: anywhere inside the box moves the selection
     } else {
       drag = { kind: 'box', add: e.ctrlKey || e.shiftKey, enclose: e.altKey, ...at };
     }
@@ -971,7 +1015,8 @@
     if (!drag.moved && Math.hypot(drag.x - drag.x0, drag.y - drag.y0) > 3) drag.moved = true;   // a click is not a drag
     if (drag.kind === 'resize') { drag.shift = e.shiftKey; drag.alt = e.altKey; }
     if (drag.kind === 'box') drag.enclose = e.altKey;
-    if (drag.moved && drag.kind === 'move') cv.className = 'moving';
+    if (drag.kind === 'move') drag.copy = e.altKey;   // Alt: leave the shapes where they are and move a copy
+    if (drag.moved && drag.kind === 'move') cv.className = drag.copy ? 'copying' : 'moving';
     if (drag.moved && drag.kind === 'resize') { cv.className = 'rs-' + SL.CURSOR[drag.h]; updateReadout(); }
     draw();
   });
@@ -987,8 +1032,8 @@
       else if (!xf && d.under && !sel.has(d.under.id)) pick(d.under.id, d.ctrl, d.shift);   // a click on a handle that covers a shape
       else if (!xf) draw();
       // one engine edit per drag: one undo step; the shapes keep their points, order, start and closed flag
-      else if (d.kind === 'move') api('move', { ids: d.ids, dx: xf.dx, dy: xf.dy }, { quiet: true });
-      else if (SL.isScale(xf)) api('scale', { ids: d.ids, sx: xf.sx, sy: xf.sy, ox: xf.ax, oy: xf.ay }, { quiet: true });
+      else if (d.kind === 'move') { lastXf = { op: d.copy ? 'duplicate' : 'move', args: { dx: xf.dx, dy: xf.dy } }; api(lastXf.op, { ids: d.ids, ...lastXf.args }, { quiet: true }); }
+      else if (SL.isScale(xf)) { lastXf = { op: 'scale', args: { sx: xf.sx, sy: xf.sy } }; api('scale', { ids: d.ids, sx: xf.sx, sy: xf.sy, ox: xf.ax, oy: xf.ay }, { quiet: true }); }
       else draw();
     } else if (d.kind === 'box') {
       if (Math.hypot(d.x - d.x0, d.y - d.y0) < 4) { if (!d.add) { sel.clear(); selChanged(); } return; }
@@ -1005,14 +1050,15 @@
     e.preventDefault(); if (!S) return;
     const s = hit(e.clientX, e.clientY);
     if (s && !sel.has(s.id)) { sel = new Set([s.id]); selChanged(); }
-    if (!sel.size) return menu(e.clientX, e.clientY, [['Add a shape here…', () => openSheet('add', { x: wx(e.clientX), y: wy(e.clientY) })], ['Fit drawing', fitView], ['Select all', ACT.selectAll]]);
+    if (!sel.size) { const at = [wx(e.clientX), wy(e.clientY)]; return menu(e.clientX, e.clientY, [['Add a shape here…', () => openSheet('add', { x: at[0], y: at[1] })], ...(clip ? [['Paste here', () => paste('view', at), 'Ctrl V']] : []), ['Fit drawing', fitView, 'Ctrl 0'], ['Select all', ACT.selectAll, 'Ctrl A']]); }
     const x = wx(e.clientX), y = wy(e.clientY);
     menu(e.clientX, e.clientY, [
       ['Start sewing here', () => api('set_start', { id: [...sel][0], x, y }, { quiet: true }), ''],
-      ['Reverse direction', () => api('reverse', { ids: [...sel] }, { quiet: true }), 'R'],
-      ['Duplicate', () => api('duplicate', { ids: [...sel], dx: 5, dy: -5 }), 'Ctrl D'],
-      ['Mirror left–right', () => api('mirror', { ids: [...sel], axis: 'h' }, { quiet: true })],
-      ['Mirror up–down', () => api('mirror', { ids: [...sel], axis: 'v' }, { quiet: true })],
+      ['Reverse direction', () => api('reverse', { ids: [...sel] }, { quiet: true }), 'Ctrl Alt R'],
+      ['Copy', () => copySel(false), 'Ctrl C'],
+      ['Duplicate', () => api('duplicate', { ids: [...sel], dx: 5, dy: -5 })],
+      ['Mirror left–right', () => xform('mirror', { axis: 'h' }), 'O'],
+      ['Mirror up–down', () => xform('mirror', { axis: 'v' }), 'Shift O'],
       ['Split at the nearest point', () => { const sh = shapeById([...sel][0]); let bi = 0, bd = Infinity; sh.pts.forEach((p, i) => { const d = Math.hypot(p[0] - x, p[1] - y); if (d < bd) { bd = d; bi = i; } }); api('split', { id: sh.id, index: bi }); }],
       ['Edit points…', () => openSheet('points')],
       ['Sections (zigzag, back-tack)…', () => openSheet('marks')],
@@ -1196,16 +1242,25 @@
 
   /* ------------------------------------------------------------------ sheets */
   let sheetCtx = {};
+  // the shortcuts follow Adobe Illustrator's; 1 marks the ones that changed to match it
   const KEYS = [
-    ['File', [['Open a drawing or job', 'Ctrl O'], ['Save job', 'Ctrl S'], ['Save job as…', 'Ctrl Shift S'], ['Save machine file', 'Ctrl E'], ['New job', 'Ctrl N', 1], ['Insert a drawing', 'Ctrl I', 1]]],
-    ['Edit', [['Undo', 'Ctrl Z'], ['Redo', 'Ctrl Y'], ['Select all', 'Ctrl A'], ['Clear the selection', 'Esc'], ['Duplicate', 'Ctrl D'], ['Delete selected', 'Delete'], ['Nudge the selection', '← ↑ → ↓'], ['Nudge ×10', 'Shift ← ↑ → ↓'], ['Reverse direction', 'R'], ['Make a layer from the selection', 'Ctrl G'], ['Delete layer, keep its shapes', 'Ctrl Shift G']]],
-    ['View and tools', [['Selection: move and resize whole shapes', 'V'], ['Direct selection: move one path', 'A', 1], ['Resize keeping proportions', 'Shift', 1], ['Resize from the centre', 'Alt', 1], ['Box: only shapes fully inside', 'Alt', 1], ['Pan', 'H'], ['Pan while held', 'Space'], ['Set start point', 'S'], ['Measure', 'M'], ['Fit the drawing', 'F'], ['Zoom in / out', '+ −'], ['Show stitches', 'T'], ['Show sewing order', 'O'], ['Find any tool', 'Ctrl K'], ['Light / dark', 'Ctrl Shift L', 1], ['Keyboard shortcuts', '?', 1]]],
+    ['File', [['Open a drawing or job', 'Ctrl O'], ['Save job', 'Ctrl S'], ['Save job as…', 'Ctrl Shift S'], ['Save machine file', 'Ctrl Alt E', 1], ['New job', 'Ctrl N'], ['Insert a drawing', 'Ctrl Shift P', 1]]],
+    ['Edit', [['Undo', 'Ctrl Z'], ['Redo', 'Ctrl Shift Z', 1], ['Select all', 'Ctrl A'], ['Clear the selection', 'Ctrl Shift A', 1], ['Clear the selection, leave a tool', 'Esc'],
+      ['Copy', 'Ctrl C', 1], ['Cut', 'Ctrl X', 1], ['Paste in the middle of the view', 'Ctrl V', 1], ['Paste in place, sewn last', 'Ctrl F', 1], ['Paste in place, sewn first', 'Ctrl B', 1],
+      ['Copy while dragging', 'Alt', 1], ['Do the last move, rotate, mirror or resize again', 'Ctrl D', 1], ['Delete selected', 'Delete'], ['Nudge the selection', '← ↑ → ↓'], ['Nudge ×10', 'Shift ← ↑ → ↓'],
+      ['Join line ends', 'Ctrl J', 1], ['Reverse direction', 'Ctrl Alt R', 1], ['Make a layer from the selection', 'Ctrl G'], ['Delete layer, keep its shapes', 'Ctrl Shift G'],
+      ['Sew one step later', 'Ctrl ]', 1], ['Sew one step earlier', 'Ctrl [', 1], ['Sew last', 'Ctrl Shift ]', 1], ['Sew first', 'Ctrl Shift [', 1]]],
+    ['Tools', [['Selection: move and resize whole shapes', 'V'], ['Direct selection: move one path', 'A'], ['Resize keeping proportions', 'Shift'], ['Resize from the centre', 'Alt'], ['Box: only shapes fully inside', 'Alt'],
+      ['Pan', 'H'], ['Pan while held', 'Space'], ['Rotate: type the angle', 'R', 1], ['Mirror left–right', 'O', 1], ['Mirror up–down', 'Shift O', 1], ['Resize: type the size', 'S', 1], ['Move: type the distance', 'Enter', 1],
+      ['Set start point', 'C', 1], ['Measure', 'I', 1], ['Add shape', 'M', 1]]],
+    ['View', [['Fit the drawing', 'Ctrl 0', 1], ['Real size (100%)', 'Ctrl 1', 1], ['Zoom in', 'Ctrl +', 1], ['Zoom out', 'Ctrl −', 1], ['Show stitches', 'Ctrl Y', 1], ['Show sewing order', 'Ctrl H', 1],
+      ['Find any tool', 'Ctrl K'], ['Light / dark', 'Ctrl Shift L'], ['Keyboard shortcuts', 'Ctrl Alt Shift K', 1], ['Keyboard shortcuts', '?']]],
     ['Stages', [['Import', '1'], ['Arrange', '2'], ['Stitch', '3'], ['Sequence', '4'], ['Output', '5']]],
   ];
   const keyCaps = k => k === '← ↑ → ↓' ? `<kbd>${k}</kbd>` : k.startsWith('Shift ←') ? `<kbd>Shift</kbd><kbd>← ↑ → ↓</kbd>` : k.split(' ').map(x => `<kbd>${x}</kbd>`).join('');
   const SHEETS = {
-    keys: () => `<header><h3>Keyboard shortcuts</h3><p>Point at any button to see its shortcut.</p></header>
-      <div class="body"><div class="keys-grid">${[[KEYS[0], KEYS[3]], [KEYS[1]], [KEYS[2]]].map(col => `<div>${col.map(([g, list]) => `<h4>${g}</h4>${list.map(([n, k, isNew]) => `<div class="k"><span>${n}${isNew ? '<span class="new">new</span>' : ''}</span><span data-notr>${keyCaps(k)}</span></div>`).join('')}`).join('')}</div>`).join('')}</div></div>
+    keys: () => `<header><h3>Keyboard shortcuts</h3><p>The same keys as Adobe Illustrator. Point at any button to see its shortcut.</p></header>
+      <div class="body"><div class="keys-grid">${[[KEYS[0], KEYS[4]], [KEYS[1]], [KEYS[2], KEYS[3]]].map(col => `<div>${col.map(([g, list]) => `<h4>${g}</h4>${list.map(([n, k, isNew]) => `<div class="k"><span>${n}${isNew ? '<span class="new">new</span>' : ''}</span><span data-notr>${keyCaps(k)}</span></div>`).join('')}`).join('')}</div>`).join('')}</div></div>
       <footer><button class="btn primary" data-close>Close</button></footer>`,
     group: () => `<header><h3>Make a layer</h3><p>${sel.size} selected shape${sel.size > 1 ? 's' : ''} move into a new layer with its own needle.</p></header>
       <div class="body">${row('Name', `<span class="field wide" style="width:200px"><input id="gName" value="${nextLayerName()}"></span>`)}
@@ -1383,7 +1438,7 @@
       if ((c.w > 1e-9 && !(nw > 0)) || (c.h > 1e-9 && !(nh > 0))) { toast('Enter a size more than 0.', true); return false; }
       const sx = c.w > 1e-9 ? nw / c.w : 1, sy = c.h > 1e-9 ? nh / c.h : 1;
       if (Math.abs(sx - 1) < 1e-9 && Math.abs(sy - 1) < 1e-9) return;   // same size: nothing to do
-      api('scale', { ids: [...sel], sx, sy }, { quiet: true });          // about the centre, one undo step
+      xform('scale', { sx, sy });                                        // about the centre, one undo step
     },
     ioRev: () => setJob({ io_on_reverse: swOn('iorOn'), io_reverse_port: Math.max(1, Math.round(num('iorPort'))) }),
   };
@@ -1478,47 +1533,70 @@
       return;
     }
     if (!$('#sheetScrim').hidden) { if (e.key === 'Escape') closeSheet(); return; }
+    if (ctrl && k === 'k' && e.altKey && e.shiftKey) { e.preventDefault(); return openSheet('keys'); }
     if (ctrl && k === 'k') { e.preventDefault(); return openPalette(); }
     if (ctrl && k === 'o') { e.preventDefault(); return ACT.open(); }
     if (ctrl && k === 's') { e.preventDefault(); return e.shiftKey ? api('save', { as_new: true }) : ACT.save(); }
-    if (ctrl && k === 'e') { e.preventDefault(); return ACT.saveMachine(); }
+    if (ctrl && e.altKey && k === 'e') { e.preventDefault(); return ACT.saveMachine(); }
     if (ctrl && k === 'n') { e.preventDefault(); return confirmSheet('New job?', 'The current job closes. Save it first if you want to keep it.', 'New job', () => { sel.clear(); api('new'); }); }
-    if (ctrl && k === 'i') { e.preventDefault(); return ACT.insert(); }
+    if (ctrl && e.shiftKey && k === 'p') { e.preventDefault(); return ACT.insert(); }
     if (ctrl && e.shiftKey && k === 'l') { e.preventDefault(); return toggleTheme(); }
     if (e.key === 'F1') { e.preventDefault(); return openSheet('keys'); }
+    // the WebView's own page zoom, find bar, history and print would take these: here they belong to the drawing
+    if (ctrl && (/^[fhjp]$/.test(k) || /^(Digit0|Digit1|Numpad0|Numpad1|Equal|Minus|NumpadAdd|NumpadSubtract)$/.test(e.code))) e.preventDefault();
     if (typing) return;
-    // during a move or resize: Esc cancels it, Shift / Alt change the resize at once, other keys wait
+    // during a move or resize: Esc cancels it, Shift / Alt change the resize (or the copy) at once, other keys wait
     if (drag && (drag.kind === 'move' || drag.kind === 'resize' || drag.kind === 'box')) {
       if (e.key === 'Escape') { e.preventDefault(); cancelDrag(); }
       else if (drag.kind === 'resize' && (e.key === 'Shift' || e.key === 'Alt')) { e.preventDefault(); drag.shift = e.shiftKey; drag.alt = e.altKey; draw(); }
       else if (drag.kind === 'box' && e.key === 'Alt') { e.preventDefault(); drag.enclose = true; draw(); }
+      else if (drag.kind === 'move' && e.key === 'Alt') { e.preventDefault(); drag.copy = true; if (drag.moved) cv.className = 'copying'; draw(); }
       return;
     }
     if (e.key === '?' || e.key === '؟') { e.preventDefault(); return openSheet('keys'); }
+    // edit
     if (ctrl && k === 'z') { e.preventDefault(); return api(e.shiftKey ? 'redo' : 'undo', {}, { quiet: true }); }
-    if (ctrl && k === 'y') { e.preventDefault(); return api('redo', {}, { quiet: true }); }
-    if (ctrl && k === 'a') { e.preventDefault(); return ACT.selectAll(); }
+    if (ctrl && k === 'a') { e.preventDefault(); if (e.shiftKey) { sel.clear(); selChanged(); } else ACT.selectAll(); return; }
+    if (ctrl && k === 'c') { e.preventDefault(); return copySel(false); }
+    if (ctrl && k === 'x') { e.preventDefault(); return copySel(true); }
+    if (ctrl && k === 'v') { e.preventDefault(); return paste('view'); }
+    if (ctrl && k === 'f') return paste('front');
+    if (ctrl && k === 'b') { e.preventDefault(); return paste('back'); }
+    if (ctrl && k === 'd') { e.preventDefault(); return again(); }
     if (ctrl && k === 'g') { e.preventDefault(); if (e.shiftKey) { const L = layerById(curLayer); if (L) api('ungroup', { id: L.id }, { quiet: true }); } else ACT.groupSheet(); return; }
-    if (ctrl && k === 'd') { e.preventDefault(); if (needSel()) api('duplicate', { ids: [...sel], dx: 5, dy: -5 }); return; }
+    if (ctrl && k === 'j') return needSel() && api('join', { ids: [...sel], tol: parseFloat($('#jt')?.value) || 2 });
+    if (ctrl && e.altKey && k === 'r') { e.preventDefault(); return needSel() && api('reverse', { ids: [...sel] }, { quiet: true }); }
+    if (ctrl && (e.code === 'BracketRight' || e.code === 'BracketLeft')) { e.preventDefault(); return sewOrder(e.code === 'BracketRight' ? 1 : -1, e.shiftKey); }
+    // view
+    if (ctrl && (e.code === 'Digit0' || e.code === 'Numpad0')) return fitView();
+    if (ctrl && (e.code === 'Digit1' || e.code === 'Numpad1')) return zoomAt(3.78 / view.k);   // 100%: real size
+    if (ctrl && (e.code === 'Equal' || e.code === 'NumpadAdd')) return zoomAt(1.25);
+    if (ctrl && (e.code === 'Minus' || e.code === 'NumpadSubtract')) return zoomAt(0.8);
+    if (ctrl && k === 'y') { e.preventDefault(); return $('#showStitch').click(); }
+    if (ctrl && k === 'h') return $('#showOrder').click();
     if (e.key === 'Escape') { $('#ctx').hidden = true; if (sim.on) return stopSim(); if (tool !== 'select' && tool !== 'direct') return setTool('select'); sel.clear(); selChanged(); return; }
     if ((e.key === 'Delete' || e.key === 'Backspace') && sel.size) return api('delete', { ids: [...sel] }, { quiet: true });
     if (e.key.startsWith('Arrow') && sel.size) {
       e.preventDefault(); const st = (parseFloat(store.get('nudge', '0.10')) || 0.1) * (e.shiftKey ? 10 : 1);
       const d = { ArrowUp: [0, st], ArrowDown: [0, -st], ArrowLeft: [-st, 0], ArrowRight: [st, 0] }[e.key];
-      return api('move', { ids: [...sel], dx: d[0], dy: d[1] }, { quiet: true });
+      return xform('move', { dx: d[0], dy: d[1] });
     }
     if (e.key === ' ' && !spaceDown) { spaceDown = true; cv.className = 'pan'; e.preventDefault(); return; }
-    if (ctrl) return;
-    if (k === 'v') setTool('select'); if (k === 'a') setTool('direct'); if (k === 'h') setTool('pan'); if (k === 's') setTool('start'); if (k === 'm') setTool('measure');
-    if (k === 'f') fitView(); if (k === '+' || k === '=') zoomAt(1.25); if (k === '-') zoomAt(0.8);
-    if (k === 'o') $('#showOrder').click(); if (k === 't') $('#showStitch').click();
-    if (k === 'r' && sel.size) api('reverse', { ids: [...sel] }, { quiet: true });
+    if (ctrl || e.altKey) return;
+    if (e.key === 'Enter') { e.preventDefault(); return focusField('mvx'); }
+    // tools, with Illustrator's letters
+    if (k === 'v') setTool('select'); if (k === 'a') setTool('direct'); if (k === 'h') setTool('pan'); if (k === 'c') setTool('start'); if (k === 'i') setTool('measure');
+    if (k === 'm') openSheet('add', { x: view.cx, y: view.cy });
+    if (k === 'r') { e.preventDefault(); focusField('ang'); }
+    if (k === 'o') xform('mirror', { axis: e.shiftKey ? 'v' : 'h' });
+    if (k === 's') openSheet('resize');
     if (/^[1-5]$/.test(k)) setStage(STAGES[+k - 1]);
   });
   document.addEventListener('keyup', e => {
     if (e.key === ' ') { spaceDown = false; cv.className = tool === 'pan' ? 'pan' : ''; }
     if (drag && drag.kind === 'resize' && (e.key === 'Shift' || e.key === 'Alt')) { e.preventDefault(); drag.shift = e.shiftKey; drag.alt = e.altKey; draw(); }
     if (drag && drag.kind === 'box' && e.key === 'Alt') { e.preventDefault(); drag.enclose = false; draw(); }
+    if (drag && drag.kind === 'move' && e.key === 'Alt') { e.preventDefault(); drag.copy = false; if (drag.moved) cv.className = 'moving'; draw(); }
   });
 
   /* ------------------------------------------------------------------ drag & drop files */

@@ -316,3 +316,30 @@ fn legacy_machine_file_opens_and_moves() {
     let v: Value = s.state(false).unwrap();
     assert_eq!(v["can_undo"], json!(true));
 }
+
+#[test]
+fn paste_brings_back_cut_shapes_in_one_undo_step() {
+    let mut s = session(None);
+    let id = rect(&mut s);
+    let a = shape(&s, id);
+    let copied = serde_json::to_value(&a).unwrap();
+    s.handle("delete", &json!({ "ids": [id] })).unwrap();
+    assert!(s.job.shapes.is_empty());
+    // pasted in place, last in the sewing order: same points and layer, a new id
+    let st = s.handle("paste", &json!({ "shapes": [copied.clone()], "dx": 0.0, "dy": 0.0 })).unwrap();
+    let new: Vec<i64> = st["new_ids"].as_array().unwrap().iter().map(|v| v.as_i64().unwrap()).collect();
+    assert_eq!(new.len(), 1);
+    let b = shape(&s, new[0]);
+    assert_eq!(b.pts, a.pts);
+    assert_eq!((b.layer.as_str(), b.closed), (a.layer.as_str(), a.closed));
+    // moved, and first in the sewing order (paste in back)
+    let st = s.handle("paste", &json!({ "shapes": [copied], "dx": 5.0, "dy": -2.0, "back": true })).unwrap();
+    let c = st["new_ids"][0].as_i64().unwrap();
+    assert_eq!(s.job.order[0], c);
+    for (p, q) in a.pts.iter().zip(&shape(&s, c).pts) {
+        assert!(close(q.0, p.0 + 5.0) && close(q.1, p.1 - 2.0));
+    }
+    s.handle("undo", &json!({})).unwrap();
+    assert_eq!(s.job.shapes.len(), 1);
+    assert!(s.handle("paste", &json!({ "shapes": [], "dx": 0.0, "dy": 0.0 })).is_err());
+}
