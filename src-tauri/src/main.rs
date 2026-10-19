@@ -8,7 +8,7 @@ use serde_json::{json, Value};
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::path::PathBuf;
 use std::sync::Mutex;
-use stitchline_engine::session::{app_dir, Dialogs, FileTypes, Session};
+use stitchline_engine::session::{app_dir, preview_file, Dialogs, FileTypes, Session};
 use stitchline_engine::Error;
 use tauri::ipc::{InvokeBody, Request, Response};
 use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
@@ -110,6 +110,17 @@ fn with_session<F: FnOnce(&mut Session) -> Result<Value, Error>>(app: &App, f: F
 /// One UI action (POST /api/<op> in the Python app). Returns the new state as JSON bytes.
 #[tauri::command]
 async fn api(app: AppHandle, op: String, args: Value) -> Result<Response, Value> {
+    // a Home screen preview reads a whole drawing: do it without holding the session, so the window keeps answering
+    if op == "preview" {
+        let path = args.get("path").and_then(Value::as_str).unwrap_or_default().to_string();
+        let dpi = app.state::<App>().0.lock().unwrap_or_else(|e| e.into_inner()).dpi();
+        return tauri::async_runtime::spawn_blocking(move || {
+            catch_unwind(|| preview_file(&path, dpi)).unwrap_or_else(|_| json!({"paths": [], "closed": [], "box": null}))
+        })
+        .await
+        .map(|v| Response::new(serde_json::to_vec(&v).unwrap()))
+        .map_err(|e| fail(Error::Unexpected(e.to_string())));
+    }
     // file dialogs block: keep them off the window's thread
     run_blocking(app, move |s| s.handle(&op, &args)).await
 }

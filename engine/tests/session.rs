@@ -271,3 +271,53 @@ fn a_failed_insert_leaves_undo_as_it_was() {
     assert!(s.handle("insert", &json!({})).is_err());
     assert_eq!(s.job.undo_stack.len(), undo);
 }
+
+// ------------------------------------------------------------------ the Home screen
+
+#[test]
+fn new_job_takes_a_name_and_a_table_size() {
+    let (mut s, _) = session(&home("new-job-args"));
+    add_line(&mut s);
+    let st = s.handle("new", &json!({"name": "  Jacket back  ", "table_w": 1200, "table_h": 600.5})).unwrap();
+    assert_eq!(st["file"]["name"], json!("Jacket back"));
+    assert_eq!(st["file"]["dirty"], json!(false));
+    assert_eq!(st["job"]["settings"]["table_w"], json!(1200.0));
+    assert_eq!(st["job"]["settings"]["table_h"], json!(600.5));
+    assert!(st["job"]["shapes"].as_array().unwrap().is_empty());
+    // a blank name keeps "Untitled"; no size keeps the last one
+    let st = s.handle("new", &json!({"name": " "})).unwrap();
+    assert_eq!(st["file"]["name"], json!("Untitled"));
+    assert_eq!(st["job"]["settings"]["table_w"], json!(1200.0));
+    for bad in [json!(0), json!(-5), json!("x"), json!(1e9)] {
+        assert!(s.handle("new", &json!({"table_w": bad})).is_err());
+    }
+}
+
+#[test]
+fn home_lists_the_recent_files_and_previews_them() {
+    let dir = home("home-recent");
+    let (mut s, _) = session(&dir);
+    let dxf = rebuild().join("reference/parity/p1_lines_offset.dxf");
+    let dxf = dxf.to_string_lossy().into_owned();
+    s.handle("open", &json!({"path": dxf})).unwrap();
+    let h = s.handle("home", &json!({})).unwrap();
+    let r = &h["recent"][0];
+    assert_eq!(r["path"], json!(dxf));
+    assert_eq!(r["name"], json!("p1_lines_offset.dxf"));
+    assert!(r["modified"].as_u64().unwrap() > 0 && r["size"].as_u64().unwrap() > 0);
+    assert!(h["job"]["shapes"].as_u64().unwrap() > 0);
+
+    // the preview reads the file without touching the open job
+    let shapes = s.job.shapes.len();
+    let p = s.handle("preview", &json!({"path": dxf})).unwrap();
+    assert!(!p["paths"].as_array().unwrap().is_empty());
+    assert_eq!(p["box"].as_array().unwrap().len(), 4);
+    assert_eq!(s.job.shapes.len(), shapes);
+    // a file that cannot be read has an empty preview, not an error
+    let p = s.handle("preview", &json!({"path": dir.join("missing.dxf").to_string_lossy()})).unwrap();
+    assert!(p["paths"].as_array().unwrap().is_empty() && p["box"].is_null());
+
+    let h = s.handle("forget_recent", &json!({"path": dxf})).unwrap();
+    assert!(h["recent"].as_array().unwrap().is_empty());
+    assert!(state(&mut s)["recent"].as_array().unwrap().is_empty());
+}
