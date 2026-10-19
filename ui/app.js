@@ -668,7 +668,7 @@
     const band = drag && drag.kind === 'box' ? boxWorld(drag) : null;   // shapes a rubber band will pick light up
     for (const s of S.job.shapes) {
       const bb = s._bb || (s._bb = bounds([s]));
-      const isSel = sel.has(s.id) || !!(band && inBox(s, band));
+      const isSel = sel.has(s.id) || !!(band && inBox(s, band, drag.enclose));
       const t = sel.has(s.id) ? T : null;               // this shape follows the drag
       const vb = t ? SL.applyBox(xf, bb) : bb;
       if (vb[2] < vx0 || vb[0] > vx1 || vb[3] < vy0 || vb[1] > vy1) continue;   // off screen
@@ -780,11 +780,15 @@
       ctx.fillStyle = colors.canvas; ctx.fillText(label, lx, ly);
     }
   }
-  // rubber band in world coords, and whether a shape is fully inside it
+  // rubber band in world coords, and whether it picks a shape: any shape it touches (as in Illustrator),
+  // or with Alt held only shapes completely inside it
   function boxWorld(d) { return [wx(Math.min(d.x0, d.x)), wy(Math.max(d.y0, d.y)), wx(Math.max(d.x0, d.x)), wy(Math.min(d.y0, d.y))]; }
-  function inBox(s, [xa, ya, xb, yb]) {
+  function inBox(s, b, enclose = false) {
     if (viewMode === 'layer' && s.layer !== curLayer) return false;
-    return s.pts.every(([x, y]) => x >= xa && x <= xb && y >= ya && y <= yb);
+    const bb = s._bb || (s._bb = bounds([s]));
+    if (bb[2] < b[0] || bb[0] > b[2] || bb[3] < b[1] || bb[1] > b[3]) return false;    // nowhere near
+    if (bb[0] >= b[0] && bb[2] <= b[2] && bb[1] >= b[1] && bb[3] <= b[3]) return true;  // all of it inside
+    return !enclose && SL.touchesBox(s.pts, s.closed, b);
   }
   function drawGrid() {
     let step = 1; while (step * view.k < 9) step *= step % 10 === 1 || step === 1 ? 5 : 2;
@@ -881,12 +885,12 @@
       const bb = s._bb || (s._bb = bounds([s]));
       if (x < bb[0] - tol || x > bb[2] + tol || y < bb[1] - tol || y > bb[3] + tol) continue;
       const P = pathOf(s);
-      if (P.length === 1) { const d = Math.hypot(P[0][0] - x, P[0][1] - y); if (d < bd) { bd = d; best = s; } continue; }
+      if (P.length === 1) { const d = Math.hypot(P[0][0] - x, P[0][1] - y); if (d <= bd) { bd = d; best = s; } continue; }
       for (let i = 1; i < P.length; i++) {
         const [ax, ay] = P[i - 1], [bx, by] = P[i]; const dx = bx - ax, dy = by - ay; const l2 = dx * dx + dy * dy;
         const t = l2 ? Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / l2)) : 0;
         const d = Math.hypot(ax + dx * t - x, ay + dy * t - y);
-        if (d < bd) { bd = d; best = s; }
+        if (d <= bd) { bd = d; best = s; }   // on a tie the shape drawn on top wins
       }
     }
     return best;
@@ -938,7 +942,7 @@
     } else if (tool === 'select' && !e.shiftKey && !e.ctrlKey && insideSel(e.clientX, e.clientY)) {
       drag = { kind: 'move', ids: [...sel], empty: true, ...at };   // black arrow: anywhere inside the box moves the selection
     } else {
-      drag = { kind: 'box', add: e.ctrlKey || e.shiftKey, ...at };
+      drag = { kind: 'box', add: e.ctrlKey || e.shiftKey, enclose: e.altKey, ...at };
     }
   });
   cv.addEventListener('pointermove', e => {
@@ -956,6 +960,7 @@
     drag.x = e.clientX; drag.y = e.clientY;
     if (!drag.moved && Math.hypot(drag.x - drag.x0, drag.y - drag.y0) > 3) drag.moved = true;   // a click is not a drag
     if (drag.kind === 'resize') { drag.shift = e.shiftKey; drag.alt = e.altKey; }
+    if (drag.kind === 'box') drag.enclose = e.altKey;
     if (drag.moved && drag.kind === 'move') cv.className = 'moving';
     if (drag.moved && drag.kind === 'resize') { cv.className = 'rs-' + SL.CURSOR[drag.h]; updateReadout(); }
     draw();
@@ -979,7 +984,7 @@
       if (Math.hypot(d.x - d.x0, d.y - d.y0) < 4) { if (!d.add) { sel.clear(); selChanged(); } return; }
       if (!d.add) sel.clear();
       const band = boxWorld(d);
-      for (const s of S.job.shapes) if (inBox(s, band)) sel.add(s.id);
+      for (const s of S.job.shapes) if (inBox(s, band, d.enclose)) sel.add(s.id);
       const f = selected()[0]; if (f) curLayer = f.layer;
       selChanged();
     } else draw();
@@ -1169,7 +1174,7 @@
   const KEYS = [
     ['File', [['Open a drawing or job', 'Ctrl O'], ['Save job', 'Ctrl S'], ['Save job as…', 'Ctrl Shift S'], ['Save machine file', 'Ctrl E'], ['New job', 'Ctrl N', 1], ['Insert a drawing', 'Ctrl I', 1]]],
     ['Edit', [['Undo', 'Ctrl Z'], ['Redo', 'Ctrl Y'], ['Select all', 'Ctrl A'], ['Clear the selection', 'Esc'], ['Duplicate', 'Ctrl D'], ['Delete selected', 'Delete'], ['Nudge the selection', '← ↑ → ↓'], ['Nudge ×10', 'Shift ← ↑ → ↓'], ['Reverse direction', 'R'], ['Make a layer from the selection', 'Ctrl G'], ['Delete layer, keep its shapes', 'Ctrl Shift G']]],
-    ['View and tools', [['Selection: move and resize whole shapes', 'V'], ['Direct selection: move one path', 'A', 1], ['Resize keeping proportions', 'Shift', 1], ['Resize from the centre', 'Alt', 1], ['Pan', 'H'], ['Pan while held', 'Space'], ['Set start point', 'S'], ['Measure', 'M'], ['Fit the drawing', 'F'], ['Zoom in / out', '+ −'], ['Show stitches', 'T'], ['Show sewing order', 'O'], ['Find any tool', 'Ctrl K'], ['Light / dark', 'Ctrl Shift L', 1], ['Keyboard shortcuts', '?', 1]]],
+    ['View and tools', [['Selection: move and resize whole shapes', 'V'], ['Direct selection: move one path', 'A', 1], ['Resize keeping proportions', 'Shift', 1], ['Resize from the centre', 'Alt', 1], ['Box: only shapes fully inside', 'Alt', 1], ['Pan', 'H'], ['Pan while held', 'Space'], ['Set start point', 'S'], ['Measure', 'M'], ['Fit the drawing', 'F'], ['Zoom in / out', '+ −'], ['Show stitches', 'T'], ['Show sewing order', 'O'], ['Find any tool', 'Ctrl K'], ['Light / dark', 'Ctrl Shift L', 1], ['Keyboard shortcuts', '?', 1]]],
     ['Stages', [['Import', '1'], ['Arrange', '2'], ['Stitch', '3'], ['Sequence', '4'], ['Output', '5']]],
   ];
   const keyCaps = k => k === '← ↑ → ↓' ? `<kbd>${k}</kbd>` : k.startsWith('Shift ←') ? `<kbd>Shift</kbd><kbd>← ↑ → ↓</kbd>` : k.split(' ').map(x => `<kbd>${x}</kbd>`).join('');
@@ -1402,9 +1407,10 @@
     if (e.key === 'F1') { e.preventDefault(); return openSheet('keys'); }
     if (typing) return;
     // during a move or resize: Esc cancels it, Shift / Alt change the resize at once, other keys wait
-    if (drag && (drag.kind === 'move' || drag.kind === 'resize')) {
+    if (drag && (drag.kind === 'move' || drag.kind === 'resize' || drag.kind === 'box')) {
       if (e.key === 'Escape') { e.preventDefault(); cancelDrag(); }
       else if (drag.kind === 'resize' && (e.key === 'Shift' || e.key === 'Alt')) { e.preventDefault(); drag.shift = e.shiftKey; drag.alt = e.altKey; draw(); }
+      else if (drag.kind === 'box' && e.key === 'Alt') { e.preventDefault(); drag.enclose = true; draw(); }
       return;
     }
     if (e.key === '?' || e.key === '؟') { e.preventDefault(); return openSheet('keys'); }
@@ -1431,6 +1437,7 @@
   document.addEventListener('keyup', e => {
     if (e.key === ' ') { spaceDown = false; cv.className = tool === 'pan' ? 'pan' : ''; }
     if (drag && drag.kind === 'resize' && (e.key === 'Shift' || e.key === 'Alt')) { e.preventDefault(); drag.shift = e.shiftKey; drag.alt = e.altKey; draw(); }
+    if (drag && drag.kind === 'box' && e.key === 'Alt') { e.preventDefault(); drag.enclose = false; draw(); }
   });
 
   /* ------------------------------------------------------------------ drag & drop files */

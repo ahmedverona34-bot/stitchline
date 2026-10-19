@@ -106,3 +106,31 @@ test('the resize the engine is asked for maps every point like the preview', () 
     near(u, t.ax + (x - t.ax) * t.sx); near(v, t.ay + (y - t.ay) * t.sy);
   }
 });
+
+test('marquee picks every shape it touches, not only shapes fully inside', () => {
+  const band = [0, 0, 10, 10];
+  const through = [[-5, 5], [15, 5]];               // straight through, both ends outside
+  assert.equal(SL.touchesBox(through, false, band), true, 'line through the box');
+  assert.equal(SL.insideBox(through, band), false, 'Alt: not fully inside, so not picked');
+  assert.equal(SL.touchesBox([[2, 2], [30, 40]], false, band), true, 'one end inside');
+  assert.equal(SL.touchesBox([[-5, 16], [16, -5]], false, band), true, 'diagonal through the box');
+  assert.equal(SL.touchesBox([[11, 20], [20, 11]], false, band), false, 'diagonal outside a corner');
+  assert.equal(SL.touchesBox([[-5, 8], [3, 16]], false, band), false, 'passes just outside the top left corner');
+  assert.equal(SL.touchesBox([[-5, 12], [15, 12]], false, band), false, 'line above the box');
+  assert.equal(SL.touchesBox([[-5, 10], [15, 10]], false, band), true, 'line on the edge counts');
+});
+
+test('marquee and closed shapes: the closing segment counts, an outline around the box does not', () => {
+  const band = [4, 4, 6, 6];
+  assert.equal(SL.touchesBox([[0, 0], [10, 0], [10, 10], [0, 10]], true, band), false, 'square around the box');
+  const U = [[0, 5], [0, -5], [10, -5], [10, 5]];    // open U below the box; closing (10,5) -> (0,5) runs through it
+  assert.equal(SL.touchesBox(U, false, band), false, 'open: no segment reaches the box');
+  assert.equal(SL.touchesBox(U, true, band), true, 'closed: the closing segment does');
+});
+
+test('marquee and single points', () => {
+  assert.equal(SL.touchesBox([[5, 5]], false, [0, 0, 10, 10]), true);
+  assert.equal(SL.touchesBox([[11, 5]], false, [0, 0, 10, 10]), false);
+  assert.equal(SL.touchesBox([], false, [0, 0, 10, 10]), false);
+  assert.equal(SL.insideBox([[5, 5]], [0, 0, 10, 10]), true);
+});

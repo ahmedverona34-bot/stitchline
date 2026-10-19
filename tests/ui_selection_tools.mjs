@@ -96,6 +96,29 @@ await click(M.X(0) + 5, 5);                                      // focus the ca
 await key('Escape', 'Escape');
 await key('v', 'KeyV');
 check(await toolNow() === 'select', '1. V activates the black arrow');
+
+// box selection: from the empty middle of the circle to past its right side, so the box crosses the outline
+// without enclosing it. Both arrows pick what the box touches; with Alt only what is fully inside.
+{
+  const b = bbox(target.pts), cx = (b[0] + b[2]) / 2, cy = (b[1] + b[3]) / 2;
+  const boxDrag = m => dragFromTo(M.X(cx), M.Y(cy), M.X(b[2]) + 25, M.Y(cy) - 25, m);
+  for (const [k, code, name] of [['v', 'KeyV', 'black'], ['a', 'KeyA', 'white']]) {
+    await key(k, code); await key('Escape', 'Escape');
+    await boxDrag();
+    check((await selectedRows()).includes(target.id), `   ${name} arrow: the box picks a shape it only touches`);
+    await key('Escape', 'Escape');
+    await boxDrag(['alt']);
+    check(!(await selectedRows()).includes(target.id), `   ${name} arrow: Alt-box skips a shape that is not fully inside`);
+  }
+  // Alt-box around the whole drawing picks everything
+  const all = bbox(st.shapes.flatMap(s => s.pts));
+  await key('Escape', 'Escape');
+  await dragFromTo(M.X(all[0]) - 15, M.Y(all[3]) - 15, M.X(all[2]) + 15, M.Y(all[1]) + 15, ['alt']);
+  check((await selectedRows()).length === st.shapes.length, '   Alt-box around everything picks every shape', `${(await selectedRows()).length} of ${st.shapes.length}`);
+  await key('v', 'KeyV'); await key('Escape', 'Escape');
+  check((await engine()).shapes.every((s, i) => JSON.stringify(s.pts) === JSON.stringify(st.shapes[i].pts)), '   box selection changes no geometry');
+}
+
 let [px, py] = pickPoint(st.shapes, target);
 await click(M.X(px), M.Y(py));
 let rows = await selectedRows();

@@ -38,7 +38,7 @@
     'Selection: move and resize whole shapes (V)': 'التحديد: تحريك الأشكال كاملة وتغيير مقاسها (V)', 'Selection': 'التحديد',
     'Direct selection: move one path (A)': 'التحديد المباشر: تحريك مسار واحد (A)', 'Direct selection': 'التحديد المباشر',
     'Selection: move and resize whole shapes': 'التحديد: تحريك الأشكال كاملة وتغيير مقاسها', 'Direct selection: move one path': 'التحديد المباشر: تحريك مسار واحد',
-    'Resize keeping proportions': 'تغيير المقاس مع الحفاظ على النسب', 'Resize from the centre': 'تغيير المقاس من المنتصف',
+    'Resize keeping proportions': 'تغيير المقاس مع الحفاظ على النسب', 'Resize from the centre': 'تغيير المقاس من المنتصف', 'Box: only shapes fully inside': 'التحديد بالمربع: الأشكال اللي جوه بالكامل بس',
     'The size must be more than 0.': 'المقاس لازم يكون أكبر من 0.',
     'Pan (H, or hold Space)': 'تحريك العرض (H أو اضغط Space)', 'Set start point (S)': 'تحديد نقطة البداية (S)', 'Start': 'البداية',
     'Measure (M)': 'قياس (M)', 'Zoom out (−)': 'تصغير (−)', 'Zoom out': 'تصغير', 'Zoom in (+)': 'تكبير (+)', 'Zoom in': 'تكبير',

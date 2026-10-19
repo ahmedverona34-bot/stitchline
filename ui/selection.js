@@ -73,7 +73,34 @@
     return t;
   }
 
-  const api = { MIN_SIZE, HANDLES, CURSOR, identity, translation, apply, applyBox, isScale, visibleHandles, handlePos, resize };
+  /** Does the segment a-b reach into the box [x0, y0, x1, y1] (edges included)? Liang–Barsky clipping. */
+  function segmentTouchesBox(a, b, bb) {
+    const [x0, y0, x1, y1] = bb, dx = b[0] - a[0], dy = b[1] - a[1];
+    let t0 = 0, t1 = 1;
+    for (const [p, q] of [[-dx, a[0] - x0], [dx, x1 - a[0]], [-dy, a[1] - y0], [dy, y1 - a[1]]]) {
+      if (p === 0) { if (q < 0) return false; continue; }      // parallel to this edge and outside it
+      const r = q / p;
+      if (p < 0) { if (r > t1) return false; if (r > t0) t0 = r; }
+      else { if (r < t0) return false; if (r < t1) t1 = r; }
+    }
+    return true;
+  }
+
+  /** Marquee rule of both arrows (as in Illustrator): a shape is picked when any part of it is inside the box,
+      a point or a piece of a line crossing it. Closed shapes include the segment back to the start. */
+  function touchesBox(P, closed, bb) {
+    const n = P.length;
+    if (!n) return false;
+    if (n === 1) return P[0][0] >= bb[0] && P[0][0] <= bb[2] && P[0][1] >= bb[1] && P[0][1] <= bb[3];
+    const segs = closed && n > 2 ? n : n - 1;
+    for (let i = 0; i < segs; i++) if (segmentTouchesBox(P[i], P[(i + 1) % n], bb)) return true;
+    return false;
+  }
+
+  /** Alt-marquee rule: only shapes that lie completely inside the box. */
+  const insideBox = (P, bb) => P.length > 0 && P.every(([x, y]) => x >= bb[0] && x <= bb[2] && y >= bb[1] && y <= bb[3]);
+
+  const api = { MIN_SIZE, HANDLES, CURSOR, identity, translation, apply, applyBox, isScale, visibleHandles, handlePos, resize, segmentTouchesBox, touchesBox, insideBox };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else window.STL_SEL = api;
 })();
