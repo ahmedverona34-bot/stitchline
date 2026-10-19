@@ -1234,7 +1234,7 @@
       ctx.fillStyle = colors.thread; ctx.beginPath(); ctx.arc(X, Y, 4, 0, 7); ctx.fill();
     }
     const label = (window.tr || (x => x))(laser ? 'Laser' : 'Needle');
-    ctx.font = '600 11px system-ui'; ctx.fillStyle = laser ? colors.laser : colors.thread; ctx.fillText(label, X + 14, Y - 14);
+    ctx.font = '600 11px ' + getComputedStyle(document.body).getPropertyValue('--font'); ctx.fillStyle = laser ? colors.laser : colors.thread; ctx.fillText(label, X + 14, Y - 14);
   }
   $('#simPlay').onclick = () => { if (sim.playing) { sim.playing = false; syncSim(); } else startSim(true); };
   $('#simPos').addEventListener('input', e => { sim.playing = false; sim.pos = +e.target.value; sim.on = true; syncSim(); draw(); });

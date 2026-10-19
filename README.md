@@ -54,7 +54,7 @@ engine/            stitchline-engine (Rust library): importers, editing, stitche
   src/bin/cli.rs     test driver: runs a script of UI actions and prints the replies
   tests/parity.rs    SLW parity tests
 src-tauri/         the desktop app (Tauri 2): window, native file dialogs, the two commands the UI calls
-ui/                the interface: index.html, app.css, app.js, i18n.js (Arabic), fonts/ (Readex Pro, OFL)
+ui/                the interface: index.html, app.css, app.js, i18n.js (Arabic), fonts/ (Thmanyah Sans for Arabic, Readex Pro for Latin)
 reference/         drawings and the SLW files the original program saved from them
 tests/             test data, Python comparison scripts, helpers to drive the running window
 build.ps1          builds the installer
@@ -112,4 +112,5 @@ writes the synthetic DXF / DST / DSB / AI / HPGL files in `tests/data/drawings`.
 ## Licence
 
 MIT, see `LICENSE`. The Readex Pro font in `ui/fonts` is under the SIL Open Font License
-(`ui/fonts/ReadexPro-OFL.txt`).
+(`ui/fonts/ReadexPro-OFL.txt`). Thmanyah Sans (the Arabic UI font) is free to use and ships
+unmodified; its designer asks that it not be edited (`ui/fonts/ThmanyahSans-LICENSE.txt`).

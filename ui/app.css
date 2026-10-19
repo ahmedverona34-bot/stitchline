@@ -1,3 +1,8 @@
+@font-face { font-family: "Thmanyah Sans"; src: url("fonts/ThmanyahSans-Light.otf") format("opentype"); font-weight: 300; font-display: swap; unicode-range: U+0600-06FF, U+0750-077F, U+0870-08FF, U+200C-200F, U+FB50-FDFF, U+FE70-FEFF; }
+@font-face { font-family: "Thmanyah Sans"; src: url("fonts/ThmanyahSans-Regular.otf") format("opentype"); font-weight: 400; font-display: swap; unicode-range: U+0600-06FF, U+0750-077F, U+0870-08FF, U+200C-200F, U+FB50-FDFF, U+FE70-FEFF; }
+@font-face { font-family: "Thmanyah Sans"; src: url("fonts/ThmanyahSans-Medium.otf") format("opentype"); font-weight: 500; font-display: swap; unicode-range: U+0600-06FF, U+0750-077F, U+0870-08FF, U+200C-200F, U+FB50-FDFF, U+FE70-FEFF; }
+@font-face { font-family: "Thmanyah Sans"; src: url("fonts/ThmanyahSans-Bold.otf") format("opentype"); font-weight: 700; font-display: swap; unicode-range: U+0600-06FF, U+0750-077F, U+0870-08FF, U+200C-200F, U+FB50-FDFF, U+FE70-FEFF; }
+@font-face { font-family: "Thmanyah Sans"; src: url("fonts/ThmanyahSans-Black.otf") format("opentype"); font-weight: 900; font-display: swap; unicode-range: U+0600-06FF, U+0750-077F, U+0870-08FF, U+200C-200F, U+FB50-FDFF, U+FE70-FEFF; }
 @font-face { font-family: "Readex Pro"; src: url("fonts/ReadexPro.ttf") format("truetype"); font-weight: 160 700; font-display: swap; }
 /* Stitchline — flat desktop UI ("Simple and professional").
    A top bar, a dark tool rail, the layers panel and the inspector are docked around the drawing; the drawing
@@ -40,8 +45,8 @@
   --laser-glow: rgba(255, 59, 48, 0.22);
   --shadow: 0 1px 2px rgba(28, 25, 23, 0.06), 0 4px 14px rgba(28, 25, 23, 0.06);
   --shadow-pop: 0 2px 8px rgba(28, 25, 23, 0.10), 0 24px 60px rgba(28, 25, 23, 0.18);
-  --font: "Readex Pro", "Segoe UI", system-ui, sans-serif;
-  --font-d: "Readex Pro", "Segoe UI", system-ui, sans-serif;
+  --font: "Thmanyah Sans", "Readex Pro", "Segoe UI", system-ui, sans-serif;
+  --font-d: "Thmanyah Sans", "Readex Pro", "Segoe UI", system-ui, sans-serif;
   --mono: "Cascadia Mono", "Cascadia Code", Consolas, monospace;
   --top: 52px;
   --railw: 48px;
