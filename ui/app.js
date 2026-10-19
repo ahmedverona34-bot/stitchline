@@ -940,6 +940,7 @@
     return !enclose && SL.touchesBox(s.pts, s.closed, b);
   }
   function drawGrid() {
+    if (!ui.grid) return;
     let step = 1; while (step * view.k < 9) step *= step % 10 === 1 || step === 1 ? 5 : 2;
     const major = step * 5;
     const x0 = Math.floor(wx(0) / step) * step, x1 = wx(W), y0 = Math.floor(wy(H) / step) * step, y1 = wy(0);
@@ -1204,33 +1205,137 @@
   $('#groupSel').onclick = () => ACT.groupSheet();
   $('#addLayer').onclick = () => promptSheet('New layer', 'Name of the new empty layer', 'Layer ' + ((S?.job.layers.length || 0) + 1), name => api('add_layer', { name }, { quiet: true }).then(d => { if (d) curLayer = d.job.layers.at(-1).id; renderAll(); }));
   $('#fileChip').onclick = () => promptSheet('Job name', 'Used for the machine file and exports', S.job.name, name => api('rename_job', { name }, { quiet: true }));
-  // the page reloads in the other language and comes back to the same place: Home if it was open, else the editor
-  function setLang(l) { store.set('lang', l); try { sessionStorage.setItem('stl.langReload', homeOpen() ? 'home' : 'editor'); } catch {} location.reload(); }
-  function setTheme(t) { document.documentElement.dataset.theme = t; store.set('theme', t); syncSettings(); draw(); }
-  function toggleTheme() { setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'); }
-  { const th = store.get('theme', null); document.documentElement.dataset.theme = th || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); }
-
-  /* settings menu (language, light / dark, shortcuts) */
-  function syncSettings() {
-    $$('#setPop [data-lang]').forEach(b => b.setAttribute('aria-pressed', b.dataset.lang === window.STL_LANG));
-    $$('#setPop [data-theme-v]').forEach(b => b.setAttribute('aria-pressed', b.dataset.themeV === document.documentElement.dataset.theme));
+  // the page reloads in the other language and comes back to the same place: Home if it was open, else the editor,
+  // and the Settings window on the same section if the language was changed there
+  function setLang(l) {
+    store.set('lang', l);
+    try { sessionStorage.setItem('stl.langReload', homeOpen() ? 'home' : 'editor'); if (setOpen()) sessionStorage.setItem('stl.setReload', curPage); } catch {}
+    location.reload();
   }
-  function closeSettings() { $('#setPop').hidden = true; $('#settings').setAttribute('aria-expanded', 'false'); }
-  $('#settings').onclick = () => {
-    const open = $('#setPop').hidden;
-    if (!open) return closeSettings();
-    syncSettings(); $('#setPop').hidden = false; $('#settings').setAttribute('aria-expanded', 'true');
-  };
-  $('#setPop').addEventListener('click', e => {
-    const l = e.target.closest('[data-lang]'); if (l && l.dataset.lang !== window.STL_LANG) return setLang(l.dataset.lang);
-    const t = e.target.closest('[data-theme-v]'); if (t) setTheme(t.dataset.themeV);
-  });
-  document.addEventListener('pointerdown', e => { if (!$('#setPop').hidden && !e.target.closest('.set-wrap')) closeSettings(); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#setPop').hidden) { e.stopImmediatePropagation(); closeSettings(); $('#settings').focus(); } }, true);
+  /* light / dark: the user's choice, or the same as Windows while nothing is chosen */
+  const darkOS = matchMedia('(prefers-color-scheme: dark)');
+  function applyTheme() { document.documentElement.dataset.theme = store.get('theme', null) || (darkOS.matches ? 'dark' : 'light'); }
+  function setTheme(t) { store.set('theme', t === 'system' ? null : t); applyTheme(); syncSettings(); draw(); }
+  function toggleTheme() { setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'); }
+  applyTheme();
+  darkOS.addEventListener('change', () => { applyTheme(); syncSettings(); draw(); });
   let lite = store.get('lite', true);
-  function setLite(v) { lite = v; store.set('lite', v); document.documentElement.classList.toggle('lite', v); if (S && stage === 'import') renderInspector(); draw(); }
+  function setLite(v) { lite = v; store.set('lite', v); document.documentElement.classList.toggle('lite', v); draw(); }
   setLite(lite);
-  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => draw());
+
+  /* font, text size, accent colour, interface size and the parts of the window that are shown (Settings) */
+  const FONTS = {
+    thmanyah: '"Thmanyah Sans", "Readex Pro", "Segoe UI", system-ui, sans-serif',
+    readex: '"Readex Pro", "Segoe UI", system-ui, sans-serif',
+    segoe: '"Segoe UI", Tahoma, system-ui, sans-serif',
+    tahoma: 'Tahoma, "Segoe UI", sans-serif',
+  };
+  const UI_DEF = { font: 'thmanyah', ts: 1, bold: false, accent: 'blue', zoom: 1, side: true, readout: true, viewbar: true, zoombar: true, grid: true, kbd: true };
+  let ui = { ...UI_DEF, ...store.get('ui', {}) };
+  if (!FONTS[ui.font]) ui.font = UI_DEF.font;
+  let zoomNow = null;
+  function applyUI() {
+    const r = document.documentElement;
+    r.style.setProperty('--font', FONTS[ui.font]); r.style.setProperty('--font-d', FONTS[ui.font]);
+    r.style.setProperty('--ts', ui.ts);
+    r.classList.toggle('text-bold', ui.bold);
+    if (ui.accent === 'blue') delete r.dataset.accent; else r.dataset.accent = ui.accent;
+    for (const k of ['side', 'readout', 'viewbar', 'zoombar', 'kbd']) r.classList.toggle('hide-' + k, !ui[k]);
+    // the interface size is the WebView's own zoom: everything grows together and the drawing stays sharp
+    if (ui.zoom !== zoomNow) { zoomNow = ui.zoom; window.__TAURI_INTERNALS__?.invoke('set_zoom', { scale: ui.zoom })?.catch(() => {}); }
+  }
+  function setUI(k, v) {
+    ui[k] = v; store.set('ui', ui); applyUI(); syncSettings();
+    if (k === 'side' && autoFit) fitView(); else draw();
+  }
+  applyUI();
+  function resetUI() {
+    ui = { ...UI_DEF }; store.set('ui', ui); store.set('theme', null);
+    applyTheme(); applyUI(); setLite(true); setInspector(true); syncSettings();
+    if (autoFit) fitView(); else draw();
+    toast('Settings are back to their defaults');
+  }
+
+  /* the Settings window: sections on the start side, every change applies at once */
+  const setOpen = () => !$('#setScrim').hidden;
+  let curPage = store.get('setPage', 'general'), setFrom = null;
+  function showPage(k) {
+    if (!$('#swp-' + k)) k = 'general';
+    curPage = k; store.set('setPage', k);
+    $$('.sw-tab').forEach(b => { const on = b.dataset.sp === k; b.setAttribute('aria-selected', on); b.tabIndex = on ? 0 : -1; });
+    $$('.sw-page').forEach(p => { p.hidden = p.id !== 'swp-' + k; });
+    $('#swTitle').textContent = $('#swt-' + k).textContent;
+    $('#swSub').textContent = $('#swp-' + k).dataset.sub;
+    $('.sw-body').scrollTop = 0;
+  }
+  function syncSettings() {
+    const pressed = (q, f) => $$('#setWin ' + q).forEach(b => b.setAttribute('aria-pressed', f(b)));
+    const th = store.get('theme', null) || 'system';
+    pressed('[data-lang]', b => b.dataset.lang === window.STL_LANG);
+    pressed('[data-theme-v]', b => b.dataset.themeV === th);
+    pressed('.acc', b => b.dataset.accent === ui.accent);
+    pressed('[data-font]', b => b.dataset.font === ui.font);
+    pressed('[data-ts]', b => +b.dataset.ts === ui.ts);
+    pressed('[data-zoom]', b => +b.dataset.zoom === ui.zoom);
+    const on = (id, v) => $('#' + id).setAttribute('aria-checked', !!v);
+    on('swHome', store.get('homeOnStart', true)); on('swAnim', !lite); on('swBold', ui.bold);
+    on('swInsp', !document.documentElement.classList.contains('insp-off'));
+    for (const k of ['side', 'readout', 'viewbar', 'zoombar', 'grid', 'kbd']) on('sw' + k[0].toUpperCase() + k.slice(1), ui[k]);
+  }
+  function openSettings(page) {
+    if (setOpen()) return;
+    $('#paletteScrim').hidden = true; $('#ctx').hidden = true;
+    setFrom = document.activeElement;
+    syncSettings(); showPage(page || curPage);
+    $('#setScrim').hidden = false;
+    $('#swt-' + curPage).focus();
+  }
+  function closeSettings() {
+    if (!setOpen()) return;
+    $('#setScrim').hidden = true;
+    if (setFrom?.isConnected) setFrom.focus({ preventScroll: true });
+    setFrom = null;
+  }
+  $('#settings').onclick = () => openSettings();
+  $('#setScrim').addEventListener('click', e => { if (e.target === e.currentTarget) closeSettings(); });
+  $('#setWin').addEventListener('click', e => {
+    const t = e.target;
+    const tab = t.closest('[data-sp]'); if (tab) return showPage(tab.dataset.sp);
+    if (t.closest('[data-close-set]')) return closeSettings();
+    if (t.closest('#swReset')) return resetUI();
+    const l = t.closest('[data-lang]'); if (l) { if (l.dataset.lang !== window.STL_LANG) setLang(l.dataset.lang); return; }
+    const th = t.closest('[data-theme-v]'); if (th) return setTheme(th.dataset.themeV);
+    const a = t.closest('.acc'); if (a) return setUI('accent', a.dataset.accent);
+    const f = t.closest('[data-font]'); if (f) return setUI('font', f.dataset.font);
+    const z = t.closest('[data-ts]'); if (z) return setUI('ts', +z.dataset.ts);
+    const zm = t.closest('[data-zoom]'); if (zm) return setUI('zoom', +zm.dataset.zoom);
+    // a switch, or anywhere on its row
+    const s = t.closest('.switch') || (!t.closest('button') && t.closest('.sw-row')?.querySelector('.switch'));
+    if (!s) return;
+    const v = s.getAttribute('aria-checked') !== 'true';
+    if (s.id === 'swHome') { store.set('homeOnStart', v); $('#homeOnStart').setAttribute('aria-checked', v); }
+    else if (s.id === 'swAnim') setLite(!v);
+    else if (s.id === 'swInsp') setInspector(v);
+    else return setUI(s.id === 'swBold' ? 'bold' : s.id[2].toLowerCase() + s.id.slice(3), v);
+    syncSettings();
+  });
+  $('#setWin').addEventListener('keydown', e => {
+    e.stopPropagation();
+    if (e.key === 'Escape' || ((e.ctrlKey || e.metaKey) && e.code === 'Comma')) { e.preventDefault(); return closeSettings(); }
+    // Tab and Shift+Tab stay in the window; the arrow keys move between the sections
+    if (e.key === 'Tab') {
+      const f = $$('#setWin button').filter(x => !x.disabled && x.offsetParent && x.tabIndex >= 0);
+      const i = f.indexOf(document.activeElement);
+      if (f.length && (i < 0 || (e.shiftKey ? i === 0 : i === f.length - 1))) { e.preventDefault(); f[e.shiftKey ? f.length - 1 : 0].focus(); }
+      return;
+    }
+    const tab = e.target.closest?.('.sw-tab');
+    if (tab && /^Arrow(Up|Down)$/.test(e.key)) {
+      e.preventDefault();
+      const ts = $$('.sw-tab'), n = ts[(ts.indexOf(tab) + (e.key === 'ArrowDown' ? 1 : ts.length - 1)) % ts.length];
+      showPage(n.dataset.sp); n.focus();
+    }
+  });
 
   /* ------------------------------------------------------------------ simulation */
   function buildSim() {
@@ -1350,7 +1455,7 @@
       ['Pan', 'H'], ['Pan while held', 'Space'], ['Rotate: type the angle', 'R', 1], ['Mirror left–right', 'O', 1], ['Mirror up–down', 'Shift O', 1], ['Resize: type the size', 'S', 1], ['Move: type the distance', 'Enter', 1],
       ['Set start point', 'C', 1], ['Measure', 'I', 1], ['Add shape', 'M', 1]]],
     ['View', [['Fit the drawing', 'Ctrl 0', 1], ['Real size (100%)', 'Ctrl 1', 1], ['Zoom in', 'Ctrl +', 1], ['Zoom out', 'Ctrl −', 1], ['Show stitches', 'Ctrl Y', 1], ['Show sewing order', 'Ctrl H', 1],
-      ['Hide / show the stage panel', 'Shift Tab', 1], ['Find any tool', 'Ctrl K'], ['Light / dark', 'Ctrl Shift L'], ['Keyboard shortcuts', 'Ctrl Alt Shift K', 1], ['Keyboard shortcuts', '?']]],
+      ['Hide / show the stage panel', 'Shift Tab', 1], ['Find any tool', 'Ctrl K'], ['Light / dark', 'Ctrl Shift L'], ['Settings', 'Ctrl ,', 1], ['Keyboard shortcuts', 'Ctrl Alt Shift K', 1], ['Keyboard shortcuts', '?']]],
     ['Stages', [['Import', '1'], ['Arrange', '2'], ['Stitch', '3'], ['Sequence', '4'], ['Output', '5']]],
   ];
   const keyCaps = k => k === '← ↑ → ↓' ? `<kbd>${k}</kbd>` : k.startsWith('Shift ←') ? `<kbd>Shift</kbd><kbd>← ↑ → ↓</kbd>` : k.split(' ').map(x => `<kbd>${x}</kbd>`).join('');
@@ -1636,6 +1741,7 @@
     ['Light / dark (Ctrl+Shift+L)', 'import', () => toggleTheme()],
     ['Hide / show the stage panel (Shift+Tab)', 'import', () => toggleInspector()],
     ['Keyboard shortcuts', 'import', () => openSheet('keys')],
+    ['Settings: language, theme, fonts, text size, interface (Ctrl+,)', '', () => openSettings()],
     ['Language: العربية / English', 'import', () => setLang(window.STL_LANG === 'ar' ? 'en' : 'ar')],
     ['Make a layer laser cut', 'stitch', () => setKind(curLayer, 'laser')],
     ['Speed up laser paths', 'stitch', () => api('laser_fix', { id: curLayer })],
@@ -1654,7 +1760,7 @@
     const words = ([n, s]) => fold([n, t(n), NAMES[s], t(NAMES[s])].join(' '));
     hits = TOOLS.filter(tl => { const ws = words(tl); return !q || q.split(/\s+/).every(w => ws.includes(w)); });
     hi = Math.min(hi, Math.max(0, hits.length - 1));
-    $('#plist').innerHTML = hits.map(([n, s], i) => `<li class="${i === hi ? 'on' : ''}" data-i="${i}"><span>${n}</span><span class="st">${NAMES[s]}</span></li>`).join('') || '<li><span class="st">No tool matches. Try “stitch”, “mirror” or “USB”.</span></li>';
+    $('#plist').innerHTML = hits.map(([n, s], i) => `<li class="${i === hi ? 'on' : ''}" data-i="${i}"><span>${n}</span><span class="st">${NAMES[s] || ''}</span></li>`).join('') || '<li><span class="st">No tool matches. Try “stitch”, “mirror” or “USB”.</span></li>';
     $('#pcount').textContent = `${hits.length} of ${TOOLS.length} tools`;
     $('#plist .on')?.scrollIntoView({ block: 'nearest' });
   }
@@ -1662,7 +1768,7 @@
   function runTool(i) {
     const t = hits[i]; if (!t) return;
     $('#paletteScrim').hidden = true;
-    if (t[1] !== stage) setStage(t[1]);
+    if (t[1] && t[1] !== stage) setStage(t[1]);
     if (t[2]) t[2]();
   }
   $('#openPalette').onclick = openPalette;
@@ -1677,6 +1783,7 @@
     const ctrl = e.ctrlKey || e.metaKey;
     // the physical key, so shortcuts also work with the Arabic keyboard layout (Ctrl+Z types ئ there)
     const k = /^(Key[A-Z]|Digit[0-9])$/.test(e.code || '') ? e.code.slice(-1).toLowerCase() : e.key.toLowerCase();
+    if (ctrl && e.code === 'Comma' && $('#sheetScrim').hidden) { e.preventDefault(); return openSettings(); }
     if (!$('#paletteScrim').hidden) {
       if (e.key === 'ArrowDown') { hi = Math.min(hits.length - 1, hi + 1); renderPalette(); e.preventDefault(); }
       if (e.key === 'ArrowUp') { hi = Math.max(0, hi - 1); renderPalette(); e.preventDefault(); }
@@ -1923,6 +2030,7 @@
     keys: () => openSheet('keys'),
     lang: () => setLang(window.STL_LANG === 'ar' ? 'en' : 'ar'),
     theme: () => toggleTheme(),
+    settings: () => openSettings(),
   };
   $('#home').addEventListener('click', async e => {
     if (!S) return;
@@ -1972,5 +2080,11 @@
   setTool('select');
   { let back = null; try { back = sessionStorage.getItem('stl.langReload'); sessionStorage.removeItem('stl.langReload'); } catch {}
     if (back ? back === 'home' : store.get('homeOnStart', true)) $('#home').hidden = false; }
-  api('state', {}, { quiet: true }).then(d => { if (d) { if (!d.job.shapes.length && stage !== 'import') setStage('import'); fitView(); if (homeOpen()) showHome(); } });
+  api('state', {}, { quiet: true }).then(d => {
+    if (!d) return;
+    if (!d.job.shapes.length && stage !== 'import') setStage('import');
+    fitView(); if (homeOpen()) showHome();
+    let sp = null; try { sp = sessionStorage.getItem('stl.setReload'); sessionStorage.removeItem('stl.setReload'); } catch {}
+    if (sp) openSettings(sp);
+  });
 })();

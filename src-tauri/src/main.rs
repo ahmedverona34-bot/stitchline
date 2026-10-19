@@ -162,6 +162,12 @@ fn quit(app: AppHandle, discard: bool) {
     }
 }
 
+/// Settings › Interface size: the WebView's page zoom (1.0 = 100%), so buttons, panels and text grow together.
+#[tauri::command]
+fn set_zoom(window: tauri::WebviewWindow, scale: f64) -> Result<(), String> {
+    window.set_zoom(scale.clamp(0.5, 2.0)).map_err(|e| e.to_string())
+}
+
 /// The window's X (or Alt+F4) with unsaved changes: keep the window and let the UI ask Save / Don't save / Cancel.
 fn on_close_requested(app: &AppHandle, api: &tauri::CloseRequestApi) {
     if QUITTING.load(Ordering::SeqCst) {
@@ -203,7 +209,7 @@ fn percent_decode(s: &str) -> String {
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
-        .invoke_handler(tauri::generate_handler![api, upload, quit])
+        .invoke_handler(tauri::generate_handler![api, upload, quit, set_zoom])
         .on_window_event(|window, event| {
             if let WindowEvent::CloseRequested { api, .. } = event {
                 on_close_requested(window.app_handle(), api);
