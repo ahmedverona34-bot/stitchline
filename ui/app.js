@@ -33,6 +33,8 @@
   const nameOf = s => s.name || (s.pts.length === 1 ? 'Point' : s.closed ? 'Closed shape' : s.pts.length === 2 ? 'Line' : 'Path') + ' ' + s.id;
   const pathOf = s => s.closed && s.pts.length > 2 ? [...s.pts, s.pts[0]] : s.pts;
   const selected = () => [...sel].map(shapeById).filter(Boolean);
+  /** Black or white, whichever reads better on a #rrggbb fill (the layer colour). */
+  const inkOn = c => { const m = /^#?([0-9a-f]{6})$/i.exec(c || ''); if (!m) return '#fff'; const n = parseInt(m[1], 16); return (0.299 * (n >> 16) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255)) > 160 ? '#111' : '#fff'; };
   const isSewn = s => { const L = layerOf(s); return L.output && S.job.refs.align !== L.id; };
 
   /* ------------------------------------------------------------------ engine calls */
@@ -370,7 +372,7 @@
         title: 'Sewing order', sub: 'Drag to reorder. The numbers on the drawing follow this list.',
         body: `
           <div class="sec plain"><div class="sec-body">
-            <ol class="order" id="order">${all.map((s, i) => `<li draggable="true" data-id="${s.id}" class="${sel.has(s.id) ? 'sel' : ''}" style="${isSewn(s) ? '' : 'opacity:.45'}"><span class="badge">${i + 1}</span>${thumb(s.pts, s.closed)}<span class="nm">${esc(nameOf(s))}</span><span class="mono" style="color:var(--fg-3);font-size:11px">${esc(layerOf(s).name)}</span></li>`).join('')}</ol>
+            <ol class="order" id="order">${all.map((s, i) => `<li draggable="true" data-id="${s.id}" class="${sel.has(s.id) ? 'sel' : ''}" style="${isSewn(s) ? '' : 'opacity:.45'}"><span class="badge" style="background:${esc(layerOf(s).color)};color:${inkOn(layerOf(s).color)}">${i + 1}</span>${thumb(s.pts, s.closed)}<span class="nm">${esc(nameOf(s))}</span><span class="mono" style="color:var(--fg-3);font-size:11px">${esc(layerOf(s).name)}</span></li>`).join('')}</ol>
           </div></div>
           ${sec('sort', 'Sort automatically', 'rows', `
             <div class="grid2"><button class="btn" data-act="sort" data-dir="tb">Top → bottom</button><button class="btn" data-act="sort" data-dir="bt">Bottom → top</button><button class="btn" data-act="sort" data-dir="lr">Left → right</button><button class="btn" data-act="sort" data-dir="rl">Right → left</button></div>
@@ -545,16 +547,25 @@
     if (!e.target.closest('#ctx')) $('#ctx').hidden = true;
   });
 
-  /* drag to reorder */
+  /* drag to reorder: dropping on the top half of a row puts the shape above it, on the bottom half below it
+     (always "above" made a drag one row down land where it started) */
   function wireOrder(ol) {
     let dragId = null;
-    ol.addEventListener('dragstart', e => { const li = e.target.closest('li'); dragId = +li.dataset.id; li.classList.add('drag'); e.dataTransfer.effectAllowed = 'move'; });
-    ol.addEventListener('dragend', e => { e.target.closest('li')?.classList.remove('drag'); $$('li', ol).forEach(l => l.classList.remove('over')); });
-    ol.addEventListener('dragover', e => { e.preventDefault(); $$('li', ol).forEach(l => l.classList.toggle('over', l === e.target.closest('li'))); });
+    const below = (e, li) => { const r = li.getBoundingClientRect(); return e.clientY > r.top + r.height / 2; };
+    const clear = () => $$('li', ol).forEach(l => l.classList.remove('over', 'under'));
+    ol.addEventListener('dragstart', e => { const li = e.target.closest('li'); dragId = +li.dataset.id; li.classList.add('drag'); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', li.dataset.id); });
+    ol.addEventListener('dragend', e => { e.target.closest('li')?.classList.remove('drag'); clear(); dragId = null; });
+    ol.addEventListener('dragover', e => {
+      e.preventDefault(); e.dataTransfer.dropEffect = 'move';
+      const t = e.target.closest('li'); clear();
+      if (t && +t.dataset.id !== dragId) t.classList.add(below(e, t) ? 'under' : 'over');
+    });
     ol.addEventListener('drop', e => {
-      e.preventDefault(); const t = e.target.closest('li'); if (!t || dragId == null) return;
+      e.preventDefault(); clear(); const t = e.target.closest('li'); if (!t || dragId == null) return;
       const to = +t.dataset.id; if (to === dragId) return;
-      const order = S.job.order.filter(i => i !== dragId); order.splice(order.indexOf(to), 0, dragId);
+      const order = S.job.order.filter(i => i !== dragId);
+      order.splice(order.indexOf(to) + (below(e, t) ? 1 : 0), 0, dragId);
+      if (order.every((v, i) => v === S.job.order[i])) return;   // dropped where it already was
       api('reorder', { ids: order }, { quiet: true });
     });
     ol.addEventListener('click', e => { const li = e.target.closest('li'); if (li) pick(+li.dataset.id, e.ctrlKey, e.shiftKey); });
