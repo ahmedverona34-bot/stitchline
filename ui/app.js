@@ -434,11 +434,13 @@
 
   function renderInspector() {
     const sc = $('#insp').scrollTop;
+    const osc = $('#order')?.scrollTop;   // the sewing order list scrolls on its own; keep its place across re-renders
     const p = PANELS[stage]();
     $('#insp').innerHTML = `<div class="i-title"><h2>${p.title}</h2><p>${p.sub}</p>${p.pick || ''}</div>${p.body}`;
     $('#ifoot').innerHTML = p.foot;
     $('#ifoot').hidden = !p.foot;
     $('#insp').scrollTop = sc;
+    if (osc != null && $('#order')) $('#order').scrollTop = osc;
     $$('#insp details[data-key]').forEach(d => d.addEventListener('toggle', () => { openSecs[d.dataset.key] = d.open; store.set('openSecs', openSecs); }));
     const r = $('#lenRange');
     if (r) {
