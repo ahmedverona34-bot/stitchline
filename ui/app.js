@@ -60,7 +60,7 @@
       const r = await fetch('/api/upload', { method: 'POST', headers: { 'X-File-Name': encodeURIComponent(file.name) }, body: await file.arrayBuffer() });
       const d = await r.json();
       if (!r.ok) return toast(d.error || 'That file could not be opened.', true);
-      sel.clear(); apply(d); fitView(); if (d.message) toast(d.message);
+      sel.clear(); apply(d); hideHome(); fitView(); if (d.message) toast(d.message);
       if (stage === 'import') setStage('arrange');
     } finally { $('#busy').hidden = true; }
   }
@@ -82,6 +82,7 @@
     const fs = selected()[0]; if (fs) curLayer = fs.layer;
     buildSim();
     renderAll();
+    renderHome();
     if (firstLoad) requestAnimationFrame(fitView);
   }
 
@@ -530,8 +531,8 @@
 
   /* ------------------------------------------------------------------ actions (buttons with data-act) */
   const ACT = {
-    open: () => api('open', {}, { busy: 'Waiting for the file…' }).then(d => { if (d && d.message) { sel.clear(); fitView(); if (stage === 'import') setStage('arrange'); } }),
-    openRecent: b => api('open', { path: b.dataset.path }).then(d => { if (d) { sel.clear(); fitView(); if (stage === 'import') setStage('arrange'); } }),
+    open: () => api('open', {}, { busy: 'Waiting for the file…' }).then(d => { if (d && d.message) { sel.clear(); hideHome(); fitView(); if (stage === 'import') setStage('arrange'); } }),
+    openRecent: b => api('open', { path: b.dataset.path }).then(d => { if (d) { sel.clear(); hideHome(); fitView(); if (stage === 'import') setStage('arrange'); } }),
     insert: () => api('insert', {}, { busy: 'Waiting for the file…' }).then(d => d && fitView()),
     save: () => api('save', { as_new: !S.file.path }),
     selectAll: () => { sel = new Set(S.job.shapes.map(s => s.id)); selChanged(); },
@@ -1244,7 +1245,7 @@
   let sheetCtx = {};
   // the shortcuts follow Adobe Illustrator's; 1 marks the ones that changed to match it
   const KEYS = [
-    ['File', [['Open a drawing or job', 'Ctrl O'], ['Save job', 'Ctrl S'], ['Save job as…', 'Ctrl Shift S'], ['Save machine file', 'Ctrl Alt E', 1], ['New job', 'Ctrl N'], ['Insert a drawing', 'Ctrl Shift P', 1]]],
+    ['File', [['Open a drawing or job', 'Ctrl O'], ['Save job', 'Ctrl S'], ['Save job as…', 'Ctrl Shift S'], ['Save machine file', 'Ctrl Alt E', 1], ['New job', 'Ctrl N'], ['Insert a drawing', 'Ctrl Shift P', 1], ['Home: new job, open, recent files', 'Ctrl Shift H', 1]]],
     ['Edit', [['Undo', 'Ctrl Z'], ['Redo', 'Ctrl Shift Z', 1], ['Select all', 'Ctrl A'], ['Clear the selection', 'Ctrl Shift A', 1], ['Clear the selection, leave a tool', 'Esc'],
       ['Copy', 'Ctrl C', 1], ['Cut', 'Ctrl X', 1], ['Paste in the middle of the view', 'Ctrl V', 1], ['Paste in place, sewn last', 'Ctrl F', 1], ['Paste in place, sewn first', 'Ctrl B', 1],
       ['Copy while dragging', 'Alt', 1], ['Do the last move, rotate, mirror or resize again', 'Ctrl D', 1], ['Delete selected', 'Delete'], ['Nudge the selection', '← ↑ → ↓'], ['Nudge ×10', 'Shift ← ↑ → ↓'],
@@ -1259,6 +1260,15 @@
   ];
   const keyCaps = k => k === '← ↑ → ↓' ? `<kbd>${k}</kbd>` : k.startsWith('Shift ←') ? `<kbd>Shift</kbd><kbd>← ↑ → ↓</kbd>` : k.split(' ').map(x => `<kbd>${x}</kbd>`).join('');
   const SHEETS = {
+    newjob: () => {
+      const w = sheetCtx.w ?? +J().table_w, h = sheetCtx.h ?? +J().table_h, lose = S.file.dirty && S.job.shapes.length > 0;
+      return `<header><h3>New job</h3><p>Name the job and set the size of the machine table.</p></header>
+      <div class="body"><div style="display:grid;gap:6px"><label class="eyebrow" for="njName">Job name</label><span class="field wide"><input id="njName" placeholder="Untitled" autocomplete="off" maxlength="80"></span></div>
+      <div style="display:grid;gap:6px"><span class="eyebrow">Machine table</span><div class="nj-presets" id="njPresets">${tableSizes().map(([a, b]) => `<button class="btn sm" data-njsize="${a}x${b}" aria-pressed="${a === w && b === h}">${sizeTxt(a, b)}</button>`).join('')}</div></div>
+      ${row('Table width', fld('njW', +(+w).toFixed(3)))}${row('Table height', fld('njH', +(+h).toFixed(3)))}
+      ${lose ? '<p class="hint warn">The current job has changes that are not saved. Save it first if you want to keep them.</p>' : ''}</div>
+      <footer>${lose ? '<button class="btn left" data-njsave>Save first</button>' : ''}<button class="btn" data-close>Cancel</button><button class="btn primary" data-ok>Create</button></footer>`;
+    },
     keys: () => `<header><h3>Keyboard shortcuts</h3><p>The same keys as Adobe Illustrator. Point at any button to see its shortcut.</p></header>
       <div class="body"><div class="keys-grid">${[[KEYS[0], KEYS[4]], [KEYS[1]], [KEYS[2], KEYS[3]]].map(col => `<div>${col.map(([g, list]) => `<h4>${g}</h4>${list.map(([n, k, isNew]) => `<div class="k"><span>${n}${isNew ? '<span class="new">new</span>' : ''}</span><span data-notr>${keyCaps(k)}</span></div>`).join('')}`).join('')}</div>`).join('')}</div></div>
       <footer><button class="btn primary" data-close>Close</button></footer>`,
@@ -1385,6 +1395,13 @@
   const swOn = id => $('#' + id)?.getAttribute('aria-checked') === 'true';
 
   const SHEET_OK = {
+    newjob: async () => {
+      const w = num('njW'), h = num('njH');
+      if (!(w > 0 && h > 0)) { toast('The table size must be more than 0 mm.', true); return false; }
+      const d = await api('new', { name: $('#njName').value.trim(), table_w: w, table_h: h }, { quiet: true });
+      if (!d) return false;
+      rememberSize(w, h); sel.clear(); hideHome(); setStage('import'); fitView(); toast('New job');
+    },
     group: async () => {
       const laser = segVal('gKind') === 'laser';
       const d = await api('group', { ids: [...sel], name: $('#gName').value.trim(), needle: laser ? 3 : +segVal('gNeedle'), color: $('#gColor').value }, { quiet: true });
@@ -1456,6 +1473,9 @@
     }
     const s = t.closest('.switch'); if (s) { s.setAttribute('aria-checked', s.getAttribute('aria-checked') !== 'true'); return; }
     if (t.closest('[data-nosave]')) { closeSheet(); return quit(true); }
+    const nz = t.closest('[data-njsize]');
+    if (nz) { const [w, h] = nz.dataset.njsize.split('x'); $('#njW').value = w; $('#njH').value = h; $$('#njPresets button').forEach(b => b.setAttribute('aria-pressed', b === nz)); return; }
+    if (t.closest('[data-njsave]')) { const name = $('#njName').value, w = $('#njW').value, h = $('#njH').value; const d = await ACT.save(); if (d && !d.file.dirty) { openSheet('newjob', { w: +w, h: +h }); $('#njName').value = name; } return; }
     if (t.closest('[data-ok]')) { const r = await SHEET_OK[k]?.(); if (r !== false) closeSheet(); else if (k === 'marks') openSheet('marks'); return; }
     if (t.closest('[data-clear]')) {
       if (k === 'ref') { await api('set_ref', { which: 'r1', id: null }, { quiet: true }); await api('set_ref', { which: 'r2', id: null }, { quiet: true }); await api('set_ref', { which: 'align', id: null }, { quiet: true }); closeSheet(); }
@@ -1471,6 +1491,7 @@
     const di = t.closest('[data-delio]'); if (di) { sheetCtx.io.splice(+di.dataset.delio, 1); $('#ioList').innerHTML = ioRows(sheetCtx.io); }
   });
   $('#sheet').addEventListener('input', e => {
+    if ($('#sheet').dataset.k === 'newjob' && /^nj[WH]$/.test(e.target.id)) $$('#njPresets button').forEach(b => b.setAttribute('aria-pressed', b.dataset.njsize === `${num('njW')}x${num('njH')}`));
     if ($('#sheet').dataset.k !== 'resize' || !/^rz[WH]$/.test(e.target.id)) return;
     const c = sheetCtx;
     if (swOn('rzLock') && c.w > 1e-9 && c.h > 1e-9) {
@@ -1484,7 +1505,7 @@
   /* ------------------------------------------------------------------ command palette */
   const TOOLS = [
     ['Open file', 'import', () => ACT.open()], ['Insert another drawing into the job', 'import', () => ACT.insert()], ['Save job', 'import', () => ACT.save()], ['Save job as…', 'import', () => api('save', { as_new: true })],
-    ['Remove overlapping shapes on open', 'import'], ["Don't join lines automatically", 'import'], ['Work without reference point', 'import'], ['Drawing resolution (dpi)', 'import'], ['Scale drawing', 'import'], ['Calculate scale from a measurement', 'import', () => openSheet('calc')], ['Machine table size', 'import'], ['New job', 'import', () => confirmSheet('New job?', 'The current job closes. Save it first if you want to keep it.', 'New job', () => { sel.clear(); api('new'); })],
+    ['Remove overlapping shapes on open', 'import'], ["Don't join lines automatically", 'import'], ['Work without reference point', 'import'], ['Drawing resolution (dpi)', 'import'], ['Scale drawing', 'import'], ['Calculate scale from a measurement', 'import', () => openSheet('calc')], ['Machine table size', 'import'], ['New job', 'import', () => openSheet('newjob')], ['Home: new job, open, recent files', 'import', () => showHome()],
     ['Add shape (point, line, rectangle, circle)', 'arrange', () => openSheet('add')], ['Duplicate', 'arrange', () => openSheet('dup')], ['Move shape to another layer', 'arrange'], ['New empty layer', 'arrange', () => $('#addLayer').click()], ['Reference point', 'arrange', () => openSheet('ref')], ['Nudge / move', 'arrange'], ['Rotate', 'arrange'], ['Mirror', 'arrange'], ['Resize selected shapes', 'arrange', () => openSheet('resize')], ['Pick start point', 'arrange', () => setTool('start')], ['Reverse direction', 'arrange', () => ACT.op({ dataset: { op: 'reverse' } })], ['Extend or shorten ends', 'arrange'], ['Edit points one by one', 'arrange', () => openSheet('points')], ['Split a shape', 'arrange'], ['Merge close points', 'arrange'], ['Delete short lines', 'arrange'], ['Join line ends', 'arrange'], ['Select all', 'arrange', () => ACT.selectAll()], ['Delete selected', 'arrange', () => ACT.op({ dataset: { op: 'delete' } })], ['Start every shape at top / bottom / left / right', 'arrange'], ['Sections: zigzag, back-tack, special length', 'arrange', () => openSheet('marks')], ['Measure distance', 'arrange', () => setTool('measure')], ['Undo', 'arrange', () => api('undo')], ['Redo', 'arrange', () => api('redo')],
     ['Make a layer from the selection (Ctrl+G)', 'arrange', () => ACT.groupSheet()], ['Delete layer, keep its shapes (Ctrl+Shift+G)', 'arrange'], ['Set the needle of a layer', 'arrange'],
     ['Light / dark (Ctrl+Shift+L)', 'import', () => toggleTheme()],
@@ -1532,13 +1553,28 @@
       if (e.key === 'Escape') $('#paletteScrim').hidden = true;
       return;
     }
-    if (!$('#sheetScrim').hidden) { if (e.key === 'Escape') closeSheet(); return; }
+    if (!$('#sheetScrim').hidden) {
+      if (e.key === 'Escape') closeSheet();
+      if (e.key === 'Enter' && $('#sheet').dataset.k === 'newjob' && e.target.tagName === 'INPUT') { e.preventDefault(); $('#sheet [data-ok]').click(); }
+      return;
+    }
+    if (homeOpen()) {
+      if (e.key === 'Escape' && !$('#homeBack').hidden) { e.preventDefault(); return hideHome(); }
+      if (ctrl && k === 'o') { e.preventDefault(); return ACT.open(); }
+      if (ctrl && k === 'n') { e.preventDefault(); return openSheet('newjob'); }
+      if (ctrl && e.shiftKey && k === 'h') { e.preventDefault(); if (!$('#homeBack').hidden) hideHome(); return; }
+      if (ctrl && e.shiftKey && k === 'l') { e.preventDefault(); return toggleTheme(); }
+      if (e.key === 'F1' || (ctrl && e.altKey && e.shiftKey && k === 'k')) { e.preventDefault(); return openSheet('keys'); }
+      if (ctrl && k === 'k') e.preventDefault();
+      return;
+    }
     if (ctrl && k === 'k' && e.altKey && e.shiftKey) { e.preventDefault(); return openSheet('keys'); }
     if (ctrl && k === 'k') { e.preventDefault(); return openPalette(); }
     if (ctrl && k === 'o') { e.preventDefault(); return ACT.open(); }
     if (ctrl && k === 's') { e.preventDefault(); return e.shiftKey ? api('save', { as_new: true }) : ACT.save(); }
     if (ctrl && e.altKey && k === 'e') { e.preventDefault(); return ACT.saveMachine(); }
-    if (ctrl && k === 'n') { e.preventDefault(); return confirmSheet('New job?', 'The current job closes. Save it first if you want to keep it.', 'New job', () => { sel.clear(); api('new'); }); }
+    if (ctrl && k === 'n') { e.preventDefault(); return openSheet('newjob'); }
+    if (ctrl && e.shiftKey && k === 'h') { e.preventDefault(); return homeOpen() ? (!$('#homeBack').hidden && hideHome()) : showHome(); }
     if (ctrl && e.shiftKey && k === 'p') { e.preventDefault(); return ACT.insert(); }
     if (ctrl && e.shiftKey && k === 'l') { e.preventDefault(); return toggleTheme(); }
     if (e.key === 'F1') { e.preventDefault(); return openSheet('keys'); }
@@ -1610,6 +1646,171 @@
     upload(e.dataTransfer.files[0]);
   });
 
+  /* ------------------------------------------------------------------ home: the start screen */
+  // Shown at every start (unless turned off) and with the Home button: new job, open, the job left open, recent files.
+  const home = { info: null, previews: new Map(), loading: false, view: store.get('homeView', 'grid'), used: false };
+  const homeOpen = () => !$('#home').hidden;
+  /* engine calls that answer with something other than the state (home, preview, forget_recent) */
+  async function call(op, args = {}) {
+    try {
+      const r = await fetch('/api/' + op, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(args) });
+      const d = await r.json();
+      if (!r.ok) { toast(d.error || 'Something went wrong.', true); return null; }
+      return d;
+    } catch { return null; }
+  }
+  function showHome() {
+    $('#ctx').hidden = true; $('#paletteScrim').hidden = true;
+    if (sim.on) stopSim();
+    $('#home').hidden = false;
+    renderHome(); refreshHome();
+  }
+  function hideHome() { if (!homeOpen()) return; $('#home').hidden = true; home.used = true; resize(); draw(); }
+  async function refreshHome() { const d = await call('home'); if (d) { home.info = d; renderHome(); loadPreviews(); } }
+
+  /* a drawing as a small SVG, y up like the canvas; each path is a flat [x, y, x, y, ...] list */
+  function drawingSvg(paths, closed, box) {
+    if (!paths.length || !box) return '';
+    const [x0, y0, x1, y1] = box, w = Math.max(x1 - x0, 1e-6), h = Math.max(y1 - y0, 1e-6), pad = Math.max(w, h) * 0.02;
+    const el = paths.map((p, i) => {
+      if (p.length === 2) return `<circle cx="${(p[0] - x0).toFixed(2)}" cy="${(y1 - p[1]).toFixed(2)}" r="${(Math.max(w, h) * 0.008).toFixed(3)}"/>`;
+      let pts = '';
+      for (let j = 0; j < p.length; j += 2) pts += `${(p[j] - x0).toFixed(2)},${(y1 - p[j + 1]).toFixed(2)} `;
+      return `<${closed[i] ? 'polygon' : 'polyline'} points="${pts}"/>`;
+    }).join('');
+    return `<svg class="drawing" viewBox="${-pad} ${-pad} ${w + 2 * pad} ${h + 2 * pad}" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${el}</svg>`;
+  }
+  /* the open job's shapes in the same form (thinned out for large jobs) */
+  function jobSvg() {
+    const shapes = S.job.shapes, total = shapes.reduce((n, s) => n + s.pts.length, 0), step = Math.max(1, Math.ceil(total / 4000));
+    const b = [Infinity, Infinity, -Infinity, -Infinity];
+    const paths = shapes.map(s => {
+      const out = [];
+      s.pts.forEach(([x, y], i) => { b[0] = Math.min(b[0], x); b[1] = Math.min(b[1], y); b[2] = Math.max(b[2], x); b[3] = Math.max(b[3], y); if (i % step === 0 || i === s.pts.length - 1) out.push(x, y); });
+      return out;
+    });
+    return drawingSvg(paths, shapes.map(s => s.closed), shapes.length ? b : null);
+  }
+  const FILE_ICON = '<svg class="ftype" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>';
+  const extOf = p => (p.match(/\.([^.\\/]+)$/)?.[1] || '').toUpperCase();
+  const locale = () => window.STL_LANG === 'ar' ? 'ar-u-nu-latn' : 'en';
+  function when(secs) {
+    if (secs == null) return '';
+    const d = (Date.now() / 1000 - secs), rtf = new Intl.RelativeTimeFormat(locale(), { numeric: 'auto' });
+    if (d < 60) return rtf.format(0, 'second');
+    if (d < 3600) return rtf.format(-Math.floor(d / 60), 'minute');
+    if (d < 86400) return rtf.format(-Math.floor(d / 3600), 'hour');
+    if (d < 7 * 86400) return rtf.format(-Math.floor(d / 86400), 'day');
+    return new Date(secs * 1000).toLocaleDateString(locale(), { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+  const previewKey = r => r.path + '|' + r.modified;
+  const thumbHtml = r => { const p = home.previews.get(previewKey(r)); return p === undefined ? '<span class="loading"></span>' : (p && drawingSvg(p.paths, p.closed, p.box)) || FILE_ICON; };
+
+  /* machine table sizes for a new job: this job's, the ones used before, and the standard one */
+  function tableSizes() {
+    const seen = new Set(), out = [];
+    for (const [w, h] of [[+J().table_w, +J().table_h], ...store.get('tableSizes', []), [1000, 800]]) {
+      const k = w + 'x' + h; if (!(w > 0 && h > 0) || seen.has(k)) continue; seen.add(k); out.push([w, h]);
+    }
+    return out.slice(0, 4);
+  }
+  const rememberSize = (w, h) => store.set('tableSizes', [[w, h], ...store.get('tableSizes', []).filter(([a, b]) => a !== w || b !== h)].slice(0, 4));
+  const sizeTxt = (w, h) => `<span data-notr class="num">${+(+w).toFixed(1)} × ${+(+h).toFixed(1)}</span> <span>mm</span>`;
+
+  function renderHome() {
+    if (!S || !homeOpen()) return;
+    $('#homeOnStart').setAttribute('aria-checked', store.get('homeOnStart', true));
+    const has = S.job.shapes.length > 0;
+    $('#homeBack').hidden = !(has || home.used);
+    // the job left open: autosaved, so it comes back even when it was never saved
+    const c = $('#homeContinue'); c.hidden = !has;
+    if (has) {
+      const nl = S.job.layers.length;
+      c.innerHTML = `<h2>Continue</h2><button class="home-cont" data-home="editor">
+        <div class="thumb">${jobSvg() || FILE_ICON}</div>
+        <div class="t"><span class="eyebrow">Pick up where you left off</span><b>${esc(S.file.name)}</b>
+          <span class="meta"><span>${S.job.shapes.length} ${S.job.shapes.length === 1 ? 'shape' : 'shapes'}</span>·<span>${nl} ${nl === 1 ? 'layer' : 'layers'}</span>${S.file.dirty ? '·<span class="unsaved">Unsaved changes</span>' : S.file.path ? '·<span>Saved</span>' : ''}</span></div>
+        <span class="btn primary">Continue</span></button>`;
+    }
+    $('#homeQuick').innerHTML = tableSizes().map(([w, h], i) => {
+      const k = Math.min(116 / w, 68 / h);
+      return `<button class="qcard" data-size="${w}x${h}" title="New job with this machine table">
+        <div class="pv"><div class="sheetbox" style="width:${Math.max(8, w * k).toFixed(0)}px;height:${Math.max(8, h * k).toFixed(0)}px"></div></div>
+        <div><b>${sizeTxt(w, h)}</b><small>${i === 0 ? 'Machine table' : 'Used before'}</small></div></button>`;
+    }).join('') + `<button class="qcard" data-home="new" title="New job (Ctrl+N)">
+        <div class="pv"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M12 8v8M8 12h8"/></svg></div>
+        <div><b>Custom size…</b><small>Name and table size</small></div></button>
+      <button class="qcard" data-home="open" title="Open (Ctrl+O)">
+        <div class="pv"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
+        <div><b>Open a drawing</b><small data-notr>DXF · AI · PLT · DST · DSB · SLW</small></div></button>`;
+    $$('#homeView button').forEach(b => b.setAttribute('aria-pressed', b.dataset.k === home.view));
+    renderRecent();
+  }
+  function renderRecent() {
+    const box = $('#homeRecent'); box.className = 'home-recent ' + home.view;
+    if (!home.info) { box.innerHTML = ''; return; }
+    const q = $('#homeFilter').value.trim().toLowerCase();
+    const list = home.info.recent.filter(r => !q || r.name.toLowerCase().includes(q));
+    if (!home.info.recent.length) { box.className = 'home-recent'; box.innerHTML = '<div class="home-empty">No recent files yet. Drawings and jobs you open or save show up here.</div>'; return; }
+    if (!list.length) { box.className = 'home-recent'; box.innerHTML = '<div class="home-empty">No recent file matches this filter.</div>'; return; }
+    box.innerHTML = list.map(r => {
+      const ext = extOf(r.name), cls = ext === 'STITCHLINE' ? 'job' : ext === 'SLW' ? 'slw' : '';
+      return `<div class="rcard" role="button" tabindex="0" data-open="${esc(r.path)}" title="${esc(r.path)}">
+        <div class="thumb" data-thumb="${esc(previewKey(r))}">${thumbHtml(r)}</div>
+        <div class="t"><span class="nm" data-notr>${esc(r.name)}</span><span class="meta"><span class="badge ${cls}" data-notr>${esc(ext === 'STITCHLINE' ? 'JOB' : ext)}</span><span class="when" data-notr>${esc(when(r.modified))}</span></span></div>
+        <span class="folder" data-notr>${esc(r.folder)}</span>
+        <button class="x" data-forget="${esc(r.path)}" title="Remove from recent" aria-label="Remove from recent"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>`;
+    }).join('');
+  }
+  /* thumbnails, one file at a time (the engine reads each drawing; large files get the file icon) */
+  async function loadPreviews() {
+    if (home.loading) return;
+    home.loading = true;
+    try {
+      for (const r of home.info?.recent || []) {
+        const key = previewKey(r);
+        if (home.previews.has(key)) continue;
+        const d = await call('preview', { path: r.path });
+        home.previews.set(key, d && d.paths ? d : null);
+        const el = $$('#homeRecent [data-thumb]').find(t => t.dataset.thumb === key);
+        if (el) el.innerHTML = thumbHtml(r);
+      }
+    } finally { home.loading = false; }
+  }
+  function openFromHome(path) {
+    api('open', { path }).then(d => { if (d) { sel.clear(); hideHome(); fitView(); if (stage === 'import') setStage('arrange'); } else if (homeOpen()) refreshHome(); });
+  }
+  const HOME_ACT = {
+    new: () => openSheet('newjob'),
+    open: () => ACT.open(),
+    editor: () => hideHome(),
+    keys: () => openSheet('keys'),
+    lang: () => setLang(window.STL_LANG === 'ar' ? 'en' : 'ar'),
+    theme: () => toggleTheme(),
+  };
+  $('#home').addEventListener('click', async e => {
+    if (!S) return;
+    const t = e.target;
+    const f = t.closest('[data-forget]');
+    if (f) {
+      e.stopPropagation();
+      const d = await call('forget_recent', { path: f.dataset.forget });
+      if (d) { home.info = d; S.recent = S.recent.filter(p => p !== f.dataset.forget); renderRecent(); }
+      return;
+    }
+    const o = t.closest('[data-open]'); if (o) return openFromHome(o.dataset.open);
+    const sz = t.closest('[data-size]'); if (sz) { const [w, h] = sz.dataset.size.split('x').map(Number); return openSheet('newjob', { w, h }); }
+    const a = t.closest('[data-home]'); if (a) return HOME_ACT[a.dataset.home]?.();
+    const vb = t.closest('#homeView button'); if (vb) { home.view = vb.dataset.k; store.set('homeView', home.view); renderHome(); return; }
+    if (t.closest('.home-check')) { const on = !store.get('homeOnStart', true); store.set('homeOnStart', on); $('#homeOnStart').setAttribute('aria-checked', on); }
+  });
+  $('#home').addEventListener('keydown', e => {
+    const o = e.target.closest?.('[data-open]');
+    if (o && e.target === o && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openFromHome(o.dataset.open); }
+  });
+  $('#homeFilter').addEventListener('input', renderRecent);
+  $('#btnHome').onclick = showHome;
+
   /* ------------------------------------------------------------------ toast */
   let tt;
   function toast(msg, err = false) {
@@ -1624,5 +1825,6 @@
   setInterval(() => fetch('/api/ping', { method: 'POST', body: '{}' }).catch(() => {}), 5000);
   resize();
   setTool('select');
-  api('state', {}, { quiet: true }).then(d => { if (d) { if (!d.job.shapes.length && stage !== 'import') setStage('import'); fitView(); } });
+  if (store.get('homeOnStart', true)) $('#home').hidden = false;
+  api('state', {}, { quiet: true }).then(d => { if (d) { if (!d.job.shapes.length && stage !== 'import') setStage('import'); fitView(); if (homeOpen()) showHome(); } });
 })();

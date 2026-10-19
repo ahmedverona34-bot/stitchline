@@ -160,6 +160,56 @@ fn stitch_check(job: &Job) -> Res<HashMap<i64, (u64, Stitched)>> {
     Ok(cache)
 }
 
+/// Files larger than this get no preview on the Home screen (reading them would hold the window up).
+const PREVIEW_MAX_BYTES: u64 = 25 << 20;
+/// At most this many points in one preview, spread over all its paths.
+const PREVIEW_MAX_PTS: usize = 4000;
+
+/// A small outline of a drawing or job file for the Home screen's recent files; the open job is not touched.
+/// {"paths": [[x, y, x, y, ...], ...], "closed": [bool, ...], "box": [x0, y0, x1, y1] or null}; no paths when the
+/// file cannot be read.
+pub fn preview_file(path: &str, dpi: f64) -> Value {
+    let too_big = std::fs::metadata(path).map(|m| m.len() > PREVIEW_MAX_BYTES).unwrap_or(true);
+    let paths: Vec<(Vec<(f64, f64)>, bool)> = if too_big {
+        vec![]
+    } else if platform::splitext(path).1.eq_ignore_ascii_case(JOB_EXT) {
+        std::fs::read(path)
+            .ok()
+            .and_then(|b| serde_json::from_slice::<Value>(&b).ok())
+            .and_then(|d| Job::from_dict(&d).ok())
+            .map(|j| j.shapes.into_iter().map(|s| (s.pts, s.closed)).collect())
+            .unwrap_or_default()
+    } else {
+        importers::read_any(path, dpi).map(|v| v.into_iter().map(|p| (p.pts, p.closed)).collect()).unwrap_or_default()
+    };
+    let total: usize = paths.iter().map(|(p, _)| p.len()).sum();
+    let step = total.div_ceil(PREVIEW_MAX_PTS).max(1);
+    let mut b = [f64::INFINITY, f64::INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY];
+    let mut out = vec![];
+    let mut closed = vec![];
+    for (pts, cl) in &paths {
+        if pts.is_empty() {
+            continue;
+        }
+        let mut flat = vec![];
+        for (i, &(x, y)) in pts.iter().enumerate() {
+            if !x.is_finite() || !y.is_finite() {
+                continue;
+            }
+            b = [b[0].min(x), b[1].min(y), b[2].max(x), b[3].max(y)];
+            if i % step == 0 || i + 1 == pts.len() {
+                flat.push(py::num(py::round_n(x, 2)));
+                flat.push(py::num(py::round_n(y, 2)));
+            }
+        }
+        if !flat.is_empty() {
+            out.push(Value::Array(flat));
+            closed.push(json!(cl));
+        }
+    }
+    json!({"paths": out, "closed": closed, "box": if out.is_empty() { Value::Null } else { json!(b) }})
+}
+
 impl Session {
     pub fn new(dialogs: Box<dyn Dialogs>) -> Session {
         Session::with_dir(dialogs, app_dir())
@@ -308,6 +358,44 @@ impl Session {
         new.extend(rec.into_iter().take(7));
         self.prefs.insert("recent".into(), Value::Array(new));
         self.save_prefs()
+    }
+
+    /// Take a file off the recent list (Home screen); a missing file is left off it anyway.
+    fn forget(&mut self, path: &str) -> Res<()> {
+        if let Some(Value::Array(a)) = self.prefs.get_mut("recent") {
+            a.retain(|p| p.as_str() != Some(path));
+        }
+        self.save_prefs()
+    }
+
+    /// What the Home screen shows: the recent files with their dates and sizes, and the job left open.
+    pub fn home(&self) -> Value {
+        let recent: Vec<Value> = match self.prefs.get("recent") {
+            Some(Value::Array(a)) => a
+                .iter()
+                .filter_map(|p| p.as_str())
+                .filter_map(|p| {
+                    let m = std::fs::metadata(p).ok()?;
+                    let modified = m.modified().ok().and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok()).map(|d| d.as_secs());
+                    Some(json!({"path": p, "name": platform::basename(p), "folder": platform::dirname(p), "modified": modified, "size": m.len()}))
+                })
+                .collect(),
+            _ => vec![],
+        };
+        let name = match &self.path {
+            Some(p) => platform::basename(p),
+            None => self.job.name.clone(),
+        };
+        json!({
+            "recent": recent,
+            "job": {"name": name, "path": self.path, "dirty": self.dirty, "shapes": self.job.shapes.len(), "layers": self.job.layers.len()},
+            "table": [get_f(&self.job.settings, "table_w", 1000.0), get_f(&self.job.settings, "table_h", 800.0)],
+        })
+    }
+
+    /// The drawing resolution used to read HPGL files (for previews read outside the session).
+    pub fn dpi(&self) -> f64 {
+        get_f(&self.job.settings, "dpi", 1016.0)
     }
 
     /// The whole state the window draws from.
@@ -678,9 +766,31 @@ impl Session {
                 return Ok(self.with_message(st, None));
             }
             "ping" => return Ok(json!({"ok": true})),
+            "home" => return Ok(self.home()),
+            "preview" => return Ok(preview_file(&str_arg(a, "path")?, self.dpi())),
+            "forget_recent" => {
+                self.forget(&str_arg(a, "path")?)?;
+                return Ok(self.home());
+            }
             "new" => {
                 let mut nj = Job::new();
                 nj.settings = self.job.settings.clone();
+                // the Home screen's New job: a name and the machine table size (mm)
+                if let Some(n) = opt_str(a, "name") {
+                    let n = truncate(n.trim(), 80);
+                    if !n.is_empty() {
+                        nj.name = n;
+                    }
+                }
+                for k in ["table_w", "table_h"] {
+                    if a.get(k).is_some() {
+                        let v = f(a, k, 0.0)?;
+                        if !(v > 0.0 && v <= 100_000.0) {
+                            return Err(Error::op("The table size must be between 1 mm and 100 m."));
+                        }
+                        nj.settings.insert(k.into(), json!(v));
+                    }
+                }
                 self.reset(nj, None);
                 self.autosave();
                 msg = Some("New job".into());

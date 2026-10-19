@@ -12,6 +12,7 @@
 
 <header class="topbar">
   <div class="brand">
+    <button class="icon-btn" id="btnHome" title="Home (Ctrl+Shift+H)" aria-label="Home"><svg viewBox="0 0 24 24"><path d="M4 11 12 4l8 7"/><path d="M6 9.5V20h4.5v-5.5h3V20H18V9.5"/></svg></button>
     <svg class="mark" viewBox="0 0 26 26" aria-hidden="true">
       <rect width="26" height="26" rx="7.5" fill="var(--fg)"/>
       <path d="M5.5 19.5c3.5-1 6-3.5 8.2-7.4" fill="none" stroke="var(--thread)" stroke-width="2" stroke-linecap="round" stroke-dasharray="2.6 2.4"/>
@@ -129,6 +130,48 @@
   <div class="scroll" id="insp"></div>
   <div class="i-foot" id="ifoot"></div>
 </aside>
+
+<!-- Home: the start screen (like Photoshop's): new job, open, continue, recent files -->
+<section class="home" id="home" aria-label="Home" hidden>
+  <aside class="home-nav">
+    <div class="home-brand"><svg class="mark" viewBox="0 0 26 26" aria-hidden="true"><rect width="26" height="26" rx="7.5" fill="var(--fg)"/><path d="M5.5 19.5c3.5-1 6-3.5 8.2-7.4" fill="none" stroke="var(--thread)" stroke-width="2" stroke-linecap="round" stroke-dasharray="2.6 2.4"/><path d="M20.5 5.5 13 13.6" stroke="var(--canvas)" stroke-width="2.2" stroke-linecap="round"/><circle cx="19.6" cy="6.4" r=".9" fill="var(--fg)"/></svg><b>Stitchline</b></div>
+    <button class="btn primary big" data-home="new" title="New job (Ctrl+N)"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span class="grow">New job</span><kbd data-notr>Ctrl N</kbd></button>
+    <button class="btn big" data-home="open" title="Open (Ctrl+O)"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span class="grow">Open…</span><kbd data-notr>Ctrl O</kbd></button>
+    <button class="btn ghost big" data-home="editor" id="homeBack" title="Back to the job (Esc)"><svg viewBox="0 0 24 24"><path d="M15 6 9 12l6 6"/></svg><span class="grow">Back to the job</span><kbd data-notr>Esc</kbd></button>
+    <div class="home-foot">
+      <label class="home-check"><button class="switch blue" role="switch" id="homeOnStart" aria-checked="true" aria-label="Show Home when Stitchline starts"></button><span>Show Home when Stitchline starts</span></label>
+      <div class="home-tools">
+        <button class="icon-btn" data-home="keys" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg></button>
+        <button class="icon-btn lang-btn" data-home="lang" title="Language" aria-label="Language" data-notr><span class="ar-only">EN</span><span class="en-only">ع</span></button>
+        <button class="icon-btn" data-home="theme" title="Light / dark (Ctrl+Shift+L)" aria-label="Switch light or dark"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></button>
+      </div>
+    </div>
+  </aside>
+  <div class="home-main">
+    <div class="home-inner">
+      <header class="home-head">
+        <h1>Welcome to Stitchline</h1>
+        <p>Start a new sewing job, open a drawing, or pick up where you left off. You can also drop a file anywhere in this window.</p>
+      </header>
+      <section id="homeContinue" hidden></section>
+      <section>
+        <h2>Start a new job</h2>
+        <div class="home-quick" id="homeQuick"></div>
+      </section>
+      <section>
+        <div class="home-row">
+          <h2>Recent</h2>
+          <span class="field wide home-filter"><svg viewBox="0 0 24 24" class="i"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="homeFilter" placeholder="Filter recent files" autocomplete="off"></span>
+          <div class="seg" role="group" aria-label="Recent files view" id="homeView">
+            <button aria-pressed="true" data-k="grid" title="Thumbnails" aria-label="Thumbnails"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg></button>
+            <button aria-pressed="false" data-k="list" title="List" aria-label="List"><svg class="i" viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg></button>
+          </div>
+        </div>
+        <div class="home-recent grid" id="homeRecent"></div>
+      </section>
+    </div>
+  </div>
+</section>
 
 <div class="scrim" id="paletteScrim" hidden>
   <div class="palette" role="dialog" aria-label="Find any tool">
