@@ -98,6 +98,11 @@
     $('#undo').disabled = !S.can_undo; $('#redo').disabled = !S.can_redo;
     $('#groupSel').disabled = !sel.size;
     $$('.stage').forEach(b => { b.setAttribute('aria-selected', b.dataset.stage === stage); b.classList.toggle('done', STAGES.indexOf(b.dataset.stage) < STAGES.indexOf(stage)); });
+    const si = STAGES.indexOf(stage), last = si === STAGES.length - 1;
+    $('#stepPrev').disabled = si === 0;
+    $('#stepNext').disabled = !S.job.shapes.length;
+    $('#stepNextLb').textContent = last ? 'Save machine file' : 'Next step';
+    $('#stepNext').title = last ? 'Save machine file (Ctrl+Alt+E)' : 'Next step (Page Down)';
     $('#empty').hidden = S.job.shapes.length > 0;
     $('#heroRecent').innerHTML = S.recent.length ? `<div class="eyebrow" style="text-align:left;padding:8px 8px 2px">Recent</div>` + S.recent.slice(0, 5).map(p => `<button data-act="openRecent" data-path="${esc(p)}"><svg class="i" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg><span>${esc(p.split(/[\\/]/).pop())}</span></button>`).join('') : '';
     $('#showOrder').setAttribute('aria-pressed', showOrder);
@@ -724,6 +729,14 @@
     renderAll();
   }
   $$('.stage').forEach(b => b.addEventListener('click', () => S && setStage(b.dataset.stage)));
+  function stepBy(d) {
+    if (!S) return;
+    const i = STAGES.indexOf(stage) + d;
+    if (i >= STAGES.length) return ACT.saveMachine();
+    if (i >= 0 && (d < 0 || S.job.shapes.length)) setStage(STAGES[i]);
+  }
+  $('#stepPrev').addEventListener('click', () => stepBy(-1));
+  $('#stepNext').addEventListener('click', () => stepBy(1));
 
   function selChanged() {
     if (!S) return;
@@ -1239,8 +1252,10 @@
     segoe: '"Segoe UI", Tahoma, system-ui, sans-serif',
     tahoma: 'Tahoma, "Segoe UI", sans-serif',
   };
-  const UI_DEF = { font: 'thmanyah', ts: 1, bold: false, accent: 'blue', zoom: 1, side: true, readout: true, viewbar: true, zoombar: true, grid: true, kbd: true };
+  const UI_DEF = { font: 'thmanyah', ts: 1, bold: false, accent: 'blue', zoom: 1, side: true, readout: true, viewbar: true, zoombar: true, grid: false, kbd: true };
   let ui = { ...UI_DEF, ...store.get('ui', {}) };
+  // the grid used to be on by default: switch it off once for everyone, Settings turns it back on
+  if (!store.get('gridOff1', false)) { ui.grid = false; store.set('gridOff1', true); if (store.get('ui', null)) store.set('ui', ui); }
   if (!FONTS[ui.font]) ui.font = UI_DEF.font;
   let zoomNow = null;
   function applyUI() {
@@ -1465,7 +1480,7 @@
       ['Set start point', 'C', 1], ['Measure', 'I', 1], ['Add shape', 'M', 1]]],
     ['View', [['Fit the drawing', 'Ctrl 0', 1], ['Real size (100%)', 'Ctrl 1', 1], ['Zoom in', 'Ctrl +', 1], ['Zoom out', 'Ctrl −', 1], ['Show stitches', 'Ctrl Y', 1], ['Show sewing order', 'Ctrl H', 1],
       ['Hide / show the stage panel', 'Shift Tab', 1], ['Find any tool', 'Ctrl K'], ['Light / dark', 'Ctrl Shift L'], ['Settings', 'Ctrl ,', 1], ['Keyboard shortcuts', 'Ctrl Alt Shift K', 1], ['Keyboard shortcuts', '?']]],
-    ['Stages', [['Import', '1'], ['Arrange', '2'], ['Stitch', '3'], ['Sequence', '4'], ['Output', '5']]],
+    ['Stages', [['Import', '1'], ['Arrange', '2'], ['Stitch', '3'], ['Sequence', '4'], ['Output', '5'], ['Next step', 'PageDown', 1], ['Previous step', 'PageUp', 1]]],
   ];
   const keyCaps = k => k === '← ↑ → ↓' ? `<kbd>${k}</kbd>` : k.startsWith('Shift ←') ? `<kbd>Shift</kbd><kbd>← ↑ → ↓</kbd>` : k.split(' ').map(x => `<kbd>${x}</kbd>`).join('');
   const SHEETS = {
@@ -1876,6 +1891,7 @@
     if (k === 'o') xform('mirror', { axis: e.shiftKey ? 'v' : 'h' });
     if (k === 's') openSheet('resize');
     if (/^[1-5]$/.test(k)) setStage(STAGES[+k - 1]);
+    if (e.key === 'PageDown' || e.key === 'PageUp') { e.preventDefault(); stepBy(e.key === 'PageDown' ? 1 : -1); }
   });
   document.addEventListener('keyup', e => {
     if (e.key === ' ') { spaceDown = false; cv.className = tool === 'pan' ? 'pan' : ''; }

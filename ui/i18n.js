@@ -186,6 +186,8 @@
     'Head 3 shape start': 'بداية شكل الرأس 3', 'Head 3 shape end': 'نهاية شكل الرأس 3', 'Stitch shape start': 'بداية شكل الغرز', 'Stitch shape end': 'نهاية شكل الغرز',
     // ---------------------------------------------------------------- sheets
     // ---------------------------------------------------------------- new design: hints, shortcuts sheet
+    'Previous step': 'الخطوة السابقة', 'Next step': 'الخطوة التالية', 'Previous step (Page Up)': 'الخطوة السابقة (Page Up)', 'Next step (Page Down)': 'الخطوة التالية (Page Down)',
+    'Place the shapes': 'وضع الأشكال', 'Save for the machine': 'الحفظ للماكينة',
     'Import (1)': 'استيراد (1)', 'Arrange (2)': 'ترتيب (2)', 'Stitch (3)': 'الغرز (3)', 'Sequence (4)': 'التسلسل (4)', 'Output (5)': 'الإخراج (5)',
     'Find any tool (Ctrl+K)': 'ابحث عن أي أداة (Ctrl+K)', 'Keyboard shortcuts (?)': 'اختصارات الكيبورد (?)', 'Keyboard shortcuts': 'اختصارات الكيبورد',
     'Light / dark (Ctrl+Shift+L)': 'فاتح / داكن (Ctrl+Shift+L)', 'Save machine file (Ctrl+Alt+E)': 'حفظ ملف الماكينة (Ctrl+Alt+E)', 'Save machine file': 'حفظ ملف الماكينة',

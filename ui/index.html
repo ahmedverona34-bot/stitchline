@@ -22,13 +22,6 @@
     <button class="icon-btn" id="btnHome" title="Home (Ctrl+Shift+H)" aria-label="Home"><svg viewBox="0 0 24 24"><path d="M4 11 12 4l8 7"/><path d="M6 9.5V20h4.5v-5.5h3V20H18V9.5"/></svg></button>
     <button class="file-chip" id="fileChip" title="Rename job"><span id="fileName">Untitled</span><span class="dot" id="dirtyDot"></span></button>
   </div>
-  <nav class="stages" data-tauri-drag-region role="tablist" aria-label="Workflow">
-    <button class="stage" role="tab" data-stage="import" title="Import (1)"><span class="n">1</span><span class="lb">Import</span></button>
-    <button class="stage" role="tab" data-stage="arrange" title="Arrange (2)"><span class="n">2</span><span class="lb">Arrange</span></button>
-    <button class="stage" role="tab" data-stage="stitch" title="Stitch (3)"><span class="n">3</span><span class="lb">Stitch</span></button>
-    <button class="stage" role="tab" data-stage="sequence" title="Sequence (4)"><span class="n">4</span><span class="lb">Sequence</span></button>
-    <button class="stage" role="tab" data-stage="output" title="Output (5)"><span class="n">5</span><span class="lb">Output</span></button>
-  </nav>
   <div class="tb-right" data-tauri-drag-region>
     <button class="search" id="openPalette" title="Find any tool (Ctrl+K)"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span>Find any tool</span><kbd data-notr>Ctrl K</kbd></button>
     <button class="icon-btn" id="btnOpen" title="Open (Ctrl+O)" aria-label="Open"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></button>
@@ -41,6 +34,19 @@
     <button class="btn primary tb-machine" id="saveTop" title="Save machine file (Ctrl+Alt+E)" aria-label="Save machine file"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span class="lb">Save machine file</span><kbd data-notr>Ctrl Alt E</kbd></button>
   </div>
 </header>
+
+<!-- the five steps of a job, in order, under the title bar -->
+<div class="stepbar" id="stepbar">
+  <button class="btn step-nav" id="stepPrev" title="Previous step (Page Up)"><svg class="flip" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg><span>Previous step</span></button>
+  <ol class="stages" role="tablist" aria-label="Workflow">
+    <li role="presentation"><button class="stage" role="tab" data-stage="import" title="Import (1)"><span class="n">1</span><span class="lb"><b>Import</b><small>Open a drawing</small></span></button></li>
+    <li role="presentation"><button class="stage" role="tab" data-stage="arrange" title="Arrange (2)"><span class="n">2</span><span class="lb"><b>Arrange</b><small>Place the shapes</small></span></button></li>
+    <li role="presentation"><button class="stage" role="tab" data-stage="stitch" title="Stitch (3)"><span class="n">3</span><span class="lb"><b>Stitch</b><small>Stitch settings</small></span></button></li>
+    <li role="presentation"><button class="stage" role="tab" data-stage="sequence" title="Sequence (4)"><span class="n">4</span><span class="lb"><b>Sequence</b><small>Sewing order</small></span></button></li>
+    <li role="presentation"><button class="stage" role="tab" data-stage="output" title="Output (5)"><span class="n">5</span><span class="lb"><b>Output</b><small>Save for the machine</small></span></button></li>
+  </ol>
+  <button class="btn primary step-nav" id="stepNext" title="Next step (Page Down)"><span id="stepNextLb">Next step</span><svg class="flip" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></button>
+</div>
 
 <nav class="rail" role="toolbar" aria-label="Canvas tools" aria-orientation="vertical">
   <button class="tool" aria-pressed="true" data-tool="select" data-key="V" title="Selection: move and resize whole shapes (V)" aria-label="Selection"><svg class="arrow-black" viewBox="0 0 24 24"><path d="M6 3v15.5l4.1-4 2.8 6.2 2.7-1.2-2.8-6.1H18.5z"/></svg></button>

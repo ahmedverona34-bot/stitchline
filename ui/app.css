@@ -48,7 +48,9 @@
   --font: "Thmanyah Sans", "Readex Pro", "Segoe UI", system-ui, sans-serif;
   --font-d: "Thmanyah Sans", "Readex Pro", "Segoe UI", system-ui, sans-serif;
   --mono: "Cascadia Mono", "Cascadia Code", Consolas, monospace;
-  --top: 52px;
+  --bar: 52px;             /* the title bar */
+  --steph: 58px;           /* the step bar under it */
+  --top: calc(var(--bar) + var(--steph));
   --wintop: 36px;
   --railw: 48px;
   --sidew: 248px;
@@ -125,11 +127,11 @@ input, textarea { user-select: text; }
 
 /* ---------- top bar ---------- */
 .topbar {
-  position: fixed; inset: 0 0 auto 0; height: var(--top); z-index: 20; background: var(--app); border-bottom: 1px solid var(--line);
-  display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 12px; padding: 0 12px;
+  position: fixed; inset: 0 0 auto 0; height: var(--bar); z-index: 20; background: var(--app); border-bottom: 1px solid var(--line);
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 0 12px;
 }
 /* the window buttons (no Windows title bar): always at the right edge, like Windows, also in Arabic */
-.winctl { position: fixed; top: 0; right: 0; z-index: 60; display: flex; height: var(--top); }
+.winctl { position: fixed; top: 0; right: 0; z-index: 60; display: flex; height: var(--bar); }
 body:has(#home:not([hidden])) .winctl { height: var(--wintop); }
 .winctl button { width: 46px; height: 100%; display: grid; place-items: center; border: 0; padding: 0; background: transparent; color: var(--fg-2); border-radius: 0; }
 .winctl button:hover { background: var(--well-strong); color: var(--fg); }
@@ -148,16 +150,32 @@ body:has(#home:not([hidden])) .winctl { height: var(--wintop); }
 .file-chip span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); flex: none; }
 .dot.dirty { background: var(--accent-bg); }
-.stages { display: flex; padding: 3px; gap: 2px; background: var(--well); border-radius: var(--r); }
-.stage {
-  display: flex; align-items: center; gap: 7px; border: 0; background: transparent; height: 32px; padding: 0 14px 0 10px; border-radius: var(--r-sm);
-  color: var(--fg-2); white-space: nowrap;
+/* ---------- step bar: the five steps of a job, numbered and joined by a line, with previous / next ---------- */
+.stepbar {
+  position: fixed; top: var(--bar); inset-inline: 0; height: var(--steph); z-index: 19; background: var(--app); border-bottom: 1px solid var(--line);
+  display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 12px; padding: 0 14px;
 }
-.stage .n { width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; font: 600 calc(10.5px * var(--ts)) var(--mono); background: var(--well-strong); color: var(--fg-2); }
-.stage:hover { color: var(--fg); }
-.stage[aria-selected="true"] { background: var(--solid); color: var(--fg); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 0 0 1px var(--line); }
+.step-nav { height: 36px; gap: 8px; width: auto; padding: 0 14px; white-space: nowrap; }
+#stepPrev { justify-self: start; } #stepNext { justify-self: end; }
+[dir="rtl"] .step-nav svg.flip { transform: scaleX(-1); }
+.stages { display: flex; align-items: center; list-style: none; margin: 0; padding: 0; min-width: 0; }
+.stages li { display: flex; align-items: center; }
+.stages li + li::before { content: ""; width: 34px; height: 2px; border-radius: 2px; background: var(--line-strong); margin: 0 4px; flex: none; }
+.stages li:has(.stage.done) + li::before { background: var(--ok); }
+.stage {
+  display: flex; align-items: center; gap: 10px; border: 1px solid transparent; background: transparent; height: 46px; padding: 0 14px 0 8px; border-radius: var(--r);
+  color: var(--fg-2); white-space: nowrap; text-align: start;
+}
+[dir="rtl"] .stage { padding: 0 8px 0 14px; }
+.stage .n { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font: 600 calc(13px * var(--ts)) var(--mono); background: var(--well-strong); color: var(--fg-2); flex: none; }
+.stage .lb { display: grid; line-height: 1.25; }
+.stage .lb b { font-weight: 600; font-size: calc(13.5px * var(--ts)); color: inherit; }
+.stage .lb small { font-size: calc(11.5px * var(--ts)); color: var(--fg-3); }
+.stage:hover { color: var(--fg); background: var(--well); }
+.stage[aria-selected="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--fg); }
 .stage[aria-selected="true"] .n { background: var(--accent-bg); color: var(--accent-fg); }
-.stage.done .n { background: var(--ok); color: #fff; }
+.stage.done .n { background: var(--ok); color: #fff; font-size: 0; }
+.stage.done .n::after { content: ""; width: 10px; height: 5px; border: solid #fff; border-width: 0 0 2px 2px; transform: translateY(-1px) rotate(-45deg); }
 .tb-right { display: flex; justify-content: flex-end; align-items: center; gap: 4px; min-width: 0; }
 .tb-sep { width: 1px; height: 18px; background: var(--line); margin: 0 2px; flex: none; }
 .search {
@@ -704,16 +722,17 @@ html[lang="ar"] .en-only, html:not([lang="ar"]) .ar-only { display: none; }
 
 @media (max-width: 1560px) {
   .search { min-width: 0; padding: 0; width: 32px; flex: none; justify-content: center; } .search span, .search kbd { display: none; }
-  .tb-machine kbd { display: none; } .stage { padding: 0 10px 0 7px; gap: 6px; } .topbar { gap: 8px; }
+  .tb-machine kbd { display: none; } .topbar { gap: 8px; }
 }
 @media (max-width: 1250px) {
   :root { --sidew: 224px; --inspw: 316px; }
   .search { min-width: 0; } .search span, .search kbd { display: none; }
   .brand .file-chip { max-width: 180px; }
   .tb-machine .lb { display: none; }
+  .stage .lb small { display: none; } .stages li + li::before { width: 20px; }
 }
 @media (max-width: 1000px) {
-  .stage { padding: 0 9px 0 6px; } .stage .lb { display: none; }
+  .step-nav span { display: none; } .step-nav { padding: 0 10px; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 html.lite * { transition: none !important; }
