@@ -530,13 +530,13 @@
     const ol = $('#order'); if (ol) wireOrder(ol);
   }
 
-  /* every layer takes this layer's stitch settings, after asking. Never from a laser layer: that would switch off the
-     stitches and back-tack of every sewing layer */
+  /* every sewing layer takes this layer's stitch settings, after asking (the engine leaves laser layers alone). Never
+     from a laser layer: that would switch off the stitches and back-tack of every sewing layer */
   function copySettings(id) {
     const L = layerById(id); if (!L) return;
     if (isLaser(L)) return toast('Pick a sewing layer to copy its stitch settings.', true);
     const same = o => Object.keys({ ...o, ...L.settings }).every(k => JSON.stringify(o[k]) === JSON.stringify(L.settings[k]));
-    const n = S.job.layers.filter(l => l.id !== id && !same(l.settings)).length;
+    const n = S.job.layers.filter(l => l.id !== id && !isLaser(l) && !same(l.settings)).length;
     if (!n) return toast('Every layer already uses these stitch settings');
     confirmSheet('Use these settings for every layer?', `${n} ${n === 1 ? 'layer gets' : 'layers get'} the stitch settings of “${esc(L.name)}”. You can undo this.`, 'Use for every layer',
       () => api('copy_layer_settings', { id }, { quiet: true }).then(d => d && toast('Every layer now uses these stitch settings')));

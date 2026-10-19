@@ -710,9 +710,15 @@ pub fn move_group(job: &mut Job, lid: &str, delta: i64) -> Res<()> {
     Ok(())
 }
 
+/// A laser cut layer: needle 3 with nothing that stitches (the window's isLaser).
+fn is_laser(l: &crate::model::Layer) -> bool {
+    l.needle == 3 && ["convert", "bt_start", "bt_end", "cl_start", "cl_end", "end_repeat"].iter().all(|k| !py::truthy(l.settings.get(*k)))
+}
+
+/// Every layer takes this layer's settings, except laser layers: stitch settings would make them sewn layers.
 pub fn copy_layer_settings(job: &mut Job, lid: &str) -> Res<()> {
     let src = job.layer(lid).ok_or(Error::Missing)?.settings.clone();
-    for l in job.layers.iter_mut() {
+    for l in job.layers.iter_mut().filter(|l| !is_laser(l)) {
         l.settings = src.clone();
     }
     Ok(())

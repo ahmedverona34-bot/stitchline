@@ -346,3 +346,24 @@ fn place_moves_shapes_to_a_layer_and_reorders_them_in_one_undo_step() {
     assert_eq!(st["job"]["order"], json!([a, b, c]));
     assert_eq!(s.job.shape(c).unwrap().layer, l1);
 }
+
+#[test]
+fn copying_a_sewing_layers_settings_leaves_laser_layers_alone_in_one_undo_step() {
+    let (mut s, _) = session(&home("copy-settings"));
+    let (_, sew) = add_line(&mut s);
+    s.handle("add_layer", &json!({})).unwrap();
+    let laser = s.job.layers.last().unwrap().id.clone();
+    s.handle("add_layer", &json!({})).unwrap();
+    let other = s.job.layers.last().unwrap().id.clone();
+    // the window's "Laser cut" button, then a stitch length of its own on the sewing layer
+    let off = json!({"convert": false, "bt_start": 0, "bt_end": 0, "cl_start": 0, "cl_end": 0, "end_repeat": 0});
+    s.handle("update_layer", &json!({"id": laser, "fields": {"needle": 3, "settings": off}})).unwrap();
+    s.handle("update_layer", &json!({"id": sew, "fields": {"settings": {"stitch_len": 4.5}}})).unwrap();
+    let (laser_before, other_before) = (s.job.layer(&laser).unwrap().settings.clone(), s.job.layer(&other).unwrap().settings.clone());
+    s.handle("copy_layer_settings", &json!({"id": sew})).unwrap();
+    assert_eq!(s.job.layer(&laser).unwrap().settings, laser_before);
+    assert_eq!(s.job.layer(&other).unwrap().settings, s.job.layer(&sew).unwrap().settings);
+    s.handle("undo", &json!({})).unwrap();
+    assert_eq!(s.job.layer(&other).unwrap().settings, other_before);
+    assert_eq!(s.job.layer(&sew).unwrap().settings["stitch_len"], json!(4.5));
+}
