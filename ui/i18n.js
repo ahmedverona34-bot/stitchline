@@ -18,6 +18,7 @@
     'Open (Ctrl+O)': 'فتح (Ctrl+O)', 'Open': 'فتح', 'Save job (Ctrl+S)': 'حفظ الشغلانة (Ctrl+S)', 'Save': 'حفظ',
     'Undo (Ctrl+Z)': 'تراجع (Ctrl+Z)', 'Undo': 'تراجع', 'Redo (Ctrl+Shift+Z)': 'إعادة (Ctrl+Shift+Z)', 'Redo': 'إعادة',
     'Light / dark': 'فاتح / داكن', 'Switch light or dark': 'التبديل بين الفاتح والداكن', 'Rename job': 'تغيير اسم الشغلانة',
+    'Minimize': 'تصغير', 'Maximize': 'تكبير', 'Restore': 'استعادة الحجم', 'Close (Alt+F4)': 'إغلاق (Alt+F4)',
     'Language': 'اللغة', 'English': 'English',
     'Settings': 'الإعدادات', 'Appearance': 'المظهر', 'Light': 'فاتح', 'Dark': 'داكن',
     // ---------------------------------------------------------------- settings window

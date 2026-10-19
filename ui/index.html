@@ -10,8 +10,15 @@
 <body>
 <canvas id="cv" aria-label="Drawing canvas"></canvas>
 
-<header class="topbar">
-  <div class="brand">
+<!-- window buttons: the window has no Windows title bar, the top bar is the title bar -->
+<div class="winctl" id="winctl" dir="ltr">
+  <button data-win="min" title="Minimize" aria-label="Minimize"><svg viewBox="0 0 12 12"><path d="M1.5 6h9"/></svg></button>
+  <button data-win="max" title="Maximize" aria-label="Maximize"><svg class="w-max" viewBox="0 0 12 12"><rect x="1.5" y="1.5" width="9" height="9" rx="1"/></svg><svg class="w-restore" viewBox="0 0 12 12"><rect x="1.5" y="3.5" width="7" height="7" rx="1"/><path d="M3.5 3.5V2.5a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-1"/></svg></button>
+  <button data-win="close" class="close" title="Close (Alt+F4)" aria-label="Close"><svg viewBox="0 0 12 12"><path d="m1.5 1.5 9 9M10.5 1.5l-9 9"/></svg></button>
+</div>
+
+<header class="topbar" data-tauri-drag-region>
+  <div class="brand" data-tauri-drag-region>
     <button class="icon-btn" id="btnHome" title="Home (Ctrl+Shift+H)" aria-label="Home"><svg viewBox="0 0 24 24"><path d="M4 11 12 4l8 7"/><path d="M6 9.5V20h4.5v-5.5h3V20H18V9.5"/></svg></button>
     <svg class="mark" viewBox="0 0 26 26" aria-hidden="true">
       <rect width="26" height="26" rx="7.5" fill="var(--fg)"/>
@@ -19,18 +26,18 @@
       <path d="M20.5 5.5 13 13.6" stroke="var(--canvas)" stroke-width="2.2" stroke-linecap="round"/>
       <circle cx="19.6" cy="6.4" r=".9" fill="var(--fg)"/>
     </svg>
-    <b>Stitchline</b>
+    <b data-tauri-drag-region>Stitchline</b>
     <span class="slash" aria-hidden="true">/</span>
     <button class="file-chip" id="fileChip" title="Rename job"><span id="fileName">Untitled</span><span class="dot" id="dirtyDot"></span></button>
   </div>
-  <nav class="stages" role="tablist" aria-label="Workflow">
+  <nav class="stages" data-tauri-drag-region role="tablist" aria-label="Workflow">
     <button class="stage" role="tab" data-stage="import" title="Import (1)"><span class="n">1</span><span class="lb">Import</span></button>
     <button class="stage" role="tab" data-stage="arrange" title="Arrange (2)"><span class="n">2</span><span class="lb">Arrange</span></button>
     <button class="stage" role="tab" data-stage="stitch" title="Stitch (3)"><span class="n">3</span><span class="lb">Stitch</span></button>
     <button class="stage" role="tab" data-stage="sequence" title="Sequence (4)"><span class="n">4</span><span class="lb">Sequence</span></button>
     <button class="stage" role="tab" data-stage="output" title="Output (5)"><span class="n">5</span><span class="lb">Output</span></button>
   </nav>
-  <div class="tb-right">
+  <div class="tb-right" data-tauri-drag-region>
     <button class="search" id="openPalette" title="Find any tool (Ctrl+K)"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span>Find any tool</span><kbd data-notr>Ctrl K</kbd></button>
     <button class="icon-btn" id="btnOpen" title="Open (Ctrl+O)" aria-label="Open"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></button>
     <button class="icon-btn" id="btnSave" title="Save job (Ctrl+S)" aria-label="Save"><svg viewBox="0 0 24 24"><path d="M5 3h11l3 3v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M7 3v5h8V3M7 21v-7h10v7"/></svg></button>
@@ -118,7 +125,7 @@
 <button class="insp-toggle" id="inspToggle" aria-expanded="true" title="Hide the panel (Shift+Tab)" aria-label="Hide the panel (Shift+Tab)"><svg viewBox="0 0 24 24"><path d="M10 6l6 6-6 6"/></svg></button>
 
 <!-- Home: the start screen (like Photoshop's): new job, open, continue, recent files -->
-<section class="home" id="home" aria-label="Home" hidden>
+<section class="home" id="home" aria-label="Home" data-tauri-drag-region hidden>
   <aside class="home-nav">
     <div class="home-brand"><svg class="mark" viewBox="0 0 26 26" aria-hidden="true"><rect width="26" height="26" rx="7.5" fill="var(--fg)"/><path d="M5.5 19.5c3.5-1 6-3.5 8.2-7.4" fill="none" stroke="var(--thread)" stroke-width="2" stroke-linecap="round" stroke-dasharray="2.6 2.4"/><path d="M20.5 5.5 13 13.6" stroke="var(--canvas)" stroke-width="2.2" stroke-linecap="round"/><circle cx="19.6" cy="6.4" r=".9" fill="var(--fg)"/></svg><span><b>Stitchline</b><small>Pattern sewing and laser cutting</small></span></div>
     <nav class="home-acts">

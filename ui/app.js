@@ -104,6 +104,15 @@
     $('#showStitch').setAttribute('aria-pressed', showStitch);
   }
 
+  /* window buttons: the window has no Windows title bar; the top bar (and Home's top strip) drags it */
+  const winctl = (action) => window.__TAURI_INTERNALS__?.invoke('window_ctl', { action }).then(maxed => {
+    const w = $('#winctl'), b = $('#winctl [data-win="max"]');
+    w.classList.toggle('maxed', maxed); b.title = maxed ? 'Restore' : 'Maximize'; b.setAttribute('aria-label', b.title);
+  }).catch(() => {});
+  $$('#winctl [data-win]').forEach(b => b.addEventListener('click', () => winctl(b.dataset.win)));
+  addEventListener('resize', () => winctl('state'));
+  winctl('state');
+
   /* ------------------------------------------------------------------ layers sidebar */
   const openLayers = new Set(store.get('openLayers', []));
   const thumb = (pts, closed) => {

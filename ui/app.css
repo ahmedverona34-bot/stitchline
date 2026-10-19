@@ -49,6 +49,7 @@
   --font-d: "Thmanyah Sans", "Readex Pro", "Segoe UI", system-ui, sans-serif;
   --mono: "Cascadia Mono", "Cascadia Code", Consolas, monospace;
   --top: 52px;
+  --wintop: 36px;
   --railw: 48px;
   --sidew: 248px;
   --inspw: 348px;
@@ -127,6 +128,16 @@ input, textarea { user-select: text; }
   position: fixed; inset: 0 0 auto 0; height: var(--top); z-index: 20; background: var(--app); border-bottom: 1px solid var(--line);
   display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 12px; padding: 0 12px;
 }
+/* the window buttons (no Windows title bar): always at the right edge, like Windows, also in Arabic */
+.winctl { position: fixed; top: 0; right: 0; z-index: 60; display: flex; height: var(--top); }
+body:has(#home:not([hidden])) .winctl { height: var(--wintop); }
+.winctl button { width: 46px; height: 100%; display: grid; place-items: center; border: 0; padding: 0; background: transparent; color: var(--fg-2); border-radius: 0; }
+.winctl button:hover { background: var(--well-strong); color: var(--fg); }
+.winctl button.close:hover { background: #c42b1c; color: #fff; }
+.winctl button:focus-visible { outline-offset: -2px; }
+.winctl svg { width: 11px; height: 11px; stroke: currentColor; fill: none; stroke-width: 1.1; }
+.winctl .w-restore, .winctl.maxed .w-max { display: none; } .winctl.maxed .w-restore { display: block; }
+.topbar { padding-right: calc(12px + 138px); }
 .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .mark { width: 26px; height: 26px; flex: none; }
 .brand b { font: 600 calc(14px * var(--ts)) var(--font-d); }
@@ -541,6 +552,7 @@ html.lite .setwin { animation: none; }
 .home {
   --home-bg: var(--well); --home-card: var(--app); --home-sunk: var(--well); --home-nav: var(--app);
   position: fixed; inset: 0; z-index: 30; background: var(--home-bg); display: grid; grid-template-columns: 264px minmax(0, 1fr);
+  padding-top: var(--wintop); /* the title strip: drag the window here, window buttons on the right */
 }
 :root[data-theme="dark"] .home { --home-bg: #1b1b1e; --home-card: #232327; --home-sunk: #161618; --home-nav: #161618; }
 html[lang="ar"] .en-only, html:not([lang="ar"]) .ar-only { display: none; }

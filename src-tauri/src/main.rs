@@ -168,6 +168,21 @@ fn set_zoom(window: tauri::WebviewWindow, scale: f64) -> Result<(), String> {
     window.set_zoom(scale.clamp(0.5, 2.0)).map_err(|e| e.to_string())
 }
 
+/// The window buttons drawn by the UI (the window has no Windows title bar): "min", "max" (maximize / restore),
+/// "close" (goes through the close question like Alt+F4), or "state". Returns whether the window is maximized.
+#[tauri::command]
+fn window_ctl(window: tauri::WebviewWindow, action: String) -> Result<bool, String> {
+    let r = match action.as_str() {
+        "min" => window.minimize(),
+        "max" if window.is_maximized().unwrap_or(false) => window.unmaximize(),
+        "max" => window.maximize(),
+        "close" => window.close(),
+        _ => Ok(()),
+    };
+    r.map_err(|e| e.to_string())?;
+    window.is_maximized().map_err(|e| e.to_string())
+}
+
 /// The window's X (or Alt+F4) with unsaved changes: keep the window and let the UI ask Save / Don't save / Cancel.
 fn on_close_requested(app: &AppHandle, api: &tauri::CloseRequestApi) {
     if QUITTING.load(Ordering::SeqCst) {
@@ -209,7 +224,7 @@ fn percent_decode(s: &str) -> String {
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
-        .invoke_handler(tauri::generate_handler![api, upload, quit, set_zoom])
+        .invoke_handler(tauri::generate_handler![api, upload, quit, set_zoom, window_ctl])
         .on_window_event(|window, event| {
             if let WindowEvent::CloseRequested { api, .. } = event {
                 on_close_requested(window.app_handle(), api);
@@ -224,6 +239,8 @@ fn main() {
                 .inner_size(1480.0, 920.0)
                 .min_inner_size(900.0, 600.0)
                 .center()
+                // the UI draws its own title bar (top bar + window buttons), in the app's colours
+                .decorations(false)
                 .initialization_script(FETCH_SHIM)
                 // the UI handles dropped files itself (HTML drag and drop)
                 .disable_drag_drop_handler()
