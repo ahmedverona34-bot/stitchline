@@ -1733,26 +1733,28 @@
         <span class="btn primary">Continue</span></button>`;
     }
     $('#homeQuick').innerHTML = tableSizes().map(([w, h], i) => {
-      const k = Math.min(116 / w, 68 / h);
+      const k = Math.min(132 / w, 66 / h);
       return `<button class="qcard" data-size="${w}x${h}" title="New job with this machine table">
         <div class="pv"><div class="sheetbox" style="width:${Math.max(8, w * k).toFixed(0)}px;height:${Math.max(8, h * k).toFixed(0)}px"></div></div>
-        <div><b>${sizeTxt(w, h)}</b><small>${i === 0 ? 'Machine table' : 'Used before'}</small></div></button>`;
+        <div class="tx"><b>${sizeTxt(w, h)}</b><small>${i === 0 ? 'Machine table' : 'Used before'}</small></div></button>`;
     }).join('') + `<button class="qcard" data-home="new" title="New job (Ctrl+N)">
-        <div class="pv"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M12 8v8M8 12h8"/></svg></div>
-        <div><b>Custom size…</b><small>Name and table size</small></div></button>
+        <div class="pv dashed"><svg viewBox="0 0 24 24"><path d="M12 6v12M6 12h12"/></svg></div>
+        <div class="tx"><b>Custom size…</b><small>Name and table size</small></div></button>
       <button class="qcard" data-home="open" title="Open (Ctrl+O)">
         <div class="pv"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
-        <div><b>Open a drawing</b><small data-notr>DXF · AI · PLT · DST · DSB · SLW</small></div></button>`;
+        <div class="tx"><b>Open a drawing</b><small data-notr>DXF · AI · PLT · DST · DSB · SLW</small></div></button>`;
     $$('#homeView button').forEach(b => b.setAttribute('aria-pressed', b.dataset.k === home.view));
     renderRecent();
   }
   function renderRecent() {
     const box = $('#homeRecent'); box.className = 'home-recent ' + home.view;
+    const n = home.info?.recent.length || 0, cnt = $('#homeCount');
+    cnt.hidden = !n; cnt.textContent = n;
     if (!home.info) { box.innerHTML = ''; return; }
     const q = $('#homeFilter').value.trim().toLowerCase();
     const list = home.info.recent.filter(r => !q || r.name.toLowerCase().includes(q));
-    if (!home.info.recent.length) { box.className = 'home-recent'; box.innerHTML = '<div class="home-empty">No recent files yet. Drawings and jobs you open or save show up here.</div>'; return; }
-    if (!list.length) { box.className = 'home-recent'; box.innerHTML = '<div class="home-empty">No recent file matches this filter.</div>'; return; }
+    if (!home.info.recent.length) { box.className = 'home-recent'; box.innerHTML = `<div class="home-empty">${FILE_ICON.replace('ftype', 'i')}<span>No recent files yet. Drawings and jobs you open or save show up here.</span></div>`; return; }
+    if (!list.length) { box.className = 'home-recent'; box.innerHTML = '<div class="home-empty"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span>No recent file matches this filter.</span></div>'; return; }
     box.innerHTML = list.map(r => {
       const ext = extOf(r.name), cls = ext === 'STITCHLINE' ? 'job' : ext === 'SLW' ? 'slw' : '';
       return `<div class="rcard" role="button" tabindex="0" data-open="${esc(r.path)}" title="${esc(r.path)}">
