@@ -140,8 +140,6 @@ body:has(#home:not([hidden])) .winctl { height: var(--wintop); }
 .topbar { padding-right: calc(12px + 138px); }
 .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .mark { width: 26px; height: 26px; flex: none; }
-.brand b { font: 600 calc(14px * var(--ts)) var(--font-d); }
-.slash { color: var(--line-strong); }
 .file-chip {
   display: inline-flex; align-items: center; gap: 8px; height: 30px; padding: 0 8px; border-radius: var(--r-sm); min-width: 0;
   background: transparent; color: var(--fg-2); border: 0; max-width: 340px;
@@ -716,7 +714,6 @@ html[lang="ar"] .en-only, html:not([lang="ar"]) .ar-only { display: none; }
 }
 @media (max-width: 1000px) {
   .stage { padding: 0 9px 0 6px; } .stage .lb { display: none; }
-  .brand b, .slash { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 html.lite * { transition: none !important; }
