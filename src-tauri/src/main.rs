@@ -1,7 +1,8 @@
 //! Stitchline desktop app: the window (WebView2) shows ../ui; every UI action goes to the
 //! Rust engine (stitchline-engine) through two commands. A small script injected before the page loads turns the
 //! UI's fetch('/api/<action>') calls into those commands, so the UI works the same as with the Python server.
-#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+// a window app in every build, debug included: no console window opens with it (nothing is printed to one)
+#![windows_subsystem = "windows"]
 
 use serde_json::{json, Value};
 use std::panic::{catch_unwind, AssertUnwindSafe};
