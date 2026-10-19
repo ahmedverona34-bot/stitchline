@@ -695,7 +695,8 @@
     }
     const li = e.target.closest('#prog li');
     if (li) { progSel = +li.dataset.i; const p = S.program[progSel]; if (p.shape != null) { sel = new Set([p.shape]); } renderInspector(); draw(); return; }
-    if (!e.target.closest('#ctx')) $('#ctx').hidden = true;
+    // the layer row's needle button opens #ctx on this same click: leave it open
+    if (!e.target.closest('#ctx, #layers [data-needle]')) $('#ctx').hidden = true;
   });
 
   /* drag to reorder: dropping on the top half of a row puts the shape above it, on the bottom half below it
@@ -811,6 +812,8 @@
     if (!S || !W) return;
     readColors();
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    // labels are positioned from their left edge; an RTL page would otherwise right-align and reorder them
+    ctx.direction = 'ltr'; ctx.textAlign = 'left';
     ctx.fillStyle = colors.canvas; ctx.fillRect(0, 0, W, H);
     drawGrid();
     const stitchMode = showStitch && (stage === 'stitch' || stage === 'sequence' || stage === 'output');
@@ -1031,7 +1034,7 @@
       ctx.fillStyle = big ? colors.accent : colors.fg; ctx.beginPath(); ctx.arc(X, Y, r, 0, 7); ctx.fill();
       ctx.fillStyle = colors.canvas; ctx.font = `600 ${big ? 12 : 11}px system-ui`; ctx.fillText(String(it.n), X, Y + .5);
     }
-    ctx.globalAlpha = 1; ctx.textAlign = 'start'; ctx.textBaseline = 'alphabetic';
+    ctx.globalAlpha = 1; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
   }
 
   /* selection tools: black arrow (tool 'select', V) moves and resizes whole shapes inside a bounding box;
@@ -2012,7 +2015,7 @@
     return out.slice(0, 4);
   }
   const rememberSize = (w, h) => store.set('tableSizes', [[w, h], ...store.get('tableSizes', []).filter(([a, b]) => a !== w || b !== h)].slice(0, 4));
-  const sizeTxt = (w, h) => `<span data-notr class="num">${+(+w).toFixed(1)} × ${+(+h).toFixed(1)}</span> <span>mm</span>`;
+  const sizeTxt = (w, h) => `<span data-notr dir="ltr" class="num">${+(+w).toFixed(1)} × ${+(+h).toFixed(1)}</span> <span>mm</span>`;
 
   function renderHome() {
     if (!S || !homeOpen()) return;
