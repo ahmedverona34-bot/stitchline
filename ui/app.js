@@ -821,8 +821,9 @@
       if (guide) { ctx.globalAlpha = alpha; ctx.setLineDash([5 / k, 4 / k]); ctx.strokeStyle = colors.guide; ctx.lineWidth = 1 / k; ctx.stroke(path); ctx.setLineDash([]); directMark(); continue; }
       const laser = isLaser(L);
       if (laser) {
-        ctx.globalAlpha = alpha; ctx.strokeStyle = colors['laser-glow']; ctx.lineWidth = 6 / k; ctx.stroke(path);
-        ctx.strokeStyle = isSel && !stitchMode ? colors.accent : colors.laser; ctx.lineWidth = 1.4 / k; ctx.stroke(path);
+        // laser cuts keep the layer's colour, with a soft glow in that colour
+        ctx.globalAlpha = alpha * 0.25; ctx.strokeStyle = L.color; ctx.lineWidth = 6 / k; ctx.stroke(path);
+        ctx.globalAlpha = alpha; ctx.strokeStyle = isSel && !stitchMode ? colors.accent : L.color; ctx.lineWidth = 1.4 / k; ctx.stroke(path);
       } else {
         ctx.strokeStyle = isSel && !stitchMode ? colors.accent : L.color;
         ctx.lineWidth = (stitchMode ? 1 : 1.8) / k; ctx.globalAlpha = alpha * (stitchMode && dots ? 0.45 : 1); ctx.stroke(path);
@@ -1268,7 +1269,7 @@
       if (prev) {
         ctx.beginPath(); ctx.moveTo(sx(prev[0]), sy(prev[1])); ctx.lineTo(sx(x), sy(y));
         if (first) { ctx.strokeStyle = colors['fg-3']; ctx.lineWidth = 1; ctx.setLineDash([3, 4]); ctx.stroke(); ctx.setLineDash([]); }
-        else if (laser) { ctx.strokeStyle = colors['laser-glow']; ctx.lineWidth = 5; ctx.stroke(); ctx.strokeStyle = '#2a0d0a'; ctx.lineWidth = 1.6; ctx.stroke(); }
+        else if (laser) { ctx.globalAlpha = 0.25; ctx.strokeStyle = col; ctx.lineWidth = 5; ctx.stroke(); ctx.globalAlpha = 1; ctx.lineWidth = 1.6; ctx.stroke(); }
         else { ctx.strokeStyle = col; ctx.lineWidth = 2.2; ctx.stroke(); }
       }
       prev = [x, y];
