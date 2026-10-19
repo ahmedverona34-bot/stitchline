@@ -286,7 +286,7 @@
           ${sec('rot', 'Rotate, mirror & size', '', `
             <div class="row">${fld('ang', store.get('ang', '90.00'), '°')}<button class="btn grow" data-act="rotate">Rotate</button></div>
             <div class="grid2"><button class="btn" data-act="mirror" data-axis="h">Mirror left–right</button><button class="btn" data-act="mirror" data-axis="v">Mirror up–down</button></div>
-            <div class="row">${fld('scx', '100.0', '%', 'sm')}${fld('scy', '100.0', '%', 'sm')}<button class="btn grow" data-act="scaleSel">Resize</button></div>`, true)}
+            <button class="btn" data-act="sheet" data-sheet="resize">Resize…</button>`, true)}
           ${sec('path', 'Shape path', 'start · direction · ends', `
             <div class="grid2"><button class="btn" data-act="tool" data-tool="start">Pick start point</button><button class="btn" data-act="op" data-op="reverse">Reverse direction</button></div>
             <span class="lbl" style="color:var(--fg-2)">Start every shape at the</span>
@@ -497,7 +497,6 @@
     toOrigin: () => { if (!needSel()) return; const bb = bounds(selected()); api('move', { ids: [...sel], dx: -bb[0], dy: -bb[1] }, { quiet: true }); },
     rotate: () => needSel() && api('rotate', { ids: [...sel], angle: num('ang') }, { quiet: true }),
     mirror: b => needSel() && api('mirror', { ids: [...sel], axis: b.dataset.axis }, { quiet: true }),
-    scaleSel: () => needSel() && api('scale', { ids: [...sel], sx: num('scx') / 100, sy: num('scy') / 100 }, { quiet: true }),
     startAt: b => needSel() && api('start_at', { ids: [...sel], side: b.dataset.side }, { quiet: true }),
     extend: () => needSel() && api('extend', { ids: [...sel], start: num('es'), end: num('ee') }, { quiet: true }),
     merge: () => needSel() && api('merge_points', { ids: [...sel], tol: num('cp') }),
@@ -1234,23 +1233,49 @@
       <div class="body"><div class="stage-list" id="ioList">${ioRows(list)}</div>
       <div class="row"><select class="sel" id="ioShape" style="flex:1">${S.job.order.map(shapeById).filter(Boolean).map(s => `<option value="${s.id}" ${sel.has(s.id) ? 'selected' : ''}>${esc(nameOf(s))}</option>`).join('')}</select>${fld('ioAt', '1', 'st', 'sm')}${fld('ioPort', '1', 'IO', 'sm')}<button class="btn" data-addio>Add</button></div></div>
       <footer><button class="btn" data-close>Cancel</button><button class="btn primary" data-ok>Save</button></footer>`; },
+    resize: () => {
+      const [x0, y0, x1, y1] = bounds(selected()); const u = store.get('rzUnit', 'cm');
+      Object.assign(sheetCtx, { w: x1 - x0, h: y1 - y0, unit: u });
+      return `<header><h3>Resize</h3><p>Type the new size. The selection keeps its centre.</p></header>
+      <div class="body">${row('Unit', `<div class="seg" role="group" id="rzUnit"><button aria-pressed="${u === 'cm'}" data-k="cm">cm</button><button aria-pressed="${u === 'mm'}" data-k="mm">mm</button></div>`)}
+      ${row('Now', `<b class="num" id="rzNow"></b>`)}
+      ${row('Width', fld('rzW', '', u))}${row('Height', fld('rzH', '', u))}
+      ${row('Keep proportions', sw('rzLock', true))}
+      <p class="hint num" id="rzPct" data-notr></p></div>
+      <footer><button class="btn" data-close>Cancel</button><button class="btn primary" data-ok>Resize</button></footer>`; },
     ioRev: () => `<header><h3>IO on reverse</h3><p>Switch an output while the machine sews backwards (back-tacks).</p></header>
       <div class="body">${row('Use an output on reverse stitching', sw('iorOn', J().io_on_reverse))}${row('Output number', fld('iorPort', J().io_reverse_port, 'IO'))}</div>
       <footer><button class="btn" data-close>Cancel</button><button class="btn primary" data-ok>Save</button></footer>`,
   };
+  /* Resize dialog: sizes are shown in cm or mm, the engine works in mm */
+  const rzK = () => sheetCtx.unit === 'cm' ? 10 : 1;
+  const rzShow = mm => (mm / rzK()).toFixed(sheetCtx.unit === 'cm' ? 4 : 3);
+  function rzFill(wmm, hmm) {
+    const c = sheetCtx, t = window.tr || (x => x);
+    $('#rzW').value = rzShow(wmm); $('#rzH').value = rzShow(hmm);
+    $('#rzW').disabled = c.w < 1e-9; $('#rzH').disabled = c.h < 1e-9;   // a straight line has no width or no height to change
+    $$('#sheet .field u').forEach(x => { x.textContent = t(c.unit); });
+    $('#rzNow').textContent = `${rzShow(c.w)} × ${rzShow(c.h)} ${t(c.unit)}`;
+    rzPct();
+  }
+  function rzPct() {
+    const c = sheetCtx, nw = num('rzW') * rzK(), nh = num('rzH') * rzK();
+    $('#rzPct').textContent = `${c.w > 1e-9 ? (nw / c.w * 100).toFixed(1) : '100.0'}% × ${c.h > 1e-9 ? (nh / c.h * 100).toFixed(1) : '100.0'}%`;
+  }
   const ptRow = (i, p) => `<tr data-i="${i}"><td>${i + 1}</td><td><span class="field"><input value="${p[0].toFixed(3)}" data-c="0"></span></td><td><span class="field"><input value="${p[1].toFixed(3)}" data-c="1"></span></td><td><button class="icon-btn" data-delpt aria-label="Delete point"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></td></tr>`;
   const defRows = d => S.events.map(ev => `<div><span style="color:var(--fg)">${ev}</span><span>${(d[ev] || []).map((x, i) => `<button class="btn sm ghost" data-deldef="${esc(ev)}|${i}" title="Remove">${esc(x.name)}${x.value ? ' ' + esc(x.value) : ''} ✕</button>`).join('') || '—'}</span><span></span></div>`).join('');
   const ioRows = l => l.length ? l.map((x, i) => `<div>${esc(nameOf(shapeById(x.shape) || { id: x.shape, pts: [], name: '' }))}<span>stitch ${x.at} · IO ${x.port}</span><button class="btn sm ghost" data-delio="${i}">Remove</button></div>`).join('') : '<div><span>No outputs yet.</span><span></span><span></span></div>';
 
   function openSheet(k, c = {}) {
     if (!S) return;
-    if (['ref', 'points', 'marks', 'dup'].includes(k) && !needSel()) return;
+    if (['ref', 'points', 'marks', 'dup', 'resize'].includes(k) && !needSel()) return;
     if (k === 'keys' && !$('#sheetScrim').hidden && $('#sheet').dataset.k === 'keys') return closeSheet();
     sheetCtx = c;
     const sh = $('#sheet');
     sh.className = 'sheet' + (k === 'points' || k === 'defaults' ? ' wide' : k === 'keys' ? ' keys' : '');
     sh.innerHTML = SHEETS[k](); sh.dataset.k = k;
     $('#sheetScrim').hidden = false;
+    if (k === 'resize') { rzFill(sheetCtx.w, sheetCtx.h); const f = $('#rzW').disabled ? $('#rzH') : $('#rzW'); f.focus(); f.select(); return; }
     ($('#sheet input') || $('#sheet [data-ok]') || $('#sheet [data-close]'))?.focus();
   }
   const closeSheet = () => { $('#sheetScrim').hidden = true; };
@@ -1315,6 +1340,13 @@
     },
     defaults: () => setJob({ defaults: sheetCtx.defaults }),
     io: () => setJob({ io_positions: sheetCtx.io }),
+    resize: () => {
+      const c = sheetCtx, nw = num('rzW') * rzK(), nh = num('rzH') * rzK();
+      if ((c.w > 1e-9 && !(nw > 0)) || (c.h > 1e-9 && !(nh > 0))) { toast('Enter a size more than 0.', true); return false; }
+      const sx = c.w > 1e-9 ? nw / c.w : 1, sy = c.h > 1e-9 ? nh / c.h : 1;
+      if (Math.abs(sx - 1) < 1e-9 && Math.abs(sy - 1) < 1e-9) return;   // same size: nothing to do
+      api('scale', { ids: [...sel], sx, sy }, { quiet: true });          // about the centre, one undo step
+    },
     ioRev: () => setJob({ io_on_reverse: swOn('iorOn'), io_reverse_port: Math.max(1, Math.round(num('iorPort'))) }),
   };
   $('#sheetScrim').addEventListener('click', async e => {
@@ -1325,6 +1357,7 @@
     if (sb) {
       $$('button', sb.parentElement).forEach(b => b.setAttribute('aria-pressed', b === sb));
       if (sb.parentElement.id === 'mKind') $('#zzOpts').hidden = sb.dataset.k !== 'zigzag';
+      if (sb.parentElement.id === 'rzUnit') { const wmm = num('rzW') * rzK(), hmm = num('rzH') * rzK(); sheetCtx.unit = sb.dataset.k; store.set('rzUnit', sheetCtx.unit); rzFill(wmm, hmm); }
       if (sb.parentElement.id === 'gKind') { const k = sb.dataset.k === 'laser' ? '3' : '1'; $$('#gNeedle button').forEach(b => b.setAttribute('aria-pressed', b.dataset.k === k)); }
       return;
     }
@@ -1343,13 +1376,22 @@
     if (t.closest('[data-addio]')) { sheetCtx.io.push({ shape: +$('#ioShape').value, at: Math.max(1, Math.round(num('ioAt'))), port: Math.max(1, Math.round(num('ioPort'))) }); $('#ioList').innerHTML = ioRows(sheetCtx.io); return; }
     const di = t.closest('[data-delio]'); if (di) { sheetCtx.io.splice(+di.dataset.delio, 1); $('#ioList').innerHTML = ioRows(sheetCtx.io); }
   });
+  $('#sheet').addEventListener('input', e => {
+    if ($('#sheet').dataset.k !== 'resize' || !/^rz[WH]$/.test(e.target.id)) return;
+    const c = sheetCtx;
+    if (swOn('rzLock') && c.w > 1e-9 && c.h > 1e-9) {
+      const f = e.target.id === 'rzW' ? num('rzW') * rzK() / c.w : num('rzH') * rzK() / c.h;
+      if (f > 0) $(e.target.id === 'rzW' ? '#rzH' : '#rzW').value = rzShow((e.target.id === 'rzW' ? c.h : c.w) * f);
+    }
+    rzPct();
+  });
   $('#sheet').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); $('#sheet [data-ok]')?.click(); } e.stopPropagation(); if (e.key === 'Escape') closeSheet(); });
 
   /* ------------------------------------------------------------------ command palette */
   const TOOLS = [
     ['Open file', 'import', () => ACT.open()], ['Insert another drawing into the job', 'import', () => ACT.insert()], ['Save job', 'import', () => ACT.save()], ['Save job as…', 'import', () => api('save', { as_new: true })],
     ['Remove overlapping shapes on open', 'import'], ["Don't join lines automatically", 'import'], ['Work without reference point', 'import'], ['Drawing resolution (dpi)', 'import'], ['Scale drawing', 'import'], ['Calculate scale from a measurement', 'import', () => openSheet('calc')], ['Machine table size', 'import'], ['New job', 'import', () => confirmSheet('New job?', 'The current job closes. Save it first if you want to keep it.', 'New job', () => { sel.clear(); api('new'); })],
-    ['Add shape (point, line, rectangle, circle)', 'arrange', () => openSheet('add')], ['Duplicate', 'arrange', () => openSheet('dup')], ['Move shape to another layer', 'arrange'], ['New empty layer', 'arrange', () => $('#addLayer').click()], ['Reference point', 'arrange', () => openSheet('ref')], ['Nudge / move', 'arrange'], ['Rotate', 'arrange'], ['Mirror', 'arrange'], ['Resize selected shapes', 'arrange'], ['Pick start point', 'arrange', () => setTool('start')], ['Reverse direction', 'arrange', () => ACT.op({ dataset: { op: 'reverse' } })], ['Extend or shorten ends', 'arrange'], ['Edit points one by one', 'arrange', () => openSheet('points')], ['Split a shape', 'arrange'], ['Merge close points', 'arrange'], ['Delete short lines', 'arrange'], ['Join line ends', 'arrange'], ['Select all', 'arrange', () => ACT.selectAll()], ['Delete selected', 'arrange', () => ACT.op({ dataset: { op: 'delete' } })], ['Start every shape at top / bottom / left / right', 'arrange'], ['Sections: zigzag, back-tack, special length', 'arrange', () => openSheet('marks')], ['Measure distance', 'arrange', () => setTool('measure')], ['Undo', 'arrange', () => api('undo')], ['Redo', 'arrange', () => api('redo')],
+    ['Add shape (point, line, rectangle, circle)', 'arrange', () => openSheet('add')], ['Duplicate', 'arrange', () => openSheet('dup')], ['Move shape to another layer', 'arrange'], ['New empty layer', 'arrange', () => $('#addLayer').click()], ['Reference point', 'arrange', () => openSheet('ref')], ['Nudge / move', 'arrange'], ['Rotate', 'arrange'], ['Mirror', 'arrange'], ['Resize selected shapes', 'arrange', () => openSheet('resize')], ['Pick start point', 'arrange', () => setTool('start')], ['Reverse direction', 'arrange', () => ACT.op({ dataset: { op: 'reverse' } })], ['Extend or shorten ends', 'arrange'], ['Edit points one by one', 'arrange', () => openSheet('points')], ['Split a shape', 'arrange'], ['Merge close points', 'arrange'], ['Delete short lines', 'arrange'], ['Join line ends', 'arrange'], ['Select all', 'arrange', () => ACT.selectAll()], ['Delete selected', 'arrange', () => ACT.op({ dataset: { op: 'delete' } })], ['Start every shape at top / bottom / left / right', 'arrange'], ['Sections: zigzag, back-tack, special length', 'arrange', () => openSheet('marks')], ['Measure distance', 'arrange', () => setTool('measure')], ['Undo', 'arrange', () => api('undo')], ['Redo', 'arrange', () => api('redo')],
     ['Make a layer from the selection (Ctrl+G)', 'arrange', () => ACT.groupSheet()], ['Delete layer, keep its shapes (Ctrl+Shift+G)', 'arrange'], ['Set the needle of a layer', 'arrange'],
     ['Light / dark (Ctrl+Shift+L)', 'import', () => $('#theme').click()],
     ['Keyboard shortcuts', 'import', () => openSheet('keys')],

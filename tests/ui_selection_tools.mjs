@@ -253,6 +253,43 @@ check(typed && await toolNow() === 'select', '16. A typed into a field does not 
 await js(`document.activeElement.blur()`);
 await key('Escape', 'Escape');
 
+// --- Resize dialog (Arrange → Rotate, mirror & size → Resize…): driven through the page, not the mouse
+{
+  st = await engine();
+  const s0 = st.shapes.find(s => s.id === target.id), b0 = bbox(s0.pts);
+  const w0 = b0[2] - b0[0], h0 = b0[3] - b0[1];
+  await js(`document.querySelector('#layers .shape-row[data-s="${target.id}"]').click()`); await sleep(200);
+  await js(`document.querySelector('[data-sheet="resize"]').click()`); await sleep(200);
+  check(await js(`!document.getElementById('sheetScrim').hidden && document.getElementById('sheet').dataset.k === 'resize'`), '   Resize… opens the dialog');
+  await js(`document.querySelector('#rzUnit [data-k="cm"]').click()`); await sleep(100);
+  const shown = await js(`[+document.getElementById('rzW').value, +document.getElementById('rzH').value]`);
+  check(near(shown[0], w0 / 10, 1e-3) && near(shown[1], h0 / 10, 1e-3), '   the dialog shows the current width and height in cm', `${shown} cm`);
+  // type a new width: with Keep proportions on, the height follows
+  await js(`(() => { const i = document.getElementById('rzW'); i.value = (${w0 * 1.5 / 10}).toFixed(4); i.dispatchEvent(new Event('input', { bubbles: true })); })()`);
+  const hFollow = await js(`+document.getElementById('rzH').value`);
+  check(near(hFollow, h0 * 1.5 / 10, 2e-3), '   Keep proportions: the height follows the width', `${hFollow} cm`);
+  // in mm the same size reads 10 times larger
+  await js(`document.querySelector('#rzUnit [data-k="mm"]').click()`); await sleep(100);
+  const mmW = await js(`+document.getElementById('rzW').value`);
+  check(near(mmW, w0 * 1.5, 2e-3), '   switching to mm converts the typed size', `${mmW} mm`);
+  await js(`document.querySelector('#rzUnit [data-k="cm"]').click()`); await sleep(100);
+  await js(`document.querySelector('#sheet [data-ok]').click()`); await sleep(500);
+  st = await engine();
+  const s1 = st.shapes.find(s => s.id === target.id), b1 = bbox(s1.pts);
+  check(near(b1[2] - b1[0], w0 * 1.5, 1e-3) && near(b1[3] - b1[1], h0 * 1.5, 1e-3), '   Resize makes the shape that size', `${(b1[2] - b1[0]).toFixed(3)} × ${(b1[3] - b1[1]).toFixed(3)} mm`);
+  check(near((b1[0] + b1[2]) / 2, (b0[0] + b0[2]) / 2, 1e-3) && near((b1[1] + b1[3]) / 2, (b0[1] + b0[3]) / 2, 1e-3), '   the shape keeps its centre');
+  check(s1.pts.length === s0.pts.length && s1.closed === s0.closed, '   same points and closed flag');
+  // width only, proportions off
+  await js(`document.querySelector('[data-sheet="resize"]').click()`); await sleep(200);
+  await js(`document.getElementById('rzLock').click()`);
+  await js(`(() => { const i = document.getElementById('rzW'); i.value = (${w0 / 10}).toFixed(4); i.dispatchEvent(new Event('input', { bubbles: true })); })()`);
+  await js(`document.querySelector('#sheet [data-ok]').click()`); await sleep(500);
+  const s2 = (await engine()).shapes.find(s => s.id === target.id), b2r = bbox(s2.pts);
+  check(near(b2r[2] - b2r[0], w0, 1e-3) && near(b2r[3] - b2r[1], h0 * 1.5, 1e-3), '   with Keep proportions off only the width changes');
+  await key('z', 'KeyZ', ['ctrl']); await key('z', 'KeyZ', ['ctrl']); await sleep(300);
+  check(JSON.stringify((await engine()).shapes.find(s => s.id === target.id).pts) === JSON.stringify(s0.pts), '   two undos restore the original size');
+}
+
 console.log(failed ? `\n${failed} check(s) failed` : '\nall checks passed');
 console.log(`screenshots: ${path.join(process.env.TEMP || '.', 'sl_black.png')}, sl_white.png`);
 ws.close();
