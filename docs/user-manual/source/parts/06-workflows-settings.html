@@ -1,0 +1,193 @@
+
+<!-- ================================================================ 12 workflows -->
+<h1 class="ch" id="c12"><span class="n">12</span>سير العمل العملي</h1>
+<p class="lead">أمثلة كاملة لأكثر المهام شيوعاً، خطوة بخطوة. استخدم الرسمة التجريبية <code>demo.plt</code> المرفقة مع البرنامج إن أردت التدرب.</p>
+
+<h2 id="c12-1"><span class="n">12.1</span>من الرسمة إلى ملف الماكينة على الفلاشة</h2>
+<p><b>الهدف:</b> تجهيز ملف <code>SLW</code> لرسمة خياطة بسيطة ونقله إلى الماكينة. <b>المتطلبات:</b> رسمة <code>DXF</code> أو <code>PLT</code>، وفلاشة <span class="lat">USB</span>. <b>نقطة البداية:</b> الصفحة الرئيسية.</p>
+<ol class="steps">
+  <li><b>افتح الرسمة:</b> اضغط <span class="ui">فتح رسمة</span> واختر الملف، أو اسحبه إلى النافذة. <span class="result">تظهر الرسمة في مرحلة الترتيب.</span></li>
+  <li><b>راجع المقاس:</b> اضغط <kbd>Ctrl</kbd>+<kbd>A</kbd> واقرأ العرض والارتفاع في شريط المقاس أعلى الرسمة (بالسنتيمتر). إن كان المقاس خاطئاً في ملف <code>PLT</code> فراجع الدقة (5.5) أو استخدم المقياس (5.6).</li>
+  <li><b>نظّف الرسمة</b> إن لزم: من قسم <span class="ui">الرسمة كلها</span> اضغط <span class="ui">حذف التداخلات</span> و<span class="ui">ربط الخطوط &lt; 2 مم</span>.</li>
+  <li><b>انتقل إلى الغرز</b> (<span class="ui">الخطوة التالية</span>): اختر كل طبقة وراجع <span class="ui">طول الغرزة</span> وإعدادات الرجوع (8.1، 8.2).</li>
+  <li><b>اختر نقطة أصل الماكينة</b> المناسبة لماكينتك من قسم <span class="ui">الماكينة</span> (8.3).</li>
+  <li><b>انتقل إلى التسلسل:</b> اضغط <span class="ui">أقصر مسافة انتقال (الأقرب أولاً)</span>، ثم <span class="ui">محاكاة الخياطة</span> للتأكد من الترتيب (9.3).</li>
+  <li><b>انتقل إلى الإخراج:</b> راجع <span class="ui">نقاط الإبرة</span> و<span class="ui">الوقت المتوقع</span>.</li>
+  <li><b>احفظ ملف الشغلانة</b> بـ <kbd>Ctrl</kbd>+<kbd>S</kbd> لتستطيع تعديلها لاحقاً.</li>
+  <li><b>وصّل الفلاشة</b> واضغط زر <span class="ui">حفظ على الفلاشة</span> أسفل لوحة الإخراج (أو <span class="ui">حفظ ملف الماكينة…</span> واختر الفلاشة في نافذة الحفظ).</li>
+</ol>
+<p><b>التحقق من النجاح:</b> يظهر إشعار «تم حفظ ملف الماكينة…» مع عدد السجلات، ويظهر الملف في الفلاشة بامتداد <code>.slw</code>. انزع الفلاشة بأمان وافتح الملف على الماكينة.</p>
+
+<h2 id="c12-2"><span class="n">12.2</span>شغلانة خياطة وقص ليزر معاً</h2>
+<p><b>الهدف:</b> تطريز القطعة على الإبرة 1 ثم قص حدودها بالليزر على الإبرة 3، في ملف واحد. <b>المتطلبات:</b> ماكينة برأس ليزر على الإبرة 3، ورسمة فيها خطوط التطريز وخطوط الحدود.</p>
+<ol class="steps">
+  <li>افتح الرسمة. إن كانت خطوط الحدود في طبقة مستقلة (مثل <code>Layer2</code> في الرسمة التجريبية) فانتقل للخطوة 3.</li>
+  <li>وإلا: حدد خطوط الحدود كلها (<kbd>Ctrl</kbd> + ضغطة على كل منها، أو مستطيل تحديد)، ثم <kbd>Ctrl</kbd>+<kbd>G</kbd>، واختر <span class="ui">قص ليزر</span> و<span class="ui">عمل الطبقة</span> (7.3). انتقل للخطوة 4.</li>
+  <li>في مرحلة الغرز اختر طبقة الحدود واضغط <span class="ui">قص ليزر</span> (8.5).</li>
+  <li>افتح قسم <span class="ui">سرعة الليزر</span>؛ إن ظهر تحذير «ممكن يقص ببطء» فاضغط <span class="ui">تسريع مسارات الليزر</span>.</li>
+  <li>في مرحلة التسلسل اضغط <span class="ui">طبقة بطبقة (حسب ترتيب الطبقات)</span>، وتأكد أن طبقة الليزر هي الأخيرة في لوحة الطبقات (حرّكها لتحت من قائمتها المختصرة إن لزم)، حتى يتم القص بعد انتهاء التطريز.</li>
+  <li>شاهد المحاكاة: يجب أن يظهر التطريز أولاً ثم شعاع الليزر مع توقفات قصيرة عند بداية كل قطعة.</li>
+  <li>احفظ الشغلانة ثم ملف الماكينة.</li>
+</ol>
+<p><b>التحقق:</b> في برنامج الإخراج تظهر خطوة اختيار «الإبرة 3» بعد خطوات التطريز، وفي الإحصاءات عدد ثوانٍ «منها انتظار».</p>
+
+<h2 id="c12-3"><span class="n">12.3</span>تصحيح مقاس القطع بعد خياطة تجريبية</h2>
+<p><b>الهدف:</b> القطع المخيطة خرجت أصغر أو أكبر من الرسمة. <b>نقطة البداية:</b> الشغلانة مفتوحة.</p>
+<ol class="steps">
+  <li>اختر مسافة واضحة في الرسمة (مثلاً ضلع طوله 100 مم) وقِسها على القطعة المخيطة.</li>
+  <li>في مرحلة الاستيراد افتح <span class="ui">تكبير/تصغير الرسمة</span> واضغط <span class="ui">من قياس…</span> (5.6).</li>
+  <li>اكتب الطولين واختر المحاور ثم <span class="ui">استخدم هذا المقياس</span>.</li>
+  <li>اضغط <span class="ui">تطبيق المقياس الآن</span>. <span class="result">يتغير مقاس الرسمة كلها.</span></li>
+  <li>احفظ ملف الماكينة من جديد وخِط قطعة تجريبية أخرى للتأكد.</li>
+</ol>
+<div class="box tip"><b class="t">بديل</b>لتكبير ملف الماكينة فقط دون تغيير الرسمة، استخدم <span class="ui">تكبير/تصغير الإخراج</span> في مرحلة الإخراج (10.3). ولتطبيق المقياس على كل الرسومات التي تفتحها لاحقاً فعّل <span class="ui">تطبيق عند فتح ملف</span>.</div>
+
+<h2 id="c12-4"><span class="n">12.4</span>إضافة إيقاف مؤقت أو تغيير سرعة داخل الشغلانة</h2>
+<ol class="steps">
+  <li>في مرحلة الإخراج اضغط على خطوة الشكل الذي تريد تغيير السرعة قبله (مثلاً «خياطة شكل 5»).</li>
+  <li>اختر <span class="ui">السرعة</span> واكتب 900، ثم <span class="ui">إدراج</span>. <span class="result">يظهر الأمر باللون الأزرق قبل الشكل.</span></li>
+  <li>لإعادة السرعة بعد الشكل، اضغط خطوة الشكل التالي وأدرج <span class="ui">السرعة</span> 1800.</li>
+  <li>للتحقق راجع البرنامج، واحفظ ملف الماكينة.</li>
+</ol>
+<div class="box warn"><b class="t">تنبيه</b>أمر <span class="ui">إيقاف مؤقت</span> يظهر في البرنامج بوسم «في الشغلانة فقط» ولا يُكتب في ملف الماكينة في هذا الإصدار (10.2). استخدم بدلاً منه <span class="ui">انتظار</span> بالمللي ثانية إذا احتجت توقفاً قصيراً.</div>
+
+<!-- ================================================================ 13 settings -->
+<h1 class="ch" id="c13"><span class="n">13</span>الإعدادات والتخصيص</h1>
+<p class="lead">نافذة الإعدادات تتحكم في شكل الواجهة: اللغة والسمة والخط وحجم النص وما يظهر من أجزاء النافذة. لا تؤثر أي منها على ملف الماكينة.</p>
+
+<h2 id="c13-1"><span class="n">13.1</span>فتح الإعدادات</h2>
+<figure class="full"><img src="../annotated/a40-settings.png" alt=""><figcaption>نافذة الإعدادات (قسم «عام»)</figcaption></figure>
+<p>افتحها بزر الترس في الشريط العلوي أو في الصفحة الرئيسية، أو بـ <kbd>Ctrl</kbd>+<kbd>,</kbd>.</p>
+<ol class="legend">
+  <li><b>عام:</b> اللغة والصفحة الرئيسية (13.2).</li>
+  <li><b>المظهر:</b> السمة واللون والحركة (13.3).</li>
+  <li><b>النصوص والخطوط:</b> الخط وحجم النص (13.3).</li>
+  <li><b>الواجهة:</b> حجم الواجهة وما يظهر منها (13.4). تنقّل بين الأقسام بالضغط أو بالسهمين لأعلى ولأسفل.</li>
+  <li><b><span class="ui">اختصارات الكيبورد</span>:</b> يفتح قائمة الاختصارات.</li>
+  <li><b><span class="ui">رجوع للافتراضي</span>:</b> يعيد كل إعدادات الواجهة إلى أصلها.</li>
+  <li><b><span class="ui">تم</span>:</b> يغلق النافذة (أو <kbd>Esc</kbd>).</li>
+</ol>
+<div class="box note"><b class="t">ملاحظة</b>كل تغيير يُطبَّق فوراً ويُحفظ تلقائياً («التغييرات بتتحفظ أول بأول»)؛ لا يوجد زر حفظ.</div>
+
+<h2 id="c13-2"><span class="n">13.2</span>عام</h2>
+<ul>
+  <li><span class="ui">لغة الواجهة</span>: العربية أو <span class="lat">English</span>. تُعاد تهيئة النافذة باللغة الجديدة وتعود إلى المكان نفسه. يمكن أيضاً التبديل من زر اللغة في الصفحة الرئيسية.</li>
+  <li><span class="ui">اعرض الرئيسية لما ستيتشلاين يفتح</span> (مفعّل افتراضياً).</li>
+</ul>
+
+<h2 id="c13-3"><span class="n">13.3</span>المظهر والنصوص</h2>
+<div class="side w48">
+  <figure><img src="../screenshots/40-settings-appearance.png" alt=""><figcaption>قسم «المظهر»</figcaption></figure>
+  <div class="txt">
+    <ul>
+      <li><span class="ui">السمة</span>: <span class="ui">فاتح</span> أو <span class="ui">داكن</span> أو <span class="ui">زي ويندوز</span> (الافتراضي: يتبع إعداد ويندوز). للتبديل السريع: <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>L</kbd>.</li>
+      <li><span class="ui">اللون الأساسي</span>: لون الأزرار والتحديد والمرحلة الحالية؛ أزرق (الافتراضي) أو بنفسجي أو فيروزي أو أخضر أو برتقالي أو رمادي. لا يغيّر ألوان الغرز ولا خطوط الليزر.</li>
+      <li><span class="ui">حركة ناعمة</span>: حركة اللوحات والأزرار عند الظهور والاختفاء. أوقفها في الأجهزة البطيئة.</li>
+    </ul>
+  </div>
+</div>
+<div class="side w48">
+  <figure><img src="../screenshots/40-settings-text.png" alt=""><figcaption>قسم «النصوص والخطوط»</figcaption></figure>
+  <div class="txt">
+    <ul>
+      <li><span class="ui">الخط</span>: <span class="lat">Thmanyah Sans</span> (الافتراضي)، أو <span class="lat">Readex Pro</span>، أو <span class="lat">Segoe UI</span>، أو <span class="lat">Tahoma</span>. كل بطاقة تعرض نموذجاً عربياً ولاتينياً.</li>
+      <li><span class="ui">حجم النص</span>: صغير، عادي (الافتراضي)، كبير، أكبر.</li>
+      <li><span class="ui">نص أثقل</span>: حروف أسمك لقراءة أسهل.</li>
+      <li><span class="ui">معاينة</span>: نموذج يُظهر أثر اختياراتك فوراً.</li>
+    </ul>
+  </div>
+</div>
+<figure class="full"><img src="../screenshots/43-dark-theme.png" alt=""><figcaption>السمة الداكنة</figcaption></figure>
+
+<h2 id="c13-4"><span class="n">13.4</span>الواجهة</h2>
+<div class="side w48">
+  <figure><img src="../screenshots/40-settings-interface-2.png" alt=""><figcaption>قسم «الواجهة»: ما يظهر على الشاشة</figcaption></figure>
+  <div class="txt">
+    <ul>
+      <li><span class="ui">حجم الواجهة</span>: 90% أو 100% (الافتراضي) أو 110% أو 125% أو 150%. يكبّر الأزرار واللوحات والنصوص معاً، وتبقى الرسمة واضحة.</li>
+      <li><span class="ui">لوحة الطبقات</span> و<span class="ui">لوحة المرحلة</span> و<span class="ui">المقاس والموضع</span> و<span class="ui">شريط العرض</span> و<span class="ui">شريط التكبير</span>: إظهار هذه الأجزاء أو إخفاؤها (كلها ظاهرة افتراضياً).</li>
+      <li><span class="ui">الشبكة على الرسمة</span>: خطوط المليمتر خلف الأشكال. <b>مخفية افتراضياً</b> في هذا الإصدار؛ فعّلها إن كنت تحتاجها للمحاذاة بالعين.</li>
+      <li><span class="ui">مفاتيح الاختصار على الأزرار</span>: الحروف الصغيرة بجانب الأزرار والأدوات.</li>
+    </ul>
+  </div>
+</div>
+<div class="box tip"><b class="t">نصيحة</b>إذا اختفى جزء من النافذة ولم تعرف السبب، افتح الإعدادات واضغط <span class="ui">رجوع للافتراضي</span>.</div>
+
+<!-- ================================================================ 14 palette -->
+<h1 class="ch" id="c14"><span class="n">14</span>البحث عن أي أداة</h1>
+<p class="lead">إن لم تتذكر مكان أمر ما، ابحث عنه باسمه بالعربية أو الإنجليزية.</p>
+<figure class="full"><img src="../annotated/a39-palette.png" alt=""><figcaption>البحث عن «عكس»</figcaption></figure>
+<ol class="steps">
+  <li>اضغط <kbd>Ctrl</kbd>+<kbd>K</kbd> أو زر البحث (العدسة) في الشريط العلوي.</li>
+  <li>اكتب جزءاً من اسم الأداة في <b>(1)</b>، مثل «غرز» أو «عكس» أو «USB». لا يهم شكل الألف ولا التاء المربوطة ولا التشكيل.</li>
+  <li>تظهر الأدوات المطابقة <b>(2)</b> <b>(3)</b> وبجانب كل منها اسم المرحلة التي تنتمي إليها، وفي الأسفل عددها <b>(4)</b> (هنا 2 من 82 أداة).</li>
+  <li>اختر بالأسهم ثم <kbd>Enter</kbd>، أو اضغط بالفأرة.</li>
+</ol>
+<p class="result">ينتقل البرنامج إلى المرحلة المناسبة وينفذ الأمر أو يفتح نافذته. بعض النتائج تنقلك فقط إلى المرحلة التي فيها الإعداد (مثل «طول الغرزة»). <kbd>Esc</kbd> يغلق البحث.</p>
+
+<!-- ================================================================ 15 shortcuts -->
+<h1 class="ch" id="c15"><span class="n">15</span>اختصارات لوحة المفاتيح</h1>
+<p class="lead">اختصارات البرنامج تشبه اختصارات <span class="lat">Adobe Illustrator</span>. تعمل الحروف بغض النظر عن لغة لوحة المفاتيح (العربية أو الإنجليزية). اضغط <kbd>?</kbd> أو <kbd>F1</kbd> في أي وقت لعرض القائمة داخل البرنامج.</p>
+<figure class="narrow"><img src="../screenshots/35-sheet-shortcuts.png" alt=""><figcaption>نافذة «اختصارات الكيبورد» داخل البرنامج</figcaption></figure>
+<h3>ملف</h3>
+<table class="keys compact"><thead><tr><th>الاختصار</th><th>الوظيفة</th></tr></thead><tbody>
+<tr><td><kbd>Ctrl</kbd>+<kbd>O</kbd></td><td>فتح رسمة أو شغلانة</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd></td><td>حفظ الشغلانة</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd></td><td>حفظ الشغلانة باسم…</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>E</kbd></td><td>حفظ ملف الماكينة</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>N</kbd></td><td>شغلانة جديدة</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd></td><td>إدراج رسمة في الشغلانة</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>H</kbd></td><td>الصفحة الرئيسية</td></tr>
+</tbody></table>
+<h3>تعديل</h3>
+<table class="keys compact"><thead><tr><th>الاختصار</th><th>الوظيفة</th></tr></thead><tbody>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd></td><td>تراجع</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd></td><td>إعادة</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>A</kbd></td><td>تحديد الكل</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>A</kbd></td><td>إلغاء التحديد</td></tr>
+<tr><td><kbd>Esc</kbd></td><td>إلغاء التحديد، أو الخروج من الأداة الحالية أو من المحاكاة أو إغلاق النافذة المفتوحة</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>Ctrl</kbd>+<kbd>X</kbd></td><td>نسخ / قص المحدد (داخل البرنامج)</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>V</kbd></td><td>لصق في منتصف المنظر</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>F</kbd> / <kbd>Ctrl</kbd>+<kbd>B</kbd></td><td>لصق في المكان نفسه، يُخاط آخراً / أولاً</td></tr>
+<tr><td><kbd>Alt</kbd> أثناء السحب</td><td>نسخ أثناء السحب</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>D</kbd></td><td>تكرار آخر تحريك أو تدوير أو عكس أو تغيير مقاس</td></tr>
+<tr><td><kbd>Delete</kbd></td><td>حذف المحدد</td></tr>
+<tr><td>الأسهم / <kbd>Shift</kbd>+الأسهم</td><td>تحريك المحدد بمقدار الخطوة / عشرة أضعافها</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>J</kbd></td><td>ربط أطراف الخطوط</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>R</kbd></td><td>عكس الاتجاه</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>G</kbd></td><td>عمل طبقة من المحدد</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>G</kbd></td><td>حذف الطبقة الحالية مع الاحتفاظ بأشكالها</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>]</kbd> / <kbd>Ctrl</kbd>+<kbd>[</kbd></td><td>الخياطة بعد خطوة / قبل خطوة</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>]</kbd> / <kbd>[</kbd></td><td>الخياطة في الآخر / في الأول</td></tr>
+</tbody></table>
+<h3>أدوات</h3>
+<table class="keys compact"><thead><tr><th>الاختصار</th><th>الوظيفة</th></tr></thead><tbody>
+<tr><td><kbd>V</kbd></td><td>التحديد: تحريك الأشكال كاملة وتغيير مقاسها</td></tr>
+<tr><td><kbd>A</kbd></td><td>التحديد المباشر: تحريك مسار واحد</td></tr>
+<tr><td><kbd>Shift</kbd> / <kbd>Alt</kbd> مع المقابض</td><td>تغيير المقاس مع الحفاظ على النسب / من المنتصف</td></tr>
+<tr><td><kbd>Alt</kbd> مع مستطيل التحديد</td><td>تحديد الأشكال الواقعة بالكامل داخله فقط</td></tr>
+<tr><td><kbd>H</kbd> / ضغط مستمر على <kbd>Space</kbd></td><td>تحريك المنظر</td></tr>
+<tr><td><kbd>R</kbd></td><td>التدوير: اكتب الزاوية</td></tr>
+<tr><td><kbd>O</kbd> / <kbd>Shift</kbd>+<kbd>O</kbd></td><td>عكس يمين–شمال / فوق–تحت</td></tr>
+<tr><td><kbd>S</kbd></td><td>تغيير الحجم: اكتب المقاس</td></tr>
+<tr><td><kbd>Enter</kbd></td><td>التحريك: اكتب المسافة</td></tr>
+<tr><td><kbd>C</kbd></td><td>تحديد نقطة البداية</td></tr>
+<tr><td><kbd>I</kbd></td><td>القياس</td></tr>
+<tr><td><kbd>M</kbd></td><td>إضافة شكل</td></tr>
+</tbody></table>
+<h3>عرض ومراحل</h3>
+<table class="keys compact"><thead><tr><th>الاختصار</th><th>الوظيفة</th></tr></thead><tbody>
+<tr><td><kbd>Ctrl</kbd>+<kbd>0</kbd></td><td>ملاءمة الرسمة كلها</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>1</kbd></td><td>الحجم الحقيقي (100%)</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>+</kbd> / <kbd>Ctrl</kbd>+<kbd>−</kbd></td><td>تكبير / تصغير</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Y</kbd></td><td>إظهار الغرز</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>H</kbd></td><td>إظهار ترتيب الخياطة</td></tr>
+<tr><td><kbd>Shift</kbd>+<kbd>Tab</kbd></td><td>إخفاء / إظهار لوحة المرحلة</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>K</kbd></td><td>البحث عن أي أداة</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>L</kbd></td><td>فاتح / داكن</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>,</kbd></td><td>الإعدادات</td></tr>
+<tr><td><kbd>?</kbd> / <kbd>F1</kbd> / <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd></td><td>اختصارات لوحة المفاتيح</td></tr>
+<tr><td><kbd>1</kbd> … <kbd>5</kbd></td><td>المراحل: استيراد، ترتيب، الغرز، التسلسل، الإخراج</td></tr>
+<tr><td><kbd>Page Down</kbd> / <kbd>Page Up</kbd></td><td>الخطوة التالية / السابقة</td></tr>
+</tbody></table>
+<div class="box note"><b class="t">ملاحظة</b>الاختصارات ذات الحرف الواحد لا تعمل أثناء الكتابة في حقل؛ اضغط <kbd>Esc</kbd> أو انقر على الرسمة أولاً. في الصفحة الرئيسية يعمل عدد محدود منها: فتح، شغلانة جديدة، الرجوع للشغلانة، السمة، والاختصارات. البرنامج يعمل على ويندوز فقط، فلا توجد اختصارات لأنظمة أخرى.</div>

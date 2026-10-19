@@ -1,0 +1,148 @@
+/* Stitchline user manual (Arabic) — print stylesheet. Colours and fonts are Stitchline's own (ui/app.css):
+   ink #1c1917, stone greys, accent blue #1d4ed8, "thread" pink #e8336d; Thmanyah Sans for Arabic, Readex Pro for Latin. */
+@font-face { font-family: "Thmanyah Sans"; src: url("../../../ui/fonts/ThmanyahSans-Regular.otf"); font-weight: 400; }
+@font-face { font-family: "Thmanyah Sans"; src: url("../../../ui/fonts/ThmanyahSans-Medium.otf"); font-weight: 500; }
+@font-face { font-family: "Thmanyah Sans"; src: url("../../../ui/fonts/ThmanyahSans-Bold.otf"); font-weight: 700; }
+@font-face { font-family: "Thmanyah Sans"; src: url("../../../ui/fonts/ThmanyahSans-Black.otf"); font-weight: 900; }
+@font-face { font-family: "Readex Pro"; src: url("../../../ui/fonts/ReadexPro.ttf"); font-weight: 160 700; }
+
+:root {
+  --ink: #1c1917; --ink-2: #44403c; --ink-3: #78716c; --line: #e7e5e4; --well: #f5f5f4; --well-2: #fafaf9;
+  --accent: #1d4ed8; --accent-soft: #eff6ff; --thread: #e8336d; --thread-soft: #fdeef3;
+  --ok: #15803d; --ok-soft: #ecfdf3; --warn: #b45309; --warn-soft: #fff7e6; --bad: #b91c1c; --bad-soft: #fef1f1;
+}
+@page { size: A4; margin: 20mm 18mm 20mm 18mm; }
+@page cover { margin: 0; }
+html { direction: rtl; }
+body {
+  margin: 0; color: var(--ink); background: #fff;
+  font-family: "Thmanyah Sans", "Readex Pro", "Segoe UI", sans-serif; font-size: 11.2pt; line-height: 1.75;
+  -webkit-print-color-adjust: exact; print-color-adjust: exact;
+}
+.lat, code, kbd, .num { font-family: "Readex Pro", "Segoe UI", sans-serif; }
+p { margin: 0 0 9pt; }
+a { color: var(--accent); text-decoration: none; }
+b, strong { font-weight: 700; }
+
+/* ---------------------------------------------------------------- cover */
+.cover { page: cover; height: 297mm; position: relative; overflow: hidden; background: #fff; break-after: page; }
+.cover .band { position: absolute; inset: 0 0 auto 0; height: 118mm; background: var(--ink); }
+.cover .seam { position: absolute; left: 0; right: 0; top: 96mm; width: 100%; height: 50mm; }
+.cover .logo { position: absolute; top: 34mm; right: 22mm; width: 30mm; height: 30mm; }
+.cover .brand { position: absolute; top: 36mm; right: 58mm; color: #fff; }
+.cover .brand .en { font-family: "Readex Pro"; font-size: 30pt; font-weight: 600; letter-spacing: .3pt; line-height: 1.1; }
+.cover .brand .ar { font-size: 15pt; color: #d6d3d1; }
+.cover .title { position: absolute; top: 150mm; right: 22mm; left: 22mm; }
+.cover .title h1 { font-size: 40pt; font-weight: 900; margin: 0; line-height: 1.2; }
+.cover .title .sub { font-size: 14.5pt; color: var(--ink-2); margin-top: 6mm; max-width: 140mm; line-height: 1.7; }
+.cover .meta { position: absolute; bottom: 22mm; right: 22mm; left: 22mm; display: flex; gap: 10mm; border-top: 1.2pt solid var(--line); padding-top: 6mm; font-size: 10.5pt; color: var(--ink-2); }
+.cover .meta div b { display: block; color: var(--ink); font-size: 11.5pt; }
+.cover .shot { position: absolute; top: 210mm; left: 22mm; width: 82mm; border-radius: 3mm; border: 1pt solid var(--line); box-shadow: 0 2mm 6mm rgba(0,0,0,.08); }
+
+/* ---------------------------------------------------------------- headings */
+h1.ch {
+  break-before: page; margin: 0 0 6mm; padding: 0 0 4mm; font-size: 24pt; font-weight: 900; line-height: 1.25;
+  border-bottom: 2.4pt dashed var(--thread);
+}
+h1.ch .n { display: inline-block; min-width: 13mm; height: 13mm; line-height: 13mm; text-align: center; border-radius: 3.5mm; background: var(--ink); color: #fff; font-family: "Readex Pro"; font-size: 15pt; font-weight: 600; margin-left: 4mm; vertical-align: 2pt; }
+h1.ch + .lead { font-size: 12.2pt; color: var(--ink-2); margin-bottom: 7mm; }
+h2 { font-size: 15.5pt; font-weight: 700; margin: 8mm 0 3mm; break-after: avoid; color: var(--ink); }
+h2 .n { color: var(--thread); font-family: "Readex Pro"; font-weight: 600; margin-left: 2mm; }
+h3 { font-size: 12.5pt; font-weight: 700; margin: 5mm 0 2mm; break-after: avoid; color: var(--ink); }
+h2 + p, h3 + p { break-before: avoid; }
+
+/* ---------------------------------------------------------------- toc */
+.toc h1 { font-size: 24pt; font-weight: 900; margin: 0 0 6mm; border-bottom: 2.4pt dashed var(--thread); padding-bottom: 4mm; }
+.toc ol { list-style: none; margin: 0; padding: 0; }
+.toc li { display: flex; align-items: baseline; gap: 2mm; padding: 1.3mm 0; }
+.toc li.l1 { font-weight: 700; font-size: 11.8pt; margin-top: 2.2mm; }
+.toc li.l2 { font-size: 10.4pt; padding-right: 9mm; color: var(--ink-2); }
+.toc li a { color: inherit; }
+.toc li .dots { flex: 1; border-bottom: 1pt dotted #c8c4c0; transform: translateY(-1.2mm); }
+.toc li .pg { font-family: "Readex Pro"; min-width: 8mm; text-align: left; }
+.toc li .tn { font-family: "Readex Pro"; color: var(--thread); min-width: 7mm; display: inline-block; }
+
+/* ---------------------------------------------------------------- figures */
+figure { margin: 5mm 0 6mm; break-inside: avoid; }
+figure img { display: block; max-width: 100%; margin: 0 auto; border: .8pt solid #d6d3d1; border-radius: 2mm; }
+figure.full img { width: 100%; }
+figure.narrow img { width: 62%; }
+figure.small img { width: 44%; }
+figure.tiny img { width: 30%; }
+figcaption { counter-increment: fig; font-size: 9.6pt; color: var(--ink-3); text-align: center; margin-top: 2mm; }
+figcaption::before { content: "شكل " counter(fig) ": "; font-weight: 700; color: var(--ink-2); }
+body { counter-reset: fig; }
+.side { display: flex; gap: 6mm; align-items: flex-start; break-inside: avoid; margin: 4mm 0 6mm; }
+.side > figure { flex: 0 0 auto; margin: 0; }
+.side > figure img { width: 100%; }
+.side > .txt { flex: 1; min-width: 0; }
+.side.w40 > figure { width: 40%; } .side.w48 > figure { width: 48%; } .side.w55 > figure { width: 55%; } .side.w33 > figure { width: 33%; }
+.side.w30 > figure { width: 30%; } .side.w22 > figure { width: 20%; } .side.w36 > figure { width: 36%; }
+
+/* numbered legend matching the badges on the pictures */
+ol.legend { list-style: none; counter-reset: lg; margin: 2mm 0 5mm; padding: 0; }
+ol.legend > li { counter-increment: lg; position: relative; padding: 0.6mm 9mm 0.6mm 0; margin-bottom: 1.4mm; break-inside: avoid; }
+ol.legend > li::before { content: counter(lg); position: absolute; right: 0; top: 1.1mm; width: 6.2mm; height: 6.2mm; line-height: 6.2mm; border-radius: 50%; background: var(--thread); color: #fff; font-family: "Readex Pro"; font-weight: 600; font-size: 8.8pt; text-align: center; }
+ol.legend[start] { counter-reset: lg calc(attr(start integer) - 1); }
+ol.legend > li > b:first-child { color: var(--ink); }
+
+/* steps */
+ol.steps { counter-reset: st; list-style: none; padding: 0; margin: 2mm 0 5mm; }
+ol.steps > li { counter-increment: st; position: relative; padding: 0 10mm 0 0; margin-bottom: 2.4mm; break-inside: avoid; }
+ol.steps > li::before { content: counter(st); position: absolute; right: 0; top: .4mm; width: 6.6mm; height: 6.6mm; line-height: 6.6mm; border-radius: 1.8mm; background: var(--ink); color: #fff; font-family: "Readex Pro"; font-weight: 600; font-size: 9pt; text-align: center; }
+ul { padding-right: 6mm; margin: 1mm 0 4mm; } ul li { margin-bottom: 1.2mm; }
+.result { color: var(--ok); font-weight: 500; }
+.result::before { content: "النتيجة: "; font-weight: 700; }
+
+/* call-outs */
+.box { border-radius: 2.4mm; padding: 3mm 4mm 2.4mm; margin: 4mm 0; break-inside: avoid; border-right: 1.6mm solid; font-size: 10.6pt; }
+.box > b.t { display: block; margin-bottom: .8mm; font-size: 10.8pt; }
+.note { background: var(--accent-soft); border-color: var(--accent); }
+.note > b.t { color: var(--accent); }
+.tip { background: var(--ok-soft); border-color: var(--ok); }
+.tip > b.t { color: var(--ok); }
+.warn { background: var(--warn-soft); border-color: #d97706; }
+.warn > b.t { color: var(--warn); }
+.issue { background: var(--bad-soft); border-color: var(--bad); }
+.issue > b.t { color: var(--bad); }
+.box p:last-child { margin-bottom: 0; }
+
+/* inline UI names, keys */
+.ui { font-weight: 700; color: var(--ink); background: var(--well); border: .6pt solid var(--line); border-radius: 1.2mm; padding: 0 1.4mm; white-space: nowrap; }
+.en { font-family: "Readex Pro"; font-size: 9pt; color: var(--ink-3); }
+kbd { display: inline-block; font-size: 8.6pt; font-weight: 500; line-height: 1.5; padding: 0 1.5mm; border: .7pt solid #c8c4c0; border-bottom-width: 1.6pt; border-radius: 1.2mm; background: #fff; color: var(--ink); direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
+code { font-size: 9.4pt; background: var(--well); border-radius: 1mm; padding: 0 1.2mm; direction: ltr; unicode-bidi: isolate; }
+
+/* tables */
+table { width: 100%; border-collapse: collapse; margin: 3mm 0 6mm; font-size: 10.2pt; }
+thead { display: table-header-group; }
+tr { break-inside: avoid; }
+th { background: var(--ink); color: #fff; font-weight: 700; text-align: right; padding: 2mm 2.6mm; }
+th:first-child { border-top-right-radius: 1.6mm; } th:last-child { border-top-left-radius: 1.6mm; }
+td { padding: 1.8mm 2.6mm; border-bottom: .7pt solid var(--line); vertical-align: top; }
+tr:nth-child(even) td { background: var(--well-2); }
+table.keys td:first-child { white-space: nowrap; width: 34mm; }
+table.compact td, table.compact th { padding: 1.3mm 2.2mm; }
+
+/* glossary and index */
+dl.gloss { margin: 0; }
+dl.gloss dt { font-weight: 700; margin-top: 3mm; break-after: avoid; }
+dl.gloss dt .en { margin-right: 2mm; }
+dl.gloss dd { margin: .6mm 0 0; padding-right: 5mm; color: var(--ink-2); }
+.idx { columns: 2; column-gap: 9mm; font-size: 10pt; }
+.idx div { break-inside: avoid; display: flex; gap: 2mm; padding: .5mm 0; }
+.idx div .dots { flex: 1; border-bottom: 1pt dotted #d6d3d1; transform: translateY(-1.2mm); }
+.idx div .pg { font-family: "Readex Pro"; }
+.idx h4 { margin: 3mm 0 1mm; color: var(--thread); font-size: 11pt; break-after: avoid; }
+
+.faq h3 { color: var(--accent); }
+.keep { break-inside: avoid; }
+.pb { break-before: page; }
+.small-print { font-size: 9.4pt; color: var(--ink-3); }
+
+/* key combinations read left to right, as printed on the keys */
+.kc { direction: ltr; unicode-bidi: isolate-override; display: inline-block; white-space: nowrap; }
+.kc kbd { unicode-bidi: normal; }
+.toc li a, .idx a { color: var(--ink); }
+.toc li.l2 a { color: var(--ink-2); }
+.idx a.pg, .toc li a.pg { color: var(--ink); font-weight: 600; }

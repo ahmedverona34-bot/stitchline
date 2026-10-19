@@ -1,0 +1,247 @@
+
+<!-- ================================================================ 5 import -->
+<h1 class="ch" id="c5"><span class="n">5</span>مرحلة الاستيراد: فتح الرسمة</h1>
+<p class="lead">في هذه المرحلة تبدأ شغلانة جديدة أو تفتح رسمة، وتحدد كيف يقرأ البرنامج الرسمة: تنظيفها عند الفتح، ودقة ملفات الرسم، والمقياس، ومقاس طاولة الماكينة.</p>
+
+<h2 id="c5-1"><span class="n">5.1</span>بدء شغلانة جديدة</h2>
+<div class="side w48">
+  <figure><img src="../screenshots/02-new-job-dialog.png" alt=""><figcaption>نافذة «شغلانة جديدة»</figcaption></figure>
+  <div class="txt">
+    <ol class="steps">
+      <li>اضغط <span class="ui">شغلانة جديدة</span> في الصفحة الرئيسية أو <kbd>Ctrl</kbd>+<kbd>N</kbd>.</li>
+      <li>اكتب <b>اسم الشغلانة</b> (اختياري؛ يمكن تغييره لاحقاً).</li>
+      <li>اختر مقاس <b>طاولة الماكينة</b> من الأزرار الجاهزة، أو اكتب <b>عرض الطاولة</b> و<b>ارتفاع الطاولة</b> بالمليمتر.</li>
+      <li>اضغط <span class="ui">إنشاء</span> أو <kbd>Enter</kbd>.</li>
+    </ol>
+    <p class="result">تفتح نافذة العمل على مرحلة الاستيراد، وفي وسط الرسمة رسالة «ابدأ شغلانة خياطة» مع زري <span class="ui">فتح رسمة…</span> و<span class="ui">ارسم شكلاً</span>.</p>
+    <p>يجب أن يكون مقاس الطاولة أكبر من صفر. يتذكر البرنامج المقاسات التي استخدمتها ويعرضها أزراراً جاهزة في المرات القادمة.</p>
+  </div>
+</div>
+<figure class="full"><img src="../screenshots/03-editor-empty-job.png" alt=""><figcaption>شغلانة جديدة فارغة</figcaption></figure>
+
+<h2 id="c5-2"><span class="n">5.2</span>فتح رسمة أو شغلانة</h2>
+<p>توجد عدة طرق لفتح ملف، وكلها تؤدي إلى النتيجة نفسها:</p>
+<ul>
+  <li>زر <span class="ui">فتح ملف…</span> في لوحة الاستيراد، أو زر المجلد في الشريط العلوي، أو <kbd>Ctrl</kbd>+<kbd>O</kbd>: تظهر نافذة الفتح في ويندوز بعنوان «<span class="lat">Open a drawing or job</span>».</li>
+  <li><b>السحب والإفلات:</b> اسحب الملف من مستكشف ويندوز وأفلته في أي مكان داخل نافذة البرنامج.</li>
+  <li><b>الملفات الأخيرة:</b> من الصفحة الرئيسية، أو من قسم <span class="ui">الملفات الأخيرة</span> في لوحة الاستيراد.</li>
+</ul>
+<table class="compact">
+  <thead><tr><th>الصيغة</th><th>الامتداد</th><th>ملاحظات</th></tr></thead>
+  <tbody>
+    <tr><td>أوتوكاد</td><td><code>.dxf</code></td><td>كل طبقة في الملف تصبح طبقة في البرنامج.</td></tr>
+    <tr><td>إليستريتور</td><td><code>.ai</code></td><td>إن لم يجد البرنامج مسارات في الملف، احفظه من إليستريتور بصيغة «<span class="lat">Illustrator 8</span>» أو <code>DXF</code>.</td></tr>
+    <tr><td>رسومات الراسمات</td><td><code>.plt</code> <code>.hpgl</code> <code>.prt</code></td><td>تُقرأ حسب الدقة المحددة (<a href="#c5-5">5.5</a>). كل قلم يصبح طبقة.</td></tr>
+    <tr><td>ملفات التطريز</td><td><code>.dst</code> <code>.dsb</code></td><td>تاجيما وباروادن.</td></tr>
+    <tr><td>ملف الماكينة</td><td><code>.slw</code></td><td>يُقرأ ما فيه من مسارات لتعديلها.</td></tr>
+    <tr><td>شغلانة ستيتشلاين</td><td><code>.stitchline</code></td><td>تُفتح كما حُفظت بكل إعداداتها وطبقاتها وترتيبها.</td></tr>
+  </tbody>
+</table>
+<p class="result">تظهر الرسمة في الوسط مُلاءَمة للشاشة، وينتقل البرنامج إلى مرحلة الترتيب، ويظهر إشعار مثل «تم فتح demo.plt · 41 شكل»، وقد يُضاف إليه عدد التداخلات المحذوفة والخطوط المربوطة.</p>
+<div class="box warn"><b class="t">تنبيه</b>فتح ملف يستبدل الشغلانة الحالية. إن كانت فيها تعديلات غير محفوظة يسألك البرنامج أولاً (<a href="#c11-3">11.3</a>). إذا أردت إضافة رسمة إلى الشغلانة الحالية فاستخدم «الإدراج» بدلاً من الفتح.</div>
+
+<h2 id="c5-3"><span class="n">5.3</span>إدراج رسمة في الشغلانة الحالية</h2>
+<p>زر <span class="ui">إدراج في الشغلانة…</span> في لوحة الاستيراد، أو <span class="ui">إدراج ملف</span> أسفل لوحة الطبقات، أو <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd>: يختار رسمة ويضيف أشكالها إلى الشغلانة المفتوحة دون حذف ما فيها، ويظهر إشعار بعدد الأشكال المُدرجة. يكون الزر باهتاً إذا كانت الشغلانة فارغة؛ استخدم الفتح في هذه الحالة.</p>
+
+<h2 id="c5-4"><span class="n">5.4</span>لوحة الاستيراد بالتفصيل</h2>
+<div class="side w30">
+  <figure><img src="../annotated/a08-import-panel.png" alt=""><figcaption>لوحة الاستيراد بكل أقسامها</figcaption></figure>
+  <div class="txt">
+    <ol class="legend">
+      <li><b>منطقة الفتح:</b> <span class="ui">فتح ملف…</span> و<span class="ui">إدراج في الشغلانة…</span> وقائمة الصيغ المقبولة. يمكنك أيضاً إفلات الملف هنا.</li>
+      <li><b><span class="ui">الملفات الأخيرة</span>:</b> اضغط اسم الملف لفتحه، ومرّر المؤشر لرؤية مساره الكامل.</li>
+      <li><b><span class="ui">عند فتح ملف</span>:</b> خيارات تنظيف تُطبَّق لحظة قراءة الملف:
+        <ul>
+          <li><span class="ui">حذف الأشكال المتداخلة</span> (مفعّل افتراضياً): يحذف الأشكال المكررة فوق بعضها حتى لا تُخاط مرتين.</li>
+          <li><span class="ui">لا تربط الخطوط تلقائياً</span>: يمنع البرنامج من وصل الخطوط التي تتلامس أطرافها في شكل واحد.</li>
+          <li><span class="ui">العمل بدون نقطة مرجعية</span>: للرسومات التي لا تحتوي نقطة محاذاة.</li>
+        </ul>
+        هذه الخيارات تؤثر على الملفات التي تفتحها بعد تغييرها، لا على الرسمة المفتوحة.</li>
+      <li><b><span class="ui">الدقة</span>:</b> انظر <a href="#c5-5">5.5</a>.</li>
+      <li><b><span class="ui">تكبير/تصغير الرسمة</span>:</b> انظر <a href="#c5-6">5.6</a>.</li>
+      <li><b><span class="ui">طاولة الماكينة</span>:</b> العرض والارتفاع بالمليمتر، انظر <a href="#c5-7">5.7</a>.</li>
+      <li><b><span class="ui">متابعة إلى الترتيب</span>:</b> يكون باهتاً حتى توجد أشكال في الشغلانة.</li>
+    </ol>
+  </div>
+</div>
+
+<h2 id="c5-5"><span class="n">5.5</span>الدقة (dpi)</h2>
+<p>ملفات <code>PLT</code> و<code>PRT</code> لا تحمل وحدة قياس واضحة، فيحتاج البرنامج أن يعرف كم نقطة في البوصة استُخدمت عند رسمها. الافتراضي <b class="lat">1016 dpi</b>، والخيار الآخر <b class="lat">1000 dpi</b>، ويمكن كتابة قيمة <span class="ui">مخصص</span>.</p>
+<div class="box warn"><b class="t">تنبيه</b>إذا ظهرت رسمة <code>PLT</code> بمقاس خاطئ قليلاً (أكبر أو أصغر بنحو 1.6%)، غيّر الدقة ثم <b>افتح الملف مرة أخرى</b>؛ التغيير لا يُطبَّق على الرسمة المفتوحة. هذه الدقة تُستخدم أيضاً عند تصدير ملفات <code>PLT</code>.</div>
+
+<h2 id="c5-6"><span class="n">5.6</span>تكبير وتصغير الرسمة، والمقياس من قياس فعلي</h2>
+<p>في قسم <span class="ui">تكبير/تصغير الرسمة</span> حقلان: <span class="ui">أفقي (X)</span> و<span class="ui">رأسي (Y)</span>، والقيمة 1 تعني بلا تغيير (مثلاً 1.02 تكبّر 2%).</p>
+<ul>
+  <li><span class="ui">تطبيق المقياس الآن</span>: يطبّق المعاملين على الشغلانة الحالية كلها (يمكن التراجع عنه).</li>
+  <li><span class="ui">تطبيق عند فتح ملف</span>: يطبّقهما تلقائياً على كل رسمة تفتحها بعد ذلك.</li>
+</ul>
+<div class="side w48">
+  <figure><img src="../screenshots/27-sheet-scale-calc.png" alt=""><figcaption>نافذة «المقياس من قياس»</figcaption></figure>
+  <div class="txt">
+    <p>إذا خرجت القطع المخيطة أصغر أو أكبر من المطلوب، يحسب البرنامج المعامل الصحيح من قياس فعلي:</p>
+    <ol class="steps">
+      <li>خِط قطعة تجريبية، وقِس عليها مسافة معروفة.</li>
+      <li>اضغط <span class="ui">من قياس…</span>.</li>
+      <li>اكتب <span class="ui">الطول في الرسمة</span> و<span class="ui">المقاس على القماش</span>، واختر <span class="ui">تطبيق على</span>: X و Y، أو X فقط، أو Y فقط.</li>
+      <li>اضغط <span class="ui">استخدم هذا المقياس</span>.</li>
+    </ol>
+    <p class="result">تتغير قيمتا المقياس، ويظهر إشعار يذكّرك بالضغط على <span class="ui">تطبيق المقياس الآن</span> لتطبيقه على الشغلانة الحالية.</p>
+  </div>
+</div>
+
+<h2 id="c5-7"><span class="n">5.7</span>طاولة الماكينة</h2>
+<p>مقاس طاولة الماكينة (الافتراضي <span class="lat">1000 × 800</span> مم) يُرسم مستطيلاً متقطعاً على الرسمة انطلاقاً من نقطة أصل الماكينة، لتتأكد أن الأشكال كلها داخل مساحة عمل الماكينة. غيّره من قسم <span class="ui">طاولة الماكينة</span> أو عند إنشاء شغلانة جديدة.</p>
+
+<!-- ================================================================ 6 arrange -->
+<h1 class="ch" id="c6"><span class="n">6</span>مرحلة الترتيب: تعديل الأشكال</h1>
+<p class="lead">في هذه المرحلة تحدد الأشكال وتحركها وتدوّرها وتعكسها وتغيّر مقاسها، وتحدد من أين تبدأ خياطة كل شكل وفي أي اتجاه، وتنظف الرسمة من العيوب.</p>
+
+<h2 id="c6-1"><span class="n">6.1</span>تحديد الأشكال</h2>
+<figure class="full"><img src="../annotated/a06-selection.png" alt=""><figcaption>شكل محدد بأداة التحديد</figcaption></figure>
+<ol class="legend">
+  <li><b>إطار التحديد:</b> يحيط بالأشكال المحددة بأداة التحديد <kbd>V</kbd>. اسحب من داخله لتحريك المحدد.</li>
+  <li><b>مقابض تغيير المقاس:</b> ثمانية مربعات على الإطار. اسحب أحدها لتغيير المقاس؛ مع <kbd>Shift</kbd> تبقى النسب ثابتة، ومع <kbd>Alt</kbd> يتغير المقاس من المركز.</li>
+  <li><b>نقطة البداية والاتجاه:</b> النقطة الخضراء هي مكان بدء الخياطة، والسهم يبيّن اتجاهها.</li>
+  <li><b>الشكل المحدد في لوحة الطبقات</b> يظهر مظللاً بالأزرق.</li>
+  <li><b>عدد المحدد</b> ومقاسه وموضعه.</li>
+</ol>
+<table class="compact">
+  <thead><tr><th>لتحقيق هذا</th><th>افعل هذا</th></tr></thead>
+  <tbody>
+    <tr><td>تحديد شكل واحد</td><td>اضغط على خطه في الرسمة، أو على اسمه في لوحة الطبقات.</td></tr>
+    <tr><td>إضافة شكل للتحديد أو إزالته</td><td><kbd>Ctrl</kbd> + ضغطة. <kbd>Shift</kbd> + ضغطة يضيف فقط.</td></tr>
+    <tr><td>تحديد مجموعة بالمستطيل</td><td>اسحب في مكان فارغ؛ يُحدد كل شكل يلمسه المستطيل. مع <kbd>Alt</kbd> تُحدد فقط الأشكال الواقعة داخله بالكامل، ومع <kbd>Ctrl</kbd> أو <kbd>Shift</kbd> يُضاف التحديد إلى السابق.</td></tr>
+    <tr><td>تحديد الكل / إلغاء التحديد</td><td><kbd>Ctrl</kbd>+<kbd>A</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>A</kbd> أو <kbd>Esc</kbd> أو ضغطة في مكان فارغ.</td></tr>
+    <tr><td>نسخ أثناء السحب</td><td>اضغط <kbd>Alt</kbd> أثناء سحب الأشكال: يبقى الأصل مكانه وتتحرك نسخة.</td></tr>
+    <tr><td>إلغاء سحب جارٍ</td><td><kbd>Esc</kbd> قبل ترك زر الفأرة.</td></tr>
+  </tbody>
+</table>
+<div class="side w40">
+  <figure><img src="../annotated/a13-direct.png" alt=""><figcaption>شكل محدد بأداة التحديد المباشر</figcaption></figure>
+  <div class="txt"><p><b>أداة التحديد المباشر</b> <kbd>A</kbd> (السهم الأبيض) تحدد مساراً واحداً بعينه وتحركه فقط، دون إطار أو مقابض. يظهر المسار المحدد بخط منقط داخل توهج أزرق. استخدمها عندما تكون الأشكال متقاربة وتريد تحريك شكل واحد دون غيره.</p>
+  <p>الضغط على شكل في الرسمة يجعل طبقته هي <b>الطبقة الحالية</b>، والنقر المزدوج عليه يحدده وينقلك إلى مرحلة الترتيب.</p></div>
+</div>
+
+<h2 id="c6-2"><span class="n">6.2</span>لوحة الترتيب دون تحديد</h2>
+<p>عندما لا يكون أي شكل محدداً، تعرض اللوحة عدد الأشكال والطبقات وقسم <span class="ui">الرسمة كلها</span> (انظر <a href="#c3-2">شكل نافذة العمل</a>) وفيه:</p>
+<ul>
+  <li><span class="ui">تحديد الكل</span> و<span class="ui">إضافة شكل…</span>.</li>
+  <li><span class="ui">حذف التداخلات</span>: يحذف الأشكال المكررة فوق بعضها في الرسمة كلها، ويظهر إشعار بعددها.</li>
+  <li><span class="ui">ربط الخطوط &lt; 2 مم</span>: يصل الخطوط التي تقل المسافة بين طرفيها عن 2 مم في شكل واحد.</li>
+</ul>
+
+<h2 id="c6-3"><span class="n">6.3</span>التحريك والتدوير والعكس وتغيير المقاس</h2>
+<div class="side w30">
+  <figure><img src="../annotated/a07-arrange-panel.png" alt=""><figcaption>لوحة الترتيب عند تحديد شكل، بكل أقسامها</figcaption></figure>
+  <div class="txt">
+    <p>عند تحديد شكل يظهر في رأس اللوحة اسمه وطبقته وطوله وعدد نقاطه وهل هو مغلق أو مفتوح، وتحته الأقسام:</p>
+    <ol class="legend">
+      <li><b><span class="ui">تحريك</span>:</b> أزرار الأسهم تحرك المحدد بمقدار <span class="ui">الخطوة</span> (الافتراضية 0.10 مم)، والزر الأوسط ينقله إلى نقطة الأصل (0، 0). اكتب مسافة في <span class="lat">X</span> و<span class="lat">Y</span> واضغط <span class="ui">تحريك</span> لتحريك دقيق. أسهم لوحة المفاتيح تحرك بمقدار الخطوة، ومع <kbd>Shift</kbd> بعشرة أضعافها، و<kbd>Enter</kbd> ينقل المؤشر إلى حقل المسافة.</li>
+      <li><b><span class="ui">تدوير وعكس وحجم</span>:</b> اكتب الزاوية (الافتراضية 90°) واضغط <span class="ui">تدوير</span> (المفتاح <kbd>R</kbd> ينقلك إلى حقل الزاوية)؛ <span class="ui">عكس يمين–شمال</span> <kbd>O</kbd> و<span class="ui">عكس فوق–تحت</span> <kbd>Shift</kbd>+<kbd>O</kbd>؛ و<span class="ui">تغيير الحجم…</span> <kbd>S</kbd>.</li>
+      <li><b><span class="ui">مسار الشكل</span>:</b> انظر <a href="#c6-4">6.4</a>.</li>
+      <li><b><span class="ui">تنظيم</span>:</b> انظر <a href="#c6-5">6.5</a>.</li>
+      <li><b><span class="ui">تنظيف</span>:</b> انظر <a href="#c6-6">6.6</a>.</li>
+      <li><b><span class="ui">متابعة إلى الغرز</span>.</b></li>
+    </ol>
+    <div class="box tip"><b class="t">نصيحة</b><kbd>Ctrl</kbd>+<kbd>D</kbd> يكرر آخر تحريك أو تدوير أو عكس أو تغيير مقاس على التحديد الحالي.</div>
+  </div>
+</div>
+<div class="side w48">
+  <figure><img src="../screenshots/30-sheet-resize.png" alt=""><figcaption>نافذة «تغيير الحجم»</figcaption></figure>
+  <div class="txt">
+    <p><b>تغيير المقاس بدقة:</b> اضغط <kbd>S</kbd> أو <span class="ui">تغيير الحجم…</span>. تعرض النافذة <span class="ui">المقاس الحالي</span>، واكتب <span class="ui">العرض</span> و<span class="ui">الارتفاع</span> الجديدين بوحدة <span class="ui">سم</span> أو <span class="ui">مم</span>. مع تفعيل <span class="ui">الحفاظ على النسب</span> يتغير الحقل الآخر تلقائياً، وتعرض النافذة نسبة التغيير المئوية. يبقى مركز التحديد في مكانه.</p>
+    <p>للخط المستقيم الأفقي أو الرأسي يكون أحد الحقلين معطلاً لأنه لا عرض له أو لا ارتفاع.</p>
+  </div>
+</div>
+
+<h2 id="c6-4"><span class="n">6.4</span>مسار الشكل: البداية والاتجاه والأطراف</h2>
+<p>تبدأ الماكينة خياطة كل شكل من نقطة بدايته وفي اتجاهه. يمكنك التحكم فيهما من قسم <span class="ui">مسار الشكل</span>:</p>
+<ul>
+  <li><span class="ui">اختيار نقطة البداية</span> (الأداة <kbd>C</kbd>): اضغط على الشكل في المكان الذي تريد أن تبدأ الخياطة منه. يظهر إشعار «تم تحديد نقطة البداية». البديل: ضغطة يمين على الشكل ثم <span class="ui">ابدأ الخياطة من هنا</span>.</li>
+  <li><span class="ui">عكس الاتجاه</span> <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>R</kbd>: يجعل الخياطة تسير في الاتجاه المعاكس.</li>
+  <li><span class="ui">ابدأ كل شكل من</span>: <span class="ui">فوق</span> / <span class="ui">تحت</span> / <span class="ui">شمال</span> / <span class="ui">يمين</span> — ينقل بداية كل شكل محدد إلى طرفه العلوي أو السفلي أو الأيسر أو الأيمن.</li>
+  <li><span class="ui">إطالة البداية (+) / تقصير (−)</span> و<span class="ui">إطالة النهاية (+) / تقصير (−)</span>: قيمة موجبة تمد الطرف، وسالبة تقصّره، ثم اضغط <span class="ui">تطبيق على الأطراف</span>.</li>
+  <li><span class="ui">تعديل النقاط واحدة واحدة…</span>: يظهر عند تحديد شكل واحد.</li>
+</ul>
+<div class="side w48">
+  <figure><img src="../screenshots/28-sheet-edit-points.png" alt=""><figcaption>نافذة «تعديل النقاط»</figcaption></figure>
+  <div class="txt">
+    <p>في نافذة <b>تعديل النقاط</b> جدول بكل نقاط الشكل وإحداثياتها <span class="lat">X</span> و<span class="lat">Y</span> بالمليمتر. يمكنك تعديل أي رقم، وحذف نقطة بزر <b>×</b>، وإضافة نقطة بزر <span class="ui">إضافة نقطة</span> (تُضاف بعد آخر نقطة بإزاحة 5 مم)، وتحويل الشكل إلى مغلق أو مفتوح بمفتاح <span class="ui">شكل مغلق</span>. اضغط <span class="ui">تطبيق</span> للحفظ.</p>
+    <p>يعرض الجدول أول 2000 نقطة فقط في الأشكال الكبيرة جداً. كل خانة يجب أن تحتوي رقماً، وإلا تظهر رسالة «كل نقطة تحتاج رقماً لـ X و Y.».</p>
+  </div>
+</div>
+
+<h2 id="c6-5"><span class="n">6.5</span>التنظيم: الطبقة والاسم والنسخ والأجزاء</h2>
+<ul>
+  <li><span class="ui">اعمل طبقة من المحدد</span> <kbd>Ctrl</kbd>+<kbd>G</kbd>: ينقل الأشكال المحددة إلى طبقة جديدة (<a href="#c7-3">7.3</a>).</li>
+  <li><span class="ui">طبقة</span>: قائمة لنقل المحدد إلى طبقة أخرى، وآخر خيار فيها <span class="ui">طبقة جديدة…</span>.</li>
+  <li><span class="ui">الاسم</span>: اسم خاص للشكل (يظهر عند تحديد شكل واحد).</li>
+  <li><span class="ui">نسخ…</span> و<span class="ui">نقطة مرجعية…</span> و<span class="ui">أجزاء (زجزاج…)</span> و<span class="ui">حذف</span> <kbd>Delete</kbd>.</li>
+</ul>
+<div class="side w48">
+  <figure><img src="../screenshots/25-sheet-duplicate.png" alt=""><figcaption>نافذة «نسخ»</figcaption></figure>
+  <div class="txt"><p><b>نسخ الأشكال بدقة:</b> حدد <span class="ui">إزاحة X</span> و<span class="ui">إزاحة Y</span> بالمليمتر (الافتراضي 10 و0)، ويمكنك عكس النسخة يميناً–شمالاً أو فوق–تحت، واختيار <span class="ui">عدد النسخ</span> (حتى 200؛ كل نسخة تُزاح عن السابقة). اضغط <span class="ui">نسخ</span>. تُحدد النسخ الجديدة بعد إنشائها.</p></div>
+</div>
+<div class="side w48">
+  <figure><img src="../screenshots/29-sheet-sections.png" alt=""><figcaption>نافذة «الأجزاء»</figcaption></figure>
+  <div class="txt">
+    <p><b>الأجزاء</b> تجعل جزءاً من الشكل يُخاط بطريقة مختلفة. حدد شكلاً واحداً، ثم اختر النوع:</p>
+    <ul>
+      <li><span class="ui">زجزاج</span>: غرز متعرجة، ولها <span class="ui">عرض الزجزاج</span> و<span class="ui">خطوة الزجزاج</span> و<span class="ui">شكل الزجزاج</span> (<span class="lat">V</span> أو <span class="lat">W</span>) و<span class="ui">موضع البداية</span>.</li>
+      <li><span class="ui">رجوع</span>: غرز رجوع (تقفيل) في هذا الجزء.</li>
+      <li><span class="ui">طول خاص</span>: يُخاط بطول الغرزة الخاص المحدد في مرحلة الغرز.</li>
+    </ul>
+    <p>حدد بداية الجزء ونهايته بالمليمتر <span class="ui">من</span> و<span class="ui">إلى</span> مقيسة من بداية الشكل (تذكر النافذة طول الشكل الكلي)، ثم <span class="ui">إضافة جزء</span>. تبقى النافذة مفتوحة لإضافة أجزاء أخرى، وتعرض قائمة الأجزاء الحالية. <span class="ui">مسح الأجزاء</span> يحذفها كلها. تظهر الأجزاء على الرسمة بخط عريض شفاف بلونها.</p>
+  </div>
+</div>
+<div class="side w48">
+  <figure><img src="../screenshots/26-sheet-reference.png" alt=""><figcaption>نافذة «النقاط المرجعية»</figcaption></figure>
+  <div class="txt"><p><b>النقاط المرجعية</b> تستخدم بداية الشكل المحدد لمحاذاة الشغلانة على الماكينة: فعّل <span class="ui">النقطة المرجعية 1</span> أو <span class="ui">2</span>. تظهر النقطة على الرسمة بعلامة حمراء ومعها <span class="lat">R1</span> أو <span class="lat">R2</span>. ويمكن جعل طبقة الشكل <b>للمحاذاة فقط</b> فلا تُخاط، وتظهر الطبقة في القائمة بكلمة «align». <span class="ui">حذف الكل</span> يلغي النقاط المرجعية جميعها.</p></div>
+</div>
+
+<h2 id="c6-6"><span class="n">6.6</span>تنظيف الرسمة</h2>
+<p>الرسومات القادمة من برامج أخرى قد تحتوي نقاطاً مكررة أو خطوطاً قصيرة جداً أو خطوطاً مقطّعة. في قسم <span class="ui">تنظيف</span>، اكتب القيمة بالمليمتر ثم اضغط الزر، وكلها تعمل على الأشكال المحددة ويظهر إشعار بالنتيجة:</p>
+<table class="compact">
+  <thead><tr><th>الزر</th><th>القيمة الافتراضية</th><th>ما يفعله</th></tr></thead>
+  <tbody>
+    <tr><td><span class="ui">دمج النقاط القريبة</span></td><td class="lat">0.30</td><td>يدمج النقاط المتتالية الأقرب من هذه المسافة في نقطة واحدة.</td></tr>
+    <tr><td><span class="ui">حذف الخطوط الأقصر</span></td><td class="lat">3.50</td><td>يحذف الخطوط التي طولها أقل من هذه القيمة.</td></tr>
+    <tr><td><span class="ui">ربط أطراف الخطوط</span> <kbd>Ctrl</kbd>+<kbd>J</kbd></td><td class="lat">2.00</td><td>يصل الخطوط التي تقترب أطرافها إلى هذه المسافة في شكل واحد. إن لم يجد أطرافاً قريبة تظهر رسالة بذلك.</td></tr>
+    <tr><td><span class="ui">حذف النسخ المتداخلة</span></td><td>—</td><td>يحذف الأشكال المكررة فوق بعضها.</td></tr>
+  </tbody>
+</table>
+
+<h2 id="c6-7"><span class="n">6.7</span>إضافة شكل جديد</h2>
+<div class="side w48">
+  <figure><img src="../screenshots/24-sheet-add-shape.png" alt=""><figcaption>نافذة «إضافة شكل»</figcaption></figure>
+  <div class="txt">
+    <p>اضغط <kbd>M</kbd> أو زر <b>+</b> في شريط الأدوات أو في لوحة الطبقات، أو ضغطة يمين في مكان فارغ ثم <span class="ui">إضافة شكل هنا…</span> (يُملأ الموضع بمكان الضغطة).</p>
+    <ol class="steps">
+      <li>اختر النوع: <span class="ui">نقطة</span> أو <span class="ui">خط</span> أو <span class="ui">مستطيل</span> أو <span class="ui">دائرة</span>.</li>
+      <li>اكتب <span class="ui">الموضع X</span> و<span class="ui">الموضع Y</span> بالمليمتر.</li>
+      <li>اكتب <span class="ui">الطول / العرض / نصف القطر</span> (حسب النوع)، و<span class="ui">الارتفاع (مستطيل)</span> للمستطيل.</li>
+      <li>اختر <span class="ui">طبقة</span> ثم <span class="ui">إضافة</span>.</li>
+    </ol>
+    <p class="result">يظهر الشكل في الرسمة ويُحدد، مع إشعار «تمت إضافة الشكل».</p>
+  </div>
+</div>
+
+<h2 id="c6-8"><span class="n">6.8</span>القوائم المختصرة والحافظة</h2>
+<div class="side w33">
+  <figure><img src="../annotated/a09-menu-shape.png" alt=""><figcaption>القائمة المختصرة لشكل</figcaption></figure>
+  <div class="txt">
+    <p><b>ضغطة يمين على شكل</b> تحدده وتعرض: <span class="ui">ابدأ الخياطة من هنا</span> (من النقطة التي ضغطت عليها)، <span class="ui">عكس الاتجاه</span>، <span class="ui">كوبي</span> (نسخ إلى الحافظة)، <span class="ui">نسخ</span> (نسخة مزاحة 5 مم مباشرة)، <span class="ui">عكس يمين–شمال</span>، <span class="ui">عكس فوق–تحت</span>، <span class="ui">تقسيم عند أقرب نقطة</span> (يقسم الشكل إلى اثنين عند أقرب نقطة من الضغطة)، <span class="ui">تعديل النقاط…</span>، <span class="ui">أجزاء (زجزاج، رجوع)…</span>، و<span class="ui">حذف</span>.</p>
+    <p><b>ضغطة يمين في مكان فارغ</b> تعرض: <span class="ui">إضافة شكل هنا…</span>، و<span class="ui">لزق هنا</span> (إذا نسخت شيئاً)، و<span class="ui">ملاءمة الرسمة</span>، و<span class="ui">تحديد الكل</span>.</p>
+  </div>
+</div>
+<figure class="small"><img src="../annotated/a10-menu-empty.png" alt=""><figcaption>القائمة المختصرة في مكان فارغ</figcaption></figure>
+<p><b>الحافظة داخل البرنامج:</b> <kbd>Ctrl</kbd>+<kbd>C</kbd> ينسخ المحدد، و<kbd>Ctrl</kbd>+<kbd>X</kbd> يقصه، و<kbd>Ctrl</kbd>+<kbd>V</kbd> يلصقه في منتصف المنظر الحالي، و<kbd>Ctrl</kbd>+<kbd>F</kbd> يلصقه في مكانه نفسه ويُخاط آخراً، و<kbd>Ctrl</kbd>+<kbd>B</kbd> يلصقه في مكانه ويُخاط أولاً. هذه الحافظة خاصة بالبرنامج ولا تُشارك مع برامج أخرى.</p>
+
+<h2 id="c6-9"><span class="n">6.9</span>أداة القياس</h2>
+<div class="side w48">
+  <figure><img src="../annotated/a14-measure.png" alt=""><figcaption>أداة القياس أثناء السحب</figcaption></figure>
+  <div class="txt">
+    <p>اضغط <kbd>I</kbd> ثم اسحب من نقطة إلى أخرى. يُرسم خط متقطع بينهما، ويظهر فوقه شريط داكن مخصص لعرض المسافة بالمليمتر والزاوية وفرق <span class="lat">X</span> و<span class="lat">Y</span>. اضغط <kbd>Esc</kbd> للخروج.</p>
+    <div class="box issue"><b class="t">مشكلة معروفة</b>في الواجهة العربية تُكتب قراءة القياس خارج الشريط الداكن فلا تُقرأ (كما في الصورة). للقراءة بدّل اللغة مؤقتاً إلى الإنجليزية، أو استخدم بديلاً: حدد الشكل واقرأ عرضه وارتفاعه في شريط المقاس أعلى الرسمة.</div>
+  </div>
+</div>

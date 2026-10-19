@@ -1,0 +1,1275 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>ستيتشلاين — دليل المستخدم</title>
+<meta name="author" content="Stitchline">
+<meta name="description" content="دليل استخدام برنامج ستيتشلاين (Stitchline) لماكينات خياطة الباترون وقص الليزر">
+<link rel="stylesheet" href="manual.css">
+</head>
+<body>
+
+<!-- ================================================================ cover -->
+<section class="cover">
+  <div class="band"></div>
+  <svg class="logo" viewBox="0 0 26 26" aria-hidden="true">
+    <rect width="26" height="26" rx="7.5" fill="#ffffff"/>
+    <path d="M5.5 19.5c3.5-1 6-3.5 8.2-7.4" fill="none" stroke="#e8336d" stroke-width="2" stroke-linecap="round" stroke-dasharray="2.6 2.4"/>
+    <path d="M20.5 5.5 13 13.6" stroke="#1c1917" stroke-width="2.2" stroke-linecap="round"/>
+    <circle cx="19.6" cy="6.4" r=".9" fill="#ffffff"/>
+  </svg>
+  <div class="brand"><div class="en">Stitchline</div><div class="ar">ستيتشلاين · خياطة الباترون وقص الليزر</div></div>
+  <svg class="seam" viewBox="0 0 800 100" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0 70 C 160 66 230 14 400 22 S 640 86 800 40" fill="none" stroke="#e8336d" stroke-width="3.2" stroke-dasharray="10 9" stroke-linecap="round"/>
+  </svg>
+  <div class="title">
+    <h1>دليل المستخدم</h1>
+    <div class="sub">شرح كامل ومصوَّر لبرنامج ستيتشلاين: من فتح الرسمة وترتيب أشكالها وضبط الغرز وقص الليزر، إلى حفظ ملف الماكينة <span class="lat">SLW</span> ونقله إلى الماكينة.</div>
+  </div>
+  <img class="shot" src="../screenshots/04-arrange-after-open.png" alt="">
+  <div class="meta">
+    <div><b>الإصدار</b><span class="lat">Stitchline 1.0.0</span></div>
+    <div><b>نظام التشغيل</b><span class="lat">Windows 10 / 11 (64-bit)</span></div>
+    <div><b>لغة الدليل</b>العربية</div>
+    <div><b>تاريخ الإعداد</b><span class="lat">2026-10-19</span></div>
+  </div>
+</section>
+
+<!-- ================================================================ table of contents (page numbers are filled in by build.mjs) -->
+<section class="toc" id="toc">
+  <h1>المحتويات</h1>
+  <ol id="tocList"><li class="l1"><span class="tn">1</span><a href="#c1">مقدمة</a><span class="dots"></span><a class="pg" href="#c1">6</a></li>
+<li class="l2"><span class="tn">1.1</span><a href="#c1-1">ما برنامج ستيتشلاين؟</a><span class="dots"></span><a class="pg" href="#c1-1">6</a></li>
+<li class="l2"><span class="tn">1.2</span><a href="#c1-2">أبرز ما يمكنك فعله بالبرنامج</a><span class="dots"></span><a class="pg" href="#c1-2">6</a></li>
+<li class="l2"><span class="tn">1.3</span><a href="#c1-3">لمن صُمّم البرنامج والدليل؟</a><span class="dots"></span><a class="pg" href="#c1-3">6</a></li>
+<li class="l2"><span class="tn">1.4</span><a href="#c1-4">كيف تستفيد من هذا الدليل؟</a><span class="dots"></span><a class="pg" href="#c1-4">7</a></li>
+<li class="l2"><span class="tn">1.5</span><a href="#c1-5">العلامات المستخدمة في الدليل</a><span class="dots"></span><a class="pg" href="#c1-5">7</a></li>
+<li class="l1"><span class="tn">2</span><a href="#c2">المتطلبات والتثبيت والتشغيل</a><span class="dots"></span><a class="pg" href="#c2">8</a></li>
+<li class="l2"><span class="tn">2.1</span><a href="#c2-1">متطلبات النظام</a><span class="dots"></span><a class="pg" href="#c2-1">8</a></li>
+<li class="l2"><span class="tn">2.2</span><a href="#c2-2">التثبيت</a><span class="dots"></span><a class="pg" href="#c2-2">8</a></li>
+<li class="l2"><span class="tn">2.3</span><a href="#c2-3">التشغيل لأول مرة</a><span class="dots"></span><a class="pg" href="#c2-3">9</a></li>
+<li class="l2"><span class="tn">2.4</span><a href="#c2-4">أين يحفظ البرنامج بياناته؟</a><span class="dots"></span><a class="pg" href="#c2-4">9</a></li>
+<li class="l2"><span class="tn">2.5</span><a href="#c2-5">التحديث والإزالة</a><span class="dots"></span><a class="pg" href="#c2-5">9</a></li>
+<li class="l1"><span class="tn">3</span><a href="#c3">التعرّف على الواجهة</a><span class="dots"></span><a class="pg" href="#c3">10</a></li>
+<li class="l2"><span class="tn">3.1</span><a href="#c3-1">الصفحة الرئيسية</a><span class="dots"></span><a class="pg" href="#c3-1">10</a></li>
+<li class="l2"><span class="tn">3.2</span><a href="#c3-2">نافذة العمل: نظرة عامة</a><span class="dots"></span><a class="pg" href="#c3-2">12</a></li>
+<li class="l2"><span class="tn">3.3</span><a href="#c3-3">شريط الأدوات ولوحة الطبقات</a><span class="dots"></span><a class="pg" href="#c3-3">15</a></li>
+<li class="l2"><span class="tn">3.4</span><a href="#c3-4">التنقل في الرسمة</a><span class="dots"></span><a class="pg" href="#c3-4">16</a></li>
+<li class="l2"><span class="tn">3.5</span><a href="#c3-5">الإشعارات ومؤشر الانشغال</a><span class="dots"></span><a class="pg" href="#c3-5">16</a></li>
+<li class="l1"><span class="tn">4</span><a href="#c4">مراحل العمل الخمس</a><span class="dots"></span><a class="pg" href="#c4">17</a></li>
+<li class="l1"><span class="tn">5</span><a href="#c5">مرحلة الاستيراد: فتح الرسمة</a><span class="dots"></span><a class="pg" href="#c5">18</a></li>
+<li class="l2"><span class="tn">5.1</span><a href="#c5-1">بدء شغلانة جديدة</a><span class="dots"></span><a class="pg" href="#c5-1">18</a></li>
+<li class="l2"><span class="tn">5.2</span><a href="#c5-2">فتح رسمة أو شغلانة</a><span class="dots"></span><a class="pg" href="#c5-2">19</a></li>
+<li class="l2"><span class="tn">5.3</span><a href="#c5-3">إدراج رسمة في الشغلانة الحالية</a><span class="dots"></span><a class="pg" href="#c5-3">20</a></li>
+<li class="l2"><span class="tn">5.4</span><a href="#c5-4">لوحة الاستيراد بالتفصيل</a><span class="dots"></span><a class="pg" href="#c5-4">21</a></li>
+<li class="l2"><span class="tn">5.5</span><a href="#c5-5">الدقة (dpi)</a><span class="dots"></span><a class="pg" href="#c5-5">21</a></li>
+<li class="l2"><span class="tn">5.6</span><a href="#c5-6">تكبير وتصغير الرسمة، والمقياس من قياس فعلي</a><span class="dots"></span><a class="pg" href="#c5-6">22</a></li>
+<li class="l2"><span class="tn">5.7</span><a href="#c5-7">طاولة الماكينة</a><span class="dots"></span><a class="pg" href="#c5-7">22</a></li>
+<li class="l1"><span class="tn">6</span><a href="#c6">مرحلة الترتيب: تعديل الأشكال</a><span class="dots"></span><a class="pg" href="#c6">23</a></li>
+<li class="l2"><span class="tn">6.1</span><a href="#c6-1">تحديد الأشكال</a><span class="dots"></span><a class="pg" href="#c6-1">23</a></li>
+<li class="l2"><span class="tn">6.2</span><a href="#c6-2">لوحة الترتيب دون تحديد</a><span class="dots"></span><a class="pg" href="#c6-2">24</a></li>
+<li class="l2"><span class="tn">6.3</span><a href="#c6-3">التحريك والتدوير والعكس وتغيير المقاس</a><span class="dots"></span><a class="pg" href="#c6-3">25</a></li>
+<li class="l2"><span class="tn">6.4</span><a href="#c6-4">مسار الشكل: البداية والاتجاه والأطراف</a><span class="dots"></span><a class="pg" href="#c6-4">26</a></li>
+<li class="l2"><span class="tn">6.5</span><a href="#c6-5">التنظيم: الطبقة والاسم والنسخ والأجزاء</a><span class="dots"></span><a class="pg" href="#c6-5">27</a></li>
+<li class="l2"><span class="tn">6.6</span><a href="#c6-6">تنظيف الرسمة</a><span class="dots"></span><a class="pg" href="#c6-6">28</a></li>
+<li class="l2"><span class="tn">6.7</span><a href="#c6-7">إضافة شكل جديد</a><span class="dots"></span><a class="pg" href="#c6-7">29</a></li>
+<li class="l2"><span class="tn">6.8</span><a href="#c6-8">القوائم المختصرة والحافظة</a><span class="dots"></span><a class="pg" href="#c6-8">29</a></li>
+<li class="l2"><span class="tn">6.9</span><a href="#c6-9">أداة القياس</a><span class="dots"></span><a class="pg" href="#c6-9">30</a></li>
+<li class="l1"><span class="tn">7</span><a href="#c7">الطبقات</a><span class="dots"></span><a class="pg" href="#c7">31</a></li>
+<li class="l2"><span class="tn">7.1</span><a href="#c7-1">لوحة الطبقات</a><span class="dots"></span><a class="pg" href="#c7-1">31</a></li>
+<li class="l2"><span class="tn">7.2</span><a href="#c7-2">القائمة المختصرة للطبقة وسحب الطبقات</a><span class="dots"></span><a class="pg" href="#c7-2">32</a></li>
+<li class="l2"><span class="tn">7.3</span><a href="#c7-3">إنشاء طبقة من المحدد</a><span class="dots"></span><a class="pg" href="#c7-3">33</a></li>
+<li class="l1"><span class="tn">8</span><a href="#c8">مرحلة الغرز وقص الليزر</a><span class="dots"></span><a class="pg" href="#c8">34</a></li>
+<li class="l2"><span class="tn">8.1</span><a href="#c8-1">الإعدادات الأساسية للطبقة</a><span class="dots"></span><a class="pg" href="#c8-1">34</a></li>
+<li class="l2"><span class="tn">8.2</span><a href="#c8-2">أقسام لوحة الغرز</a><span class="dots"></span><a class="pg" href="#c8-2">35</a></li>
+<li class="l2"><span class="tn">8.3</span><a href="#c8-3">إعدادات الماكينة</a><span class="dots"></span><a class="pg" href="#c8-3">36</a></li>
+<li class="l2"><span class="tn">8.4</span><a href="#c8-4">نسخ إعدادات الغرز لكل الطبقات</a><span class="dots"></span><a class="pg" href="#c8-4">37</a></li>
+<li class="l2"><span class="tn">8.5</span><a href="#c8-5">طبقة قص الليزر</a><span class="dots"></span><a class="pg" href="#c8-5">37</a></li>
+<li class="l1"><span class="tn">9</span><a href="#c9">مرحلة التسلسل: ترتيب الخياطة والمحاكاة</a><span class="dots"></span><a class="pg" href="#c9">40</a></li>
+<li class="l2"><span class="tn">9.1</span><a href="#c9-1">قائمة ترتيب الخياطة</a><span class="dots"></span><a class="pg" href="#c9-1">40</a></li>
+<li class="l2"><span class="tn">9.2</span><a href="#c9-2">الترتيب التلقائي وحركات الانتقال</a><span class="dots"></span><a class="pg" href="#c9-2">42</a></li>
+<li class="l2"><span class="tn">9.3</span><a href="#c9-3">محاكاة الخياطة</a><span class="dots"></span><a class="pg" href="#c9-3">42</a></li>
+<li class="l1"><span class="tn">10</span><a href="#c10">مرحلة الإخراج: برنامج الماكينة والحفظ</a><span class="dots"></span><a class="pg" href="#c10">44</a></li>
+<li class="l2"><span class="tn">10.1</span><a href="#c10-1">الإحصاءات</a><span class="dots"></span><a class="pg" href="#c10-1">44</a></li>
+<li class="l2"><span class="tn">10.2</span><a href="#c10-2">البرنامج وإدراج الأوامر</a><span class="dots"></span><a class="pg" href="#c10-2">45</a></li>
+<li class="l2"><span class="tn">10.3</span><a href="#c10-3">الأوامر التلقائية والسرعة والمخارج</a><span class="dots"></span><a class="pg" href="#c10-3">46</a></li>
+<li class="l2"><span class="tn">10.5</span><a href="#c10-5">التصدير بصيغ أخرى</a><span class="dots"></span><a class="pg" href="#c10-5">48</a></li>
+<li class="l2"><span class="tn">10.6</span><a href="#c10-6">حفظ ملف الماكينة</a><span class="dots"></span><a class="pg" href="#c10-6">48</a></li>
+<li class="l1"><span class="tn">11</span><a href="#c11">الحفظ والتصدير والنسخ الاحتياطي</a><span class="dots"></span><a class="pg" href="#c11">50</a></li>
+<li class="l2"><span class="tn">11.1</span><a href="#c11-1">الفرق بين الحفظ والتصدير وملف الماكينة</a><span class="dots"></span><a class="pg" href="#c11-1">50</a></li>
+<li class="l2"><span class="tn">11.2</span><a href="#c11-2">حفظ الشغلانة</a><span class="dots"></span><a class="pg" href="#c11-2">50</a></li>
+<li class="l2"><span class="tn">11.3</span><a href="#c11-3">سؤال حفظ التعديلات</a><span class="dots"></span><a class="pg" href="#c11-3">51</a></li>
+<li class="l2"><span class="tn">11.4</span><a href="#c11-4">الحفظ التلقائي واستعادة العمل</a><span class="dots"></span><a class="pg" href="#c11-4">51</a></li>
+<li class="l1"><span class="tn">12</span><a href="#c12">سير العمل العملي</a><span class="dots"></span><a class="pg" href="#c12">52</a></li>
+<li class="l2"><span class="tn">12.1</span><a href="#c12-1">من الرسمة إلى ملف الماكينة على الفلاشة</a><span class="dots"></span><a class="pg" href="#c12-1">52</a></li>
+<li class="l2"><span class="tn">12.2</span><a href="#c12-2">شغلانة خياطة وقص ليزر معاً</a><span class="dots"></span><a class="pg" href="#c12-2">52</a></li>
+<li class="l2"><span class="tn">12.3</span><a href="#c12-3">تصحيح مقاس القطع بعد خياطة تجريبية</a><span class="dots"></span><a class="pg" href="#c12-3">53</a></li>
+<li class="l2"><span class="tn">12.4</span><a href="#c12-4">إضافة إيقاف مؤقت أو تغيير سرعة داخل الشغلانة</a><span class="dots"></span><a class="pg" href="#c12-4">53</a></li>
+<li class="l1"><span class="tn">13</span><a href="#c13">الإعدادات والتخصيص</a><span class="dots"></span><a class="pg" href="#c13">55</a></li>
+<li class="l2"><span class="tn">13.1</span><a href="#c13-1">فتح الإعدادات</a><span class="dots"></span><a class="pg" href="#c13-1">55</a></li>
+<li class="l2"><span class="tn">13.2</span><a href="#c13-2">عام</a><span class="dots"></span><a class="pg" href="#c13-2">56</a></li>
+<li class="l2"><span class="tn">13.3</span><a href="#c13-3">المظهر والنصوص</a><span class="dots"></span><a class="pg" href="#c13-3">56</a></li>
+<li class="l2"><span class="tn">13.4</span><a href="#c13-4">الواجهة</a><span class="dots"></span><a class="pg" href="#c13-4">57</a></li>
+<li class="l1"><span class="tn">14</span><a href="#c14">البحث عن أي أداة</a><span class="dots"></span><a class="pg" href="#c14">58</a></li>
+<li class="l1"><span class="tn">15</span><a href="#c15">اختصارات لوحة المفاتيح</a><span class="dots"></span><a class="pg" href="#c15">59</a></li>
+<li class="l1"><span class="tn">16</span><a href="#c16">حل المشكلات</a><span class="dots"></span><a class="pg" href="#c16">63</a></li>
+<li class="l2"><span class="tn">16.1</span><a href="#c16-1">مشكلات فتح الملفات</a><span class="dots"></span><a class="pg" href="#c16-1">63</a></li>
+<li class="l2"><span class="tn">16.2</span><a href="#c16-2">مشكلات التعديل والحفظ</a><span class="dots"></span><a class="pg" href="#c16-2">64</a></li>
+<li class="l2"><span class="tn">16.3</span><a href="#c16-3">نتائج خياطة غير متوقعة</a><span class="dots"></span><a class="pg" href="#c16-3">65</a></li>
+<li class="l2"><span class="tn">16.4</span><a href="#c16-4">مشكلات معروفة في هذا الإصدار</a><span class="dots"></span><a class="pg" href="#c16-4">65</a></li>
+<li class="l1"><span class="tn">17</span><a href="#c17">الأسئلة الشائعة</a><span class="dots"></span><a class="pg" href="#c17">66</a></li>
+<li class="l1"><span class="tn">18</span><a href="#c18">مسرد المصطلحات</a><span class="dots"></span><a class="pg" href="#c18">68</a></li>
+<li class="l1"><span class="tn">19</span><a href="#c19">فهرس الموضوعات</a><span class="dots"></span><a class="pg" href="#c19">70</a></li></ol>
+</section>
+
+
+<!-- ================================================================ 1 intro -->
+<h1 class="ch" id="c1"><span class="n">1</span>مقدمة</h1>
+<p class="lead">يعرّفك هذا الفصل بالبرنامج، ويشرح كيف صُمّم هذا الدليل وكيف تقرأ العلامات المستخدمة فيه.</p>
+
+<h2 id="c1-1"><span class="n">1.1</span>ما برنامج ستيتشلاين؟</h2>
+<p><b>ستيتشلاين</b> <span class="en">(Stitchline)</span> برنامج لنظام ويندوز يُجهّز ملفات التشغيل لماكينات خياطة الباترون (ماكينات الخياطة المبرمجة التي تخيط شكلاً مرسوماً على قطعة القماش). تقرأ هذه الماكينات ملفات بصيغة <code>SLW</code>، وهي صيغة برنامج التصميم الأصلي «<span class="lat">Sew_Soft</span>». بعض هذه الماكينات مزوّد برأس ليزر على الإبرة رقم 3 لقص القماش، والبرنامج يدعم ذلك أيضاً.</p>
+<p>باختصار: تفتح في البرنامج رسمة الباترون، وترتّب أشكالها، وتحدد طريقة خياطة كل جزء أو قصّه بالليزر، وتختار ترتيب الخياطة، ثم تحفظ ملف الماكينة وتنقله إليها، ويمكنك الحفظ مباشرة على فلاشة <span class="lat">USB</span>.</p>
+
+<h2 id="c1-2"><span class="n">1.2</span>أبرز ما يمكنك فعله بالبرنامج</h2>
+<ul>
+  <li>فتح الرسومات بصيغ <code>DXF</code> و<code>AI</code> (إليستريتور) و<code>PLT</code>/<code>HPGL</code>/<code>PRT</code> و<code>DST</code> و<code>DSB</code> وملفات الماكينة <code>SLW</code>، إضافة إلى ملفات الشغلانات الخاصة بالبرنامج <code>.stitchline</code>.</li>
+  <li>تحريك الأشكال وتدويرها وعكسها وتغيير مقاسها وتعديل نقاطها وتنظيف الرسومات من العيوب.</li>
+  <li>توزيع الأشكال على <b>طبقات</b>، لكل طبقة إبرة ولون وإعدادات غرز خاصة بها.</li>
+  <li>ضبط الغرز بدقة: طول الغرزة، والرجوع (التقفيل)، وتقوية الأشكال المغلقة، والتبطيء والتكثيف عند الزوايا، وأجزاء الزجزاج، والطول الخاص والمزدوج.</li>
+  <li>تخصيص طبقة لقص الليزر (الإبرة 3) مع فحص لسرعة القص وإصلاح المسارات البطيئة بضغطة واحدة.</li>
+  <li>تحديد ترتيب الخياطة يدوياً أو تلقائياً، ومشاهدة محاكاة لحركة الإبرة قبل الخياطة الفعلية.</li>
+  <li>مراجعة برنامج الماكينة وإحصاءاته (عدد الغرز، وطول الخياطة، والوقت المتوقع) وإضافة أوامر خاصة مثل السرعة والانتظار والمخارج.</li>
+  <li>حفظ ملف الماكينة، والتصدير بصيغ <code>DXF</code> و<code>PLT</code> و<code>SVG</code> و<code>CSV</code>.</li>
+  <li>واجهة بالعربية (الافتراضية) والإنجليزية، وسمة فاتحة وداكنة، وتراجع وإعادة، وحفظ تلقائي للعمل.</li>
+</ul>
+
+<h2 id="c1-3"><span class="n">1.3</span>لمن صُمّم البرنامج والدليل؟</h2>
+<p>صُمّم البرنامج لمشغّلي ماكينات خياطة الباترون ومجهّزي ملفاتها في المصانع والورش. وكُتب هذا الدليل لمستخدم لم يسبق له استخدام البرنامج، ولا يحتاج إلى خبرة تقنية؛ يكفي أن تعرف استخدام الفأرة ولوحة المفاتيح في ويندوز.</p>
+
+<h2 id="c1-4"><span class="n">1.4</span>كيف تستفيد من هذا الدليل؟</h2>
+<ul>
+  <li>إن كنت تستخدم البرنامج للمرة الأولى فاقرأ الفصول 2 و3 و4، ثم طبّق السيناريو الأول في <a href="#c12">الفصل 12</a> خطوة بخطوة.</li>
+  <li>الفصول من 5 إلى 10 تتبع مراحل العمل الخمس كما تظهر في البرنامج، وكل فصل منها يشرح لوحة المرحلة بالكامل.</li>
+  <li>للبحث السريع استخدم <a href="#toc">المحتويات</a> و<a href="#c19">فهرس الموضوعات</a> في آخر الدليل، وكلاهما يحتوي روابط قابلة للنقر.</li>
+</ul>
+
+<h2 id="c1-5"><span class="n">1.5</span>العلامات المستخدمة في الدليل</h2>
+<ul>
+  <li>أسماء الأزرار والقوائم تُكتب كما تظهر في البرنامج داخل إطار رمادي، مثل <span class="ui">حفظ ملف الماكينة</span>، وقد يُذكر الاسم الإنجليزي بجوارها <span class="en">(Save machine file)</span>. لاحظ أن بعض عبارات الواجهة العربية مكتوبة باللهجة المصرية، مثل «شغلانة» بمعنى مهمة عمل، و«الشباك» بمعنى النافذة.</li>
+  <li>مفاتيح لوحة المفاتيح تظهر هكذا: <span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>S</kbd></span>.</li>
+  <li>الأرقام الوردية على الصور <span style="display:inline-block;width:5.4mm;height:5.4mm;line-height:5.4mm;border-radius:50%;background:#e8336d;color:#fff;text-align:center;font-family:'Readex Pro';font-size:8pt">1</span> تقابل البنود المرقمة بالأرقام نفسها في النص المجاور للصورة. الإطارات الوردية تحدد العنصر المقصود، وهي إضافة توضيحية وليست جزءاً من البرنامج.</li>
+</ul>
+<div class="box note"><b class="t">ملاحظة</b>معلومة مفيدة تساعدك على فهم ما يحدث.</div>
+<div class="box tip"><b class="t">نصيحة</b>طريقة أسرع أو أسلم لإنجاز العمل.</div>
+<div class="box warn"><b class="t">تنبيه</b>انتبه لهذه النقطة حتى لا تفقد عملاً أو تحصل على نتيجة غير متوقعة.</div>
+<div class="box issue"><b class="t">مشكلة معروفة</b>سلوك غير صحيح لاحظناه في هذا الإصدار أثناء الفحص، مع طريقة بديلة لإنجاز المطلوب.</div>
+<p class="small-print">جميع الصور في هذا الدليل لقطات حقيقية من الإصدار <span class="lat">1.0.0</span> من البرنامج بواجهته العربية والسمة الفاتحة، والتُقطت باستخدام رسمة تجريبية مرفقة مع البرنامج (<code>demo.plt</code>: قطعتا قماش بتطريز متقاطع).</p>
+
+<!-- ================================================================ 2 install -->
+<h1 class="ch" id="c2"><span class="n">2</span>المتطلبات والتثبيت والتشغيل</h1>
+<p class="lead">ما تحتاجه لتشغيل البرنامج، وكيف تثبّته وتشغّله أول مرة، وأين يحفظ بياناته.</p>
+
+<h2 id="c2-1"><span class="n">2.1</span>متطلبات النظام</h2>
+<table class="compact">
+  <thead><tr><th>البند</th><th>المطلوب</th></tr></thead>
+  <tbody>
+    <tr><td>نظام التشغيل</td><td><span class="lat">Windows 10</span> أو <span class="lat">Windows 11</span>، إصدار 64 بت (<span class="lat">x64</span>).</td></tr>
+    <tr><td>مكوّن العرض</td><td><span class="lat">Microsoft Edge WebView2 Runtime</span>، وهو موجود مسبقاً في أغلب أجهزة ويندوز 10 و11. إن لم يكن موجوداً ينزّله برنامج التثبيت تلقائياً، وهذا يتطلب اتصالاً بالإنترنت وقت التثبيت.</td></tr>
+    <tr><td>الشاشة</td><td>أصغر مقاس لنافذة البرنامج <span class="lat">900 × 600</span> بكسل، ويُنصح بشاشة عرضها <span class="lat">1366</span> بكسل أو أكثر.</td></tr>
+    <tr><td>الصلاحيات</td><td>لا يحتاج التثبيت صلاحيات مسؤول (<span class="lat">Administrator</span>)؛ يُثبَّت للمستخدم الحالي فقط.</td></tr>
+    <tr><td>المساحة</td><td>ملف التثبيت صغير (نحو <span class="lat">2.5</span> ميجابايت).</td></tr>
+    <tr><td>اختياري</td><td>فلاشة <span class="lat">USB</span> لنقل ملف الماكينة إليها مباشرة.</td></tr>
+  </tbody>
+</table>
+
+<h2 id="c2-2"><span class="n">2.2</span>التثبيت</h2>
+<p>يُوزَّع البرنامج في ملف تثبيت واحد اسمه <code>Stitchline_1.0.0_x64-setup.exe</code>.</p>
+<ol class="steps">
+  <li>انقر نقراً مزدوجاً على ملف التثبيت. إن ظهرت رسالة حماية من ويندوز (<span class="lat">SmartScreen</span>) فتأكد أن الملف من مصدر تثق به قبل المتابعة.</li>
+  <li>اختر لغة معالج التثبيت: العربية أو الإنجليزية.</li>
+  <li>اتبع خطوات المعالج حتى النهاية. لا يُطلب منك أي إعداد خاص بالبرنامج أثناء التثبيت.</li>
+  <li>شغّل البرنامج من قائمة ابدأ (<span class="lat">Start</span>) باسم <b>Stitchline</b>.</li>
+</ol>
+<div class="box note"><b class="t">ملاحظة</b>خطوات المعالج نفسها هي خطوات معالج التثبيت القياسي (<span class="lat">NSIS</span>) الذي تنتجه أداة البناء، وقد تختلف صفحاته اختلافاً بسيطاً حسب جهازك. لم يُشغَّل المثبّت على جهاز الفحص حتى لا يُثبَّت البرنامج عليه؛ تحقّقنا من إعداداته في ملفات المشروع (تثبيت للمستخدم الحالي، ولغتان للمعالج).</div>
+
+<h2 id="c2-3"><span class="n">2.3</span>التشغيل لأول مرة</h2>
+<p>عند فتح البرنامج تظهر <b>الصفحة الرئيسية</b> (انظر <a href="#c3-1">3.1</a>) وفيها خياران رئيسيان: بدء شغلانة جديدة أو فتح رسمة. الواجهة تبدأ بالعربية، وتتبع السمة (فاتح أو داكن) إعداد ويندوز ما لم تختر غير ذلك.</p>
+<p><b>للتأكد من أن البرنامج يعمل بشكل صحيح:</b> اضغط <span class="ui">فتح رسمة</span> وافتح أي رسمة <code>DXF</code> أو <code>PLT</code> لديك؛ يجب أن تظهر الرسمة في وسط النافذة ويظهر في أسفل الشاشة إشعار أخضر يبدأ بعبارة «تم فتح…» مع عدد الأشكال.</p>
+
+<h2 id="c2-4"><span class="n">2.4</span>أين يحفظ البرنامج بياناته؟</h2>
+<table class="compact">
+  <thead><tr><th>الملف أو المجلد</th><th>محتواه</th></tr></thead>
+  <tbody>
+    <tr><td><code>%APPDATA%\Stitchline</code></td><td>مجلد بيانات البرنامج للمستخدم الحالي.</td></tr>
+    <tr><td><code>prefs.json</code></td><td>تفضيلات المحرّك: قائمة الملفات الأخيرة (حتى 8 ملفات)، وآخر مجلد استخدمته، ومسار آخر ملف ماكينة حُفظ.</td></tr>
+    <tr><td><code>autosave.stitchline</code></td><td>نسخة تلقائية من الشغلانة المفتوحة تُكتب مع كل تعديل، ليعود عملك إذا أُغلق البرنامج فجأة (انظر <a href="#c11-4">11.4</a>).</td></tr>
+  </tbody>
+</table>
+<p>أما إعدادات الواجهة (اللغة، والسمة، والخط، وإظهار اللوحات…) فيحفظها مكوّن العرض داخل ملفات البرنامج الخاصة، ويمكن إعادتها إلى الأصل من زر <span class="ui">رجوع للافتراضي</span> في الإعدادات.</p>
+
+<h2 id="c2-5"><span class="n">2.5</span>التحديث والإزالة</h2>
+<ul>
+  <li><b>التحديث:</b> شغّل ملف التثبيت الأحدث فوق الإصدار الحالي. لا توجد في البرنامج خاصية تحديث تلقائي.</li>
+  <li><b>الإزالة:</b> من إعدادات ويندوز ← التطبيقات ← التطبيقات المثبّتة، اختر <b>Stitchline</b> ثم «إلغاء التثبيت». ملفات شغلاناتك وملفات الماكينة التي حفظتها في مجلداتك لا تُحذف.</li>
+</ul>
+
+
+<!-- ================================================================ 3 interface -->
+<h1 class="ch" id="c3"><span class="n">3</span>التعرّف على الواجهة</h1>
+<p class="lead">للبرنامج شاشتان: الصفحة الرئيسية التي تبدأ منها، ونافذة العمل التي تجهّز فيها الشغلانة. يشرح هذا الفصل كل جزء فيهما.</p>
+
+<h2 id="c3-1"><span class="n">3.1</span>الصفحة الرئيسية</h2>
+<p>تظهر الصفحة الرئيسية عند تشغيل البرنامج (ما لم توقف ذلك)، ويمكنك فتحها في أي وقت من زر البيت (أيقونة المنزل) في الشريط العلوي أو بالاختصار <span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>H</kbd></span>.</p>
+<figure class="full"><img src="../annotated/a01-home.png" alt=""><figcaption>الصفحة الرئيسية عند أول تشغيل</figcaption></figure>
+<ol class="legend">
+  <li><b>اسم البرنامج وشعاره.</b></li>
+  <li><b><span class="ui">شغلانة جديدة</span></b> <span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>N</kbd></span>: يفتح نافذة لتسمية شغلانة جديدة وتحديد مقاس طاولة الماكينة (انظر <a href="#c5-1">5.1</a>).</li>
+  <li><b><span class="ui">فتح…</span></b> <span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>O</kbd></span>: يفتح نافذة ويندوز لاختيار رسمة أو شغلانة محفوظة.</li>
+  <li><b>ابدأ شغلانة جديدة:</b> بطاقات سريعة. البطاقة الأولى تبدأ شغلانة بمقاس الطاولة الحالي (الافتراضي <span class="lat">1000 × 800</span> مم)، وتظهر بجانبها مقاسات استخدمتها سابقاً بعنوان «استخدمته قبل كده». بطاقة <span class="ui">مقاس مخصص…</span> تفتح نافذة الشغلانة الجديدة، وبطاقة <span class="ui">فتح رسمة</span> تعمل عمل زر الفتح.</li>
+  <li><b>تصفية الملفات الأخيرة وطريقة عرضها:</b> اكتب جزءاً من اسم الملف لتصفية القائمة، واختر العرض بالصور المصغرة أو كقائمة.</li>
+  <li><b>الأخيرة:</b> آخر الرسومات والشغلانات التي فتحتها أو حفظتها. عند أول تشغيل تكون فارغة وتظهر رسالة تشرح ذلك.</li>
+  <li><b><span class="ui">اعرض الرئيسية لما ستيتشلاين يفتح</span>:</b> أوقف هذا المفتاح إن أردت أن يفتح البرنامج مباشرة على آخر شغلانة.</li>
+  <li><b>أزرار سريعة:</b> تبديل اللغة (<span class="lat">English</span> / العربية)، والسمة الفاتحة أو الداكنة، والإعدادات، واختصارات لوحة المفاتيح.</li>
+</ol>
+<p>بعد أن تعمل على شغلانة، تظهر في الصفحة الرئيسية بطاقة <b>متابعة</b> وزر <span class="ui">رجوع للشغلانة</span>:</p>
+<figure class="full"><img src="../annotated/a46-home-continue.png" alt=""><figcaption>الصفحة الرئيسية بعد العمل على شغلانة</figcaption></figure>
+<ol class="legend">
+  <li><b>متابعة:</b> صورة مصغرة للشغلانة المفتوحة مع عدد أشكالها وطبقاتها وحالة حفظها («محفوظة» أو «تعديلات غير محفوظة»). اضغط <span class="ui">متابعة</span> للعودة إليها.</li>
+  <li><b><span class="ui">رجوع للشغلانة</span></b> <kbd>Esc</kbd>: يغلق الصفحة الرئيسية ويعيدك إلى نافذة العمل.</li>
+  <li><b>الملفات الأخيرة بصور مصغرة:</b> اضغط على بطاقة لفتح الملف. يظهر على كل بطاقة نوع الملف (<code>JOB</code> لملفات الشغلانة، <code>SLW</code>، <code>PLT</code>…) ووقت آخر تعديل.</li>
+</ol>
+<figure class="full"><img src="../annotated/a47-home-list.png" alt=""><figcaption>الملفات الأخيرة في عرض القائمة (تم إخفاء مسارات المجلدات في الصورة)</figcaption></figure>
+<p>في عرض القائمة <b>(1)</b> يظهر أيضاً مسار المجلد الذي فيه كل ملف <b>(2)</b>. لإزالة ملف من القائمة دون حذفه من الجهاز، مرّر المؤشر على بطاقته واضغط علامة <b>×</b> التي تظهر عليها.</p>
+<div class="box note"><b class="t">ملاحظة</b>إذا فتحت ملفاً أو بدأت شغلانة جديدة وفي الشغلانة الحالية تعديلات غير محفوظة، يسألك البرنامج أولاً هل تريد حفظها (انظر <a href="#c11-3">11.3</a>).</div>
+
+<h2 id="c3-2"><span class="n">3.2</span>نافذة العمل: نظرة عامة</h2>
+<p>نافذة العمل هي المكان الذي تجهّز فيه الشغلانة. في الوسط الرسمة، وحولها أشرطة ولوحات ثابتة:</p>
+<figure class="full"><img src="../annotated/a04-window.png" alt=""><figcaption>أجزاء نافذة العمل</figcaption></figure>
+<ol class="legend">
+  <li><b>الصفحة الرئيسية واسم الشغلانة:</b> زر البيت يفتح الصفحة الرئيسية، وبجانبه اسم الشغلانة الحالية.</li>
+  <li><b>شريط الخطوات:</b> المراحل الخمس (استيراد، ترتيب، الغرز، التسلسل، الإخراج) مع زري <span class="ui">الخطوة السابقة</span> و<span class="ui">الخطوة التالية</span> (الفصل 4).</li>
+  <li><b>أزرار سريعة:</b> البحث عن أداة، فتح، حفظ، تراجع، إعادة، الإعدادات.</li>
+  <li><b><span class="ui">حفظ ملف الماكينة</span>:</b> الزر الأزرق الرئيسي لحفظ ملف <code>SLW</code>.</li>
+  <li><b>أزرار النافذة:</b> تصغير، تكبير/استعادة، إغلاق. للبرنامج شريط عنوان خاص به، ويمكنك سحب النافذة من أي مكان فارغ في الشريط العلوي.</li>
+  <li><b>شريط الأدوات:</b> أدوات التعامل مع الرسمة (<a href="#c3-3">3.3</a>).</li>
+  <li><b>لوحة الطبقات:</b> الطبقات والأشكال التي فيها (الفصل 7).</li>
+  <li><b>المقاس والموضع:</b> عرض <span class="lat">W</span> وارتفاع <span class="lat">H</span> المحدد (أو الرسمة كلها إن لم يكن هناك تحديد)، وموضع المؤشر <span class="lat">X</span> و<span class="lat">Y</span>، كلها بالسنتيمتر، وعدد الأشكال المحددة.</li>
+  <li><b>شريط العرض:</b> <span class="ui">الكل</span> / <span class="ui">طبقة</span> لعرض كل الطبقات أو الطبقة الحالية فقط (تبقى الأخرى باهتة)، و<span class="ui">الغرز</span> <span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>Y</kbd></span> لإظهار نقاط الإبرة، و<span class="ui">الترتيب</span> <span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>H</kbd></span> لإظهار أرقام ترتيب الخياطة على الرسمة.</li>
+  <li><b>شريط التكبير:</b> تصغير، ونسبة التكبير الحالية، وتكبير، و<span class="ui">ملاءمة</span> لعرض الرسمة كلها.</li>
+  <li><b>لوحة المرحلة:</b> تتغير محتوياتها حسب المرحلة المختارة، وفيها كل إعدادات تلك المرحلة. أقسامها قابلة للطي بالضغط على عنوان القسم، ويتذكر البرنامج الأقسام المفتوحة.</li>
+  <li><b>زر الانتقال للمرحلة التالية</b> أسفل اللوحة، مثل <span class="ui">متابعة إلى الغرز</span>.</li>
+  <li><b>زر إخفاء لوحة المرحلة</b> <span class="kc" dir="ltr"><kbd>Shift</kbd>+<kbd>Tab</kbd></span>: يخفيها لتوسيع مساحة الرسمة، ويُظهرها مرة أخرى.</li>
+</ol>
+<p>في منطقة الرسمة تظهر الأشكال بلون طبقتها، وعلى كل شكل نقطة خضراء وسهم يبيّنان بداية الخياطة واتجاهها. يظهر أصل الإحداثيات بعلامة <span class="lat">0, 0</span>، ومستطيل متقطع بمقاس طاولة الماكينة. شبكة المليمترات خلف الرسمة مخفية افتراضياً، ويمكن إظهارها من الإعدادات (<a href="#c13-4">13.4</a>).</p>
+
+<h3>الشريط العلوي</h3>
+<figure class="narrow"><img src="../annotated/a04-topbar-right.png" alt=""><figcaption>الشريط العلوي: الجانب الأيمن</figcaption></figure>
+<figure class="full"><img src="../annotated/a04-topbar-left.png" alt=""><figcaption>الشريط العلوي: الجانب الأيسر</figcaption></figure>
+<ol class="legend">
+  <li><b>الصفحة الرئيسية</b> <span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>H</kbd></span>.</li>
+  <li><b>اسم الشغلانة:</b> اضغط عليه لتغييره. الاسم يُستخدم اسماً لملف الماكينة وملفات التصدير. النقطة الزرقاء وعبارة «معدّل» تعنيان وجود تعديلات غير محفوظة.</li>
+  <li><b>البحث عن أي أداة</b> <span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>K</kbd></span> (الفصل 14).</li>
+  <li><b>فتح</b> <span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>O</kbd></span>.</li>
+  <li><b>حفظ الشغلانة</b> <span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>S</kbd></span>: يحفظ ملف <code>.stitchline</code> (الفصل 11).</li>
+  <li><b>تراجع</b> <span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>Z</kbd></span>.</li>
+  <li><b>إعادة</b> <span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd></span>. يكون الزران باهتين عندما لا يوجد ما يُتراجع عنه أو يُعاد.</li>
+  <li><b>الإعدادات</b> <span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>,</kbd></span> (الفصل 13).</li>
+  <li><b><span class="ui">حفظ ملف الماكينة</span></b> <span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>E</kbd></span>.</li>
+  <li><b>أزرار النافذة:</b> تصغير، تكبير، إغلاق (<span class="kc" dir="ltr"><kbd>Alt</kbd>+<kbd>F4</kbd></span>).</li>
+</ol>
+
+<h3>شريط الخطوات</h3>
+<figure class="full"><img src="../annotated/a04-stepbar-right.png" alt=""><figcaption>شريط الخطوات: الجانب الأيمن</figcaption></figure>
+<figure class="full"><img src="../annotated/a04-stepbar-left.png" alt=""><figcaption>شريط الخطوات: الجانب الأيسر</figcaption></figure>
+<ol class="legend">
+  <li><b><span class="ui">الخطوة السابقة</span></b> <kbd>Page Up</kbd>: يعود إلى المرحلة السابقة، ويكون باهتاً في المرحلة الأولى.</li>
+  <li><b>مرحلة منتهية:</b> المراحل التي سبقت المرحلة الحالية تظهر بعلامة صح خضراء، ويتلون الخط الواصل بينها بالأخضر. تحت اسم كل مرحلة وصف قصير لها (مثل «فتح رسمة»).</li>
+  <li><b>مرحلة لم تبدأ بعد:</b> رقمها رمادي. المرحلة الحالية مظللة بالأزرق. اضغط على أي مرحلة للانتقال إليها مباشرة، أو استخدم الأرقام <span class="kc" dir="ltr"><kbd>1</kbd>…<kbd>5</kbd></span>.</li>
+  <li><b><span class="ui">الخطوة التالية</span></b> <kbd>Page Down</kbd>: ينقلك إلى المرحلة التالية. يكون باهتاً ما دامت الشغلانة فارغة. في المرحلة الأخيرة (الإخراج) يتحول اسمه إلى <span class="ui">حفظ ملف الماكينة</span> ويعمل عمل زر الحفظ.</li>
+</ol>
+<div class="box tip"><b class="t">نصيحة</b>كل زر في البرنامج يعرض اسمه واختصاره عند إيقاف المؤشر فوقه. إذا كانت النافذة ضيقة يُخفي البرنامج الأوصاف القصيرة تحت أسماء المراحل ونص زري السابق والتالي، وتبقى الأيقونات.</div>
+
+<h2 id="c3-3"><span class="n">3.3</span>شريط الأدوات ولوحة الطبقات</h2>
+<div class="side w22">
+  <figure><img src="../annotated/a06-rail.png" alt=""><figcaption>شريط الأدوات</figcaption></figure>
+  <div class="txt">
+    <ol class="legend">
+      <li><b>التحديد</b> <kbd>V</kbd> (السهم الأسود): يحدد أشكالاً كاملة ويحركها ويغيّر مقاسها بمقابض الإطار.</li>
+      <li><b>التحديد المباشر</b> <kbd>A</kbd> (السهم الأبيض): يحدد مساراً واحداً ويحركه فقط، دون إطار أو مقابض.</li>
+      <li><b>التحريك</b> <kbd>H</kbd>: اسحب لتحريك منظر الرسمة. يمكنك أيضاً الضغط مطولاً على <kbd>Space</kbd> أو السحب بزر الفأرة الأوسط مع أي أداة.</li>
+      <li><b>تحديد نقطة البداية</b> <kbd>C</kbd>: اضغط على شكل في النقطة التي تريد أن تبدأ الخياطة منها.</li>
+      <li><b>القياس</b> <kbd>I</kbd>: اسحب بين نقطتين لقياس المسافة والزاوية (<a href="#c6-9">6.9</a>).</li>
+      <li><b>إضافة شكل</b> <kbd>M</kbd>: يفتح نافذة إضافة نقطة أو خط أو مستطيل أو دائرة (<a href="#c6-7">6.7</a>).</li>
+    </ol>
+    <p>الحرف الصغير تحت كل أداة هو مفتاح اختصارها. للخروج من أي أداة والعودة إلى التحديد اضغط <kbd>Esc</kbd>.</p>
+  </div>
+</div>
+<p>لوحة الطبقات تُشرح بالتفصيل في <a href="#c7">الفصل 7</a>.</p>
+
+<h2 id="c3-4"><span class="n">3.4</span>التنقل في الرسمة</h2>
+<table class="compact">
+  <thead><tr><th>الإجراء</th><th>الطريقة</th></tr></thead>
+  <tbody>
+    <tr><td>تكبير وتصغير حول المؤشر</td><td>عجلة الفأرة فوق الرسمة.</td></tr>
+    <tr><td>تكبير / تصغير</td><td>زرا <b>+</b> و<b>−</b> في شريط التكبير، أو <span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>+</kbd></span> و<span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>−</kbd></span>.</td></tr>
+    <tr><td>عرض الرسمة كلها</td><td><span class="ui">ملاءمة</span> أو <span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>0</kbd></span>. يعيد البرنامج الملاءمة تلقائياً عند تغيير حجم النافذة ما لم تكن قد كبّرت أو حرّكت المنظر بنفسك.</td></tr>
+    <tr><td>الحجم الحقيقي (100%)</td><td><span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>1</kbd></span>: المليمتر على الشاشة يقارب المليمتر الحقيقي على شاشة عادية.</td></tr>
+    <tr><td>تحريك المنظر</td><td>أداة التحريك <kbd>H</kbd>، أو الضغط مع الاستمرار على <kbd>Space</kbd> والسحب، أو السحب بزر الفأرة الأوسط.</td></tr>
+  </tbody>
+</table>
+<div class="side w48">
+  <figure><img src="../annotated/a44-panel-hidden.png" alt=""><figcaption>بعد إخفاء لوحة المرحلة</figcaption></figure>
+  <div class="txt"><p>لإفساح مساحة أكبر للرسمة اضغط السهم الصغير على حافة لوحة المرحلة <b>(1)</b> أو <span class="kc" dir="ltr"><kbd>Shift</kbd>+<kbd>Tab</kbd></span>. اضغط مرة أخرى لإظهارها. ويمكن أيضاً إخفاء لوحة الطبقات وشرائط العرض والتكبير والمقاس من الإعدادات (<a href="#c13-4">13.4</a>).</p></div>
+</div>
+
+<h2 id="c3-5"><span class="n">3.5</span>الإشعارات ومؤشر الانشغال</h2>
+<p>بعد كل عملية مهمة يظهر في أسفل منتصف النافذة إشعار قصير يختفي وحده بعد ثوانٍ:</p>
+<ul>
+  <li><b>إشعار داكن بعلامة صح خضراء:</b> نجحت العملية، مثل «الطبقة دي بقت قص ليزر (الإبرة 3)» أو «تم حفظ ملف الماكينة…».</li>
+  <li><b>إشعار بعلامة دائرة حمراء:</b> لم تتم العملية، ويوضح السبب، مثل «حدد شكلاً أولاً — اضغط عليه في الرسمة أو في الطبقات.».</li>
+</ul>
+<figure class="small"><img src="../screenshots/42-toast-error-select-first.png" alt=""><figcaption>مثال لإشعار خطأ: محاولة تنفيذ أمر يحتاج شكلاً محدداً</figcaption></figure>
+<p>إذا استغرقت عملية أكثر من لحظة يظهر في الأسفل مؤشر دوّار مع عبارة مثل «جاري العمل…» أو «في انتظار اسم الملف…» (عندما تكون نافذة حفظ ويندوز مفتوحة).</p>
+
+<!-- ================================================================ 4 workflow -->
+<h1 class="ch" id="c4"><span class="n">4</span>مراحل العمل الخمس</h1>
+<p class="lead">يقسّم البرنامج تجهيز الشغلانة إلى خمس مراحل تظهر في شريط الخطوات تحت الشريط العلوي. كل مرحلة لها لوحة إعدادات خاصة على جانب النافذة، وتنتقل بينها بالضغط على المرحلة أو بزري الخطوة السابقة والتالية.</p>
+<table>
+  <thead><tr><th>المرحلة (ووصفها في الشريط)</th><th>المفتاح</th><th>ما تفعله فيها</th><th>الفصل</th></tr></thead>
+  <tbody>
+    <tr><td><b>1 استيراد</b><br><small>فتح رسمة</small></td><td><kbd>1</kbd></td><td>تفتح الرسمة أو تدرجها، وتضبط طريقة قراءتها: التنظيف عند الفتح، والدقة، والمقياس، ومقاس طاولة الماكينة.</td><td><a href="#c5">5</a></td></tr>
+    <tr><td><b>2 ترتيب</b><br><small>وضع الأشكال</small></td><td><kbd>2</kbd></td><td>تحدد الأشكال وتحركها وتدوّرها وتغيّر مقاسها، وتحدد بداية كل شكل واتجاهه، وتنظم الأشكال في طبقات، وتنظف الرسمة.</td><td><a href="#c6">6</a>، <a href="#c7">7</a></td></tr>
+    <tr><td><b>3 الغرز</b><br><small>إعدادات الغرز</small></td><td><kbd>3</kbd></td><td>تضبط لكل طبقة طول الغرزة والرجوع والزوايا وغيرها، أو تجعلها طبقة قص ليزر، وتحدد أصل الماكينة.</td><td><a href="#c8">8</a></td></tr>
+    <tr><td><b>4 التسلسل</b><br><small>ترتيب الخياطة</small></td><td><kbd>4</kbd></td><td>تحدد ترتيب خياطة الأشكال يدوياً أو تلقائياً، وتشاهد محاكاة للخياطة.</td><td><a href="#c9">9</a></td></tr>
+    <tr><td><b>5 الإخراج</b><br><small>الحفظ للماكينة</small></td><td><kbd>5</kbd></td><td>تراجع برنامج الماكينة وإحصاءاته، وتضيف الأوامر، وتحفظ ملف الماكينة أو تصدّر بصيغ أخرى.</td><td><a href="#c10">10</a></td></tr>
+  </tbody>
+</table>
+<div class="box note"><b class="t">ملاحظة</b>الترتيب مقترح وليس إلزامياً؛ يمكنك العودة لأي مرحلة في أي وقت وتعديل ما فيها، وكل التعديلات تُطبَّق فوراً على الرسمة والإحصاءات. في مراحل الغرز والتسلسل والإخراج تظهر نقاط الإبرة على الرسمة (إذا كان زر <span class="ui">الغرز</span> في شريط العرض مفعّلاً).</div>
+<p>للتنقل بالترتيب استخدم <span class="ui">الخطوة التالية</span> <kbd>Page Down</kbd> و<span class="ui">الخطوة السابقة</span> <kbd>Page Up</kbd>. عند فتح ملف وأنت في مرحلة الاستيراد ينتقل البرنامج تلقائياً إلى مرحلة <b>ترتيب</b>، ويحفظ البرنامج آخر مرحلة كنت فيها ليعود إليها في المرة القادمة.</p>
+<div class="box tip"><b class="t">نصيحة</b>النقر المزدوج على أي شكل في الرسمة يحدده وينقلك إلى مرحلة الترتيب مباشرة.</div>
+
+
+<!-- ================================================================ 5 import -->
+<h1 class="ch" id="c5"><span class="n">5</span>مرحلة الاستيراد: فتح الرسمة</h1>
+<p class="lead">في هذه المرحلة تبدأ شغلانة جديدة أو تفتح رسمة، وتحدد كيف يقرأ البرنامج الرسمة: تنظيفها عند الفتح، ودقة ملفات الرسم، والمقياس، ومقاس طاولة الماكينة.</p>
+
+<h2 id="c5-1"><span class="n">5.1</span>بدء شغلانة جديدة</h2>
+<div class="side w48">
+  <figure><img src="../screenshots/02-new-job-dialog.png" alt=""><figcaption>نافذة «شغلانة جديدة»</figcaption></figure>
+  <div class="txt">
+    <ol class="steps">
+      <li>اضغط <span class="ui">شغلانة جديدة</span> في الصفحة الرئيسية أو <span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>N</kbd></span>.</li>
+      <li>اكتب <b>اسم الشغلانة</b> (اختياري؛ يمكن تغييره لاحقاً).</li>
+      <li>اختر مقاس <b>طاولة الماكينة</b> من الأزرار الجاهزة، أو اكتب <b>عرض الطاولة</b> و<b>ارتفاع الطاولة</b> بالمليمتر.</li>
+      <li>اضغط <span class="ui">إنشاء</span> أو <kbd>Enter</kbd>.</li>
+    </ol>
+    <p class="result">تفتح نافذة العمل على مرحلة الاستيراد، وفي وسط الرسمة رسالة «ابدأ شغلانة خياطة» مع زري <span class="ui">فتح رسمة…</span> و<span class="ui">ارسم شكلاً</span>.</p>
+    <p>يجب أن يكون مقاس الطاولة أكبر من صفر. يتذكر البرنامج المقاسات التي استخدمتها ويعرضها أزراراً جاهزة في المرات القادمة.</p>
+  </div>
+</div>
+<figure class="full"><img src="../screenshots/03-editor-empty-job.png" alt=""><figcaption>شغلانة جديدة فارغة</figcaption></figure>
+
+<h2 id="c5-2"><span class="n">5.2</span>فتح رسمة أو شغلانة</h2>
+<p>توجد عدة طرق لفتح ملف، وكلها تؤدي إلى النتيجة نفسها:</p>
+<ul>
+  <li>زر <span class="ui">فتح ملف…</span> في لوحة الاستيراد، أو زر المجلد في الشريط العلوي، أو <span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>O</kbd></span>: تظهر نافذة الفتح في ويندوز بعنوان «<span class="lat">Open a drawing or job</span>».</li>
+  <li><b>السحب والإفلات:</b> اسحب الملف من مستكشف ويندوز وأفلته في أي مكان داخل نافذة البرنامج.</li>
+  <li><b>الملفات الأخيرة:</b> من الصفحة الرئيسية، أو من قسم <span class="ui">الملفات الأخيرة</span> في لوحة الاستيراد.</li>
+</ul>
+<table class="compact">
+  <thead><tr><th>الصيغة</th><th>الامتداد</th><th>ملاحظات</th></tr></thead>
+  <tbody>
+    <tr><td>أوتوكاد</td><td><code>.dxf</code></td><td>كل طبقة في الملف تصبح طبقة في البرنامج.</td></tr>
+    <tr><td>إليستريتور</td><td><code>.ai</code></td><td>إن لم يجد البرنامج مسارات في الملف، احفظه من إليستريتور بصيغة «<span class="lat">Illustrator 8</span>» أو <code>DXF</code>.</td></tr>
+    <tr><td>رسومات الراسمات</td><td><code>.plt</code> <code>.hpgl</code> <code>.prt</code></td><td>تُقرأ حسب الدقة المحددة (<a href="#c5-5">5.5</a>). كل قلم يصبح طبقة.</td></tr>
+    <tr><td>ملفات التطريز</td><td><code>.dst</code> <code>.dsb</code></td><td>تاجيما وباروادن.</td></tr>
+    <tr><td>ملف الماكينة</td><td><code>.slw</code></td><td>يُقرأ ما فيه من مسارات لتعديلها.</td></tr>
+    <tr><td>شغلانة ستيتشلاين</td><td><code>.stitchline</code></td><td>تُفتح كما حُفظت بكل إعداداتها وطبقاتها وترتيبها.</td></tr>
+  </tbody>
+</table>
+<p class="result">تظهر الرسمة في الوسط مُلاءَمة للشاشة، وينتقل البرنامج إلى مرحلة الترتيب، ويظهر إشعار مثل «تم فتح demo.plt · 41 شكل»، وقد يُضاف إليه عدد التداخلات المحذوفة والخطوط المربوطة.</p>
+<div class="box warn"><b class="t">تنبيه</b>فتح ملف يستبدل الشغلانة الحالية. إن كانت فيها تعديلات غير محفوظة يسألك البرنامج أولاً (<a href="#c11-3">11.3</a>). إذا أردت إضافة رسمة إلى الشغلانة الحالية فاستخدم «الإدراج» بدلاً من الفتح.</div>
+
+<h2 id="c5-3"><span class="n">5.3</span>إدراج رسمة في الشغلانة الحالية</h2>
+<p>زر <span class="ui">إدراج في الشغلانة…</span> في لوحة الاستيراد، أو <span class="ui">إدراج ملف</span> أسفل لوحة الطبقات، أو <span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd></span>: يختار رسمة ويضيف أشكالها إلى الشغلانة المفتوحة دون حذف ما فيها، ويظهر إشعار بعدد الأشكال المُدرجة. يكون الزر باهتاً إذا كانت الشغلانة فارغة؛ استخدم الفتح في هذه الحالة.</p>
+
+<h2 id="c5-4"><span class="n">5.4</span>لوحة الاستيراد بالتفصيل</h2>
+<div class="side w30">
+  <figure><img src="../annotated/a08-import-panel.png" alt=""><figcaption>لوحة الاستيراد بكل أقسامها</figcaption></figure>
+  <div class="txt">
+    <ol class="legend">
+      <li><b>منطقة الفتح:</b> <span class="ui">فتح ملف…</span> و<span class="ui">إدراج في الشغلانة…</span> وقائمة الصيغ المقبولة. يمكنك أيضاً إفلات الملف هنا.</li>
+      <li><b><span class="ui">الملفات الأخيرة</span>:</b> اضغط اسم الملف لفتحه، ومرّر المؤشر لرؤية مساره الكامل.</li>
+      <li><b><span class="ui">عند فتح ملف</span>:</b> خيارات تنظيف تُطبَّق لحظة قراءة الملف:
+        <ul>
+          <li><span class="ui">حذف الأشكال المتداخلة</span> (مفعّل افتراضياً): يحذف الأشكال المكررة فوق بعضها حتى لا تُخاط مرتين.</li>
+          <li><span class="ui">لا تربط الخطوط تلقائياً</span>: يمنع البرنامج من وصل الخطوط التي تتلامس أطرافها في شكل واحد.</li>
+          <li><span class="ui">العمل بدون نقطة مرجعية</span>: للرسومات التي لا تحتوي نقطة محاذاة.</li>
+        </ul>
+        هذه الخيارات تؤثر على الملفات التي تفتحها بعد تغييرها، لا على الرسمة المفتوحة.</li>
+      <li><b><span class="ui">الدقة</span>:</b> انظر <a href="#c5-5">5.5</a>.</li>
+      <li><b><span class="ui">تكبير/تصغير الرسمة</span>:</b> انظر <a href="#c5-6">5.6</a>.</li>
+      <li><b><span class="ui">طاولة الماكينة</span>:</b> العرض والارتفاع بالمليمتر، انظر <a href="#c5-7">5.7</a>.</li>
+      <li><b><span class="ui">متابعة إلى الترتيب</span>:</b> يكون باهتاً حتى توجد أشكال في الشغلانة.</li>
+    </ol>
+  </div>
+</div>
+
+<h2 id="c5-5"><span class="n">5.5</span>الدقة (dpi)</h2>
+<p>ملفات <code>PLT</code> و<code>PRT</code> لا تحمل وحدة قياس واضحة، فيحتاج البرنامج أن يعرف كم نقطة في البوصة استُخدمت عند رسمها. الافتراضي <b class="lat">1016 dpi</b>، والخيار الآخر <b class="lat">1000 dpi</b>، ويمكن كتابة قيمة <span class="ui">مخصص</span>.</p>
+<div class="box warn"><b class="t">تنبيه</b>إذا ظهرت رسمة <code>PLT</code> بمقاس خاطئ قليلاً (أكبر أو أصغر بنحو 1.6%)، غيّر الدقة ثم <b>افتح الملف مرة أخرى</b>؛ التغيير لا يُطبَّق على الرسمة المفتوحة. هذه الدقة تُستخدم أيضاً عند تصدير ملفات <code>PLT</code>.</div>
+
+<h2 id="c5-6"><span class="n">5.6</span>تكبير وتصغير الرسمة، والمقياس من قياس فعلي</h2>
+<p>في قسم <span class="ui">تكبير/تصغير الرسمة</span> حقلان: <span class="ui">أفقي (X)</span> و<span class="ui">رأسي (Y)</span>، والقيمة 1 تعني بلا تغيير (مثلاً 1.02 تكبّر 2%).</p>
+<ul>
+  <li><span class="ui">تطبيق المقياس الآن</span>: يطبّق المعاملين على الشغلانة الحالية كلها (يمكن التراجع عنه).</li>
+  <li><span class="ui">تطبيق عند فتح ملف</span>: يطبّقهما تلقائياً على كل رسمة تفتحها بعد ذلك.</li>
+</ul>
+<div class="side w48">
+  <figure><img src="../screenshots/27-sheet-scale-calc.png" alt=""><figcaption>نافذة «المقياس من قياس»</figcaption></figure>
+  <div class="txt">
+    <p>إذا خرجت القطع المخيطة أصغر أو أكبر من المطلوب، يحسب البرنامج المعامل الصحيح من قياس فعلي:</p>
+    <ol class="steps">
+      <li>خِط قطعة تجريبية، وقِس عليها مسافة معروفة.</li>
+      <li>اضغط <span class="ui">من قياس…</span>.</li>
+      <li>اكتب <span class="ui">الطول في الرسمة</span> و<span class="ui">المقاس على القماش</span>، واختر <span class="ui">تطبيق على</span>: X و Y، أو X فقط، أو Y فقط.</li>
+      <li>اضغط <span class="ui">استخدم هذا المقياس</span>.</li>
+    </ol>
+    <p class="result">تتغير قيمتا المقياس، ويظهر إشعار يذكّرك بالضغط على <span class="ui">تطبيق المقياس الآن</span> لتطبيقه على الشغلانة الحالية.</p>
+  </div>
+</div>
+
+<h2 id="c5-7"><span class="n">5.7</span>طاولة الماكينة</h2>
+<p>مقاس طاولة الماكينة (الافتراضي <span class="lat">1000 × 800</span> مم) يُرسم مستطيلاً متقطعاً على الرسمة انطلاقاً من نقطة أصل الماكينة، لتتأكد أن الأشكال كلها داخل مساحة عمل الماكينة. غيّره من قسم <span class="ui">طاولة الماكينة</span> أو عند إنشاء شغلانة جديدة.</p>
+
+<!-- ================================================================ 6 arrange -->
+<h1 class="ch" id="c6"><span class="n">6</span>مرحلة الترتيب: تعديل الأشكال</h1>
+<p class="lead">في هذه المرحلة تحدد الأشكال وتحركها وتدوّرها وتعكسها وتغيّر مقاسها، وتحدد من أين تبدأ خياطة كل شكل وفي أي اتجاه، وتنظف الرسمة من العيوب.</p>
+
+<h2 id="c6-1"><span class="n">6.1</span>تحديد الأشكال</h2>
+<figure class="full"><img src="../annotated/a06-selection.png" alt=""><figcaption>شكل محدد بأداة التحديد</figcaption></figure>
+<ol class="legend">
+  <li><b>إطار التحديد:</b> يحيط بالأشكال المحددة بأداة التحديد <kbd>V</kbd>. اسحب من داخله لتحريك المحدد.</li>
+  <li><b>مقابض تغيير المقاس:</b> ثمانية مربعات على الإطار. اسحب أحدها لتغيير المقاس؛ مع <kbd>Shift</kbd> تبقى النسب ثابتة، ومع <kbd>Alt</kbd> يتغير المقاس من المركز.</li>
+  <li><b>نقطة البداية والاتجاه:</b> النقطة الخضراء هي مكان بدء الخياطة، والسهم يبيّن اتجاهها.</li>
+  <li><b>الشكل المحدد في لوحة الطبقات</b> يظهر مظللاً بالأزرق.</li>
+  <li><b>عدد المحدد</b> ومقاسه وموضعه.</li>
+</ol>
+<table class="compact">
+  <thead><tr><th>لتحقيق هذا</th><th>افعل هذا</th></tr></thead>
+  <tbody>
+    <tr><td>تحديد شكل واحد</td><td>اضغط على خطه في الرسمة، أو على اسمه في لوحة الطبقات.</td></tr>
+    <tr><td>إضافة شكل للتحديد أو إزالته</td><td><kbd>Ctrl</kbd> + ضغطة. <kbd>Shift</kbd> + ضغطة يضيف فقط.</td></tr>
+    <tr><td>تحديد مجموعة بالمستطيل</td><td>اسحب في مكان فارغ؛ يُحدد كل شكل يلمسه المستطيل. مع <kbd>Alt</kbd> تُحدد فقط الأشكال الواقعة داخله بالكامل، ومع <kbd>Ctrl</kbd> أو <kbd>Shift</kbd> يُضاف التحديد إلى السابق.</td></tr>
+    <tr><td>تحديد الكل / إلغاء التحديد</td><td><span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>A</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>A</kbd></span> أو <kbd>Esc</kbd> أو ضغطة في مكان فارغ.</td></tr>
+    <tr><td>نسخ أثناء السحب</td><td>اضغط <kbd>Alt</kbd> أثناء سحب الأشكال: يبقى الأصل مكانه وتتحرك نسخة.</td></tr>
+    <tr><td>إلغاء سحب جارٍ</td><td><kbd>Esc</kbd> قبل ترك زر الفأرة.</td></tr>
+  </tbody>
+</table>
+<div class="side w40">
+  <figure><img src="../annotated/a13-direct.png" alt=""><figcaption>شكل محدد بأداة التحديد المباشر</figcaption></figure>
+  <div class="txt"><p><b>أداة التحديد المباشر</b> <kbd>A</kbd> (السهم الأبيض) تحدد مساراً واحداً بعينه وتحركه فقط، دون إطار أو مقابض. يظهر المسار المحدد بخط منقط داخل توهج أزرق. استخدمها عندما تكون الأشكال متقاربة وتريد تحريك شكل واحد دون غيره.</p>
+  <p>الضغط على شكل في الرسمة يجعل طبقته هي <b>الطبقة الحالية</b>، والنقر المزدوج عليه يحدده وينقلك إلى مرحلة الترتيب.</p></div>
+</div>
+
+<h2 id="c6-2"><span class="n">6.2</span>لوحة الترتيب دون تحديد</h2>
+<p>عندما لا يكون أي شكل محدداً، تعرض اللوحة عدد الأشكال والطبقات وقسم <span class="ui">الرسمة كلها</span> (انظر <a href="#c3-2">شكل نافذة العمل</a>) وفيه:</p>
+<ul>
+  <li><span class="ui">تحديد الكل</span> و<span class="ui">إضافة شكل…</span>.</li>
+  <li><span class="ui">حذف التداخلات</span>: يحذف الأشكال المكررة فوق بعضها في الرسمة كلها، ويظهر إشعار بعددها.</li>
+  <li><span class="ui">ربط الخطوط &lt; 2 مم</span>: يصل الخطوط التي تقل المسافة بين طرفيها عن 2 مم في شكل واحد.</li>
+</ul>
+
+<h2 id="c6-3"><span class="n">6.3</span>التحريك والتدوير والعكس وتغيير المقاس</h2>
+<div class="side w30">
+  <figure><img src="../annotated/a07-arrange-panel.png" alt=""><figcaption>لوحة الترتيب عند تحديد شكل، بكل أقسامها</figcaption></figure>
+  <div class="txt">
+    <p>عند تحديد شكل يظهر في رأس اللوحة اسمه وطبقته وطوله وعدد نقاطه وهل هو مغلق أو مفتوح، وتحته الأقسام:</p>
+    <ol class="legend">
+      <li><b><span class="ui">تحريك</span>:</b> أزرار الأسهم تحرك المحدد بمقدار <span class="ui">الخطوة</span> (الافتراضية 0.10 مم)، والزر الأوسط ينقله إلى نقطة الأصل (0، 0). اكتب مسافة في <span class="lat">X</span> و<span class="lat">Y</span> واضغط <span class="ui">تحريك</span> لتحريك دقيق. أسهم لوحة المفاتيح تحرك بمقدار الخطوة، ومع <kbd>Shift</kbd> بعشرة أضعافها، و<kbd>Enter</kbd> ينقل المؤشر إلى حقل المسافة.</li>
+      <li><b><span class="ui">تدوير وعكس وحجم</span>:</b> اكتب الزاوية (الافتراضية 90°) واضغط <span class="ui">تدوير</span> (المفتاح <kbd>R</kbd> ينقلك إلى حقل الزاوية)؛ <span class="ui">عكس يمين–شمال</span> <kbd>O</kbd> و<span class="ui">عكس فوق–تحت</span> <span class="kc" dir="ltr"><kbd>Shift</kbd>+<kbd>O</kbd></span>؛ و<span class="ui">تغيير الحجم…</span> <kbd>S</kbd>.</li>
+      <li><b><span class="ui">مسار الشكل</span>:</b> انظر <a href="#c6-4">6.4</a>.</li>
+      <li><b><span class="ui">تنظيم</span>:</b> انظر <a href="#c6-5">6.5</a>.</li>
+      <li><b><span class="ui">تنظيف</span>:</b> انظر <a href="#c6-6">6.6</a>.</li>
+      <li><b><span class="ui">متابعة إلى الغرز</span>.</b></li>
+    </ol>
+    <div class="box tip"><b class="t">نصيحة</b><span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>D</kbd></span> يكرر آخر تحريك أو تدوير أو عكس أو تغيير مقاس على التحديد الحالي.</div>
+  </div>
+</div>
+<div class="side w48">
+  <figure><img src="../screenshots/30-sheet-resize.png" alt=""><figcaption>نافذة «تغيير الحجم»</figcaption></figure>
+  <div class="txt">
+    <p><b>تغيير المقاس بدقة:</b> اضغط <kbd>S</kbd> أو <span class="ui">تغيير الحجم…</span>. تعرض النافذة <span class="ui">المقاس الحالي</span>، واكتب <span class="ui">العرض</span> و<span class="ui">الارتفاع</span> الجديدين بوحدة <span class="ui">سم</span> أو <span class="ui">مم</span>. مع تفعيل <span class="ui">الحفاظ على النسب</span> يتغير الحقل الآخر تلقائياً، وتعرض النافذة نسبة التغيير المئوية. يبقى مركز التحديد في مكانه.</p>
+    <p>للخط المستقيم الأفقي أو الرأسي يكون أحد الحقلين معطلاً لأنه لا عرض له أو لا ارتفاع.</p>
+  </div>
+</div>
+
+<h2 id="c6-4"><span class="n">6.4</span>مسار الشكل: البداية والاتجاه والأطراف</h2>
+<p>تبدأ الماكينة خياطة كل شكل من نقطة بدايته وفي اتجاهه. يمكنك التحكم فيهما من قسم <span class="ui">مسار الشكل</span>:</p>
+<ul>
+  <li><span class="ui">اختيار نقطة البداية</span> (الأداة <kbd>C</kbd>): اضغط على الشكل في المكان الذي تريد أن تبدأ الخياطة منه. يظهر إشعار «تم تحديد نقطة البداية». البديل: ضغطة يمين على الشكل ثم <span class="ui">ابدأ الخياطة من هنا</span>.</li>
+  <li><span class="ui">عكس الاتجاه</span> <span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>R</kbd></span>: يجعل الخياطة تسير في الاتجاه المعاكس.</li>
+  <li><span class="ui">ابدأ كل شكل من</span>: <span class="ui">فوق</span> / <span class="ui">تحت</span> / <span class="ui">شمال</span> / <span class="ui">يمين</span> — ينقل بداية كل شكل محدد إلى طرفه العلوي أو السفلي أو الأيسر أو الأيمن.</li>
+  <li><span class="ui">إطالة البداية (+) / تقصير (−)</span> و<span class="ui">إطالة النهاية (+) / تقصير (−)</span>: قيمة موجبة تمد الطرف، وسالبة تقصّره، ثم اضغط <span class="ui">تطبيق على الأطراف</span>.</li>
+  <li><span class="ui">تعديل النقاط واحدة واحدة…</span>: يظهر عند تحديد شكل واحد.</li>
+</ul>
+<div class="side w48">
+  <figure><img src="../screenshots/28-sheet-edit-points.png" alt=""><figcaption>نافذة «تعديل النقاط»</figcaption></figure>
+  <div class="txt">
+    <p>في نافذة <b>تعديل النقاط</b> جدول بكل نقاط الشكل وإحداثياتها <span class="lat">X</span> و<span class="lat">Y</span> بالمليمتر. يمكنك تعديل أي رقم، وحذف نقطة بزر <b>×</b>، وإضافة نقطة بزر <span class="ui">إضافة نقطة</span> (تُضاف بعد آخر نقطة بإزاحة 5 مم)، وتحويل الشكل إلى مغلق أو مفتوح بمفتاح <span class="ui">شكل مغلق</span>. اضغط <span class="ui">تطبيق</span> للحفظ.</p>
+    <p>يعرض الجدول أول 2000 نقطة فقط في الأشكال الكبيرة جداً. كل خانة يجب أن تحتوي رقماً، وإلا تظهر رسالة «كل نقطة تحتاج رقماً لـ X و Y.».</p>
+  </div>
+</div>
+
+<h2 id="c6-5"><span class="n">6.5</span>التنظيم: الطبقة والاسم والنسخ والأجزاء</h2>
+<ul>
+  <li><span class="ui">اعمل طبقة من المحدد</span> <span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>G</kbd></span>: ينقل الأشكال المحددة إلى طبقة جديدة (<a href="#c7-3">7.3</a>).</li>
+  <li><span class="ui">طبقة</span>: قائمة لنقل المحدد إلى طبقة أخرى، وآخر خيار فيها <span class="ui">طبقة جديدة…</span>.</li>
+  <li><span class="ui">الاسم</span>: اسم خاص للشكل (يظهر عند تحديد شكل واحد).</li>
+  <li><span class="ui">نسخ…</span> و<span class="ui">نقطة مرجعية…</span> و<span class="ui">أجزاء (زجزاج…)</span> و<span class="ui">حذف</span> <kbd>Delete</kbd>.</li>
+</ul>
+<div class="side w48">
+  <figure><img src="../screenshots/25-sheet-duplicate.png" alt=""><figcaption>نافذة «نسخ»</figcaption></figure>
+  <div class="txt"><p><b>نسخ الأشكال بدقة:</b> حدد <span class="ui">إزاحة X</span> و<span class="ui">إزاحة Y</span> بالمليمتر (الافتراضي 10 و0)، ويمكنك عكس النسخة يميناً–شمالاً أو فوق–تحت، واختيار <span class="ui">عدد النسخ</span> (حتى 200؛ كل نسخة تُزاح عن السابقة). اضغط <span class="ui">نسخ</span>. تُحدد النسخ الجديدة بعد إنشائها.</p></div>
+</div>
+<div class="side w48">
+  <figure><img src="../screenshots/29-sheet-sections.png" alt=""><figcaption>نافذة «الأجزاء»</figcaption></figure>
+  <div class="txt">
+    <p><b>الأجزاء</b> تجعل جزءاً من الشكل يُخاط بطريقة مختلفة. حدد شكلاً واحداً، ثم اختر النوع:</p>
+    <ul>
+      <li><span class="ui">زجزاج</span>: غرز متعرجة، ولها <span class="ui">عرض الزجزاج</span> و<span class="ui">خطوة الزجزاج</span> و<span class="ui">شكل الزجزاج</span> (<span class="lat">V</span> أو <span class="lat">W</span>) و<span class="ui">موضع البداية</span>.</li>
+      <li><span class="ui">رجوع</span>: غرز رجوع (تقفيل) في هذا الجزء.</li>
+      <li><span class="ui">طول خاص</span>: يُخاط بطول الغرزة الخاص المحدد في مرحلة الغرز.</li>
+    </ul>
+    <p>حدد بداية الجزء ونهايته بالمليمتر <span class="ui">من</span> و<span class="ui">إلى</span> مقيسة من بداية الشكل (تذكر النافذة طول الشكل الكلي)، ثم <span class="ui">إضافة جزء</span>. تبقى النافذة مفتوحة لإضافة أجزاء أخرى، وتعرض قائمة الأجزاء الحالية. <span class="ui">مسح الأجزاء</span> يحذفها كلها. تظهر الأجزاء على الرسمة بخط عريض شفاف بلونها.</p>
+  </div>
+</div>
+<div class="side w48">
+  <figure><img src="../screenshots/26-sheet-reference.png" alt=""><figcaption>نافذة «النقاط المرجعية»</figcaption></figure>
+  <div class="txt"><p><b>النقاط المرجعية</b> تستخدم بداية الشكل المحدد لمحاذاة الشغلانة على الماكينة: فعّل <span class="ui">النقطة المرجعية 1</span> أو <span class="ui">2</span>. تظهر النقطة على الرسمة بعلامة حمراء ومعها <span class="lat">R1</span> أو <span class="lat">R2</span>. ويمكن جعل طبقة الشكل <b>للمحاذاة فقط</b> فلا تُخاط، وتظهر الطبقة في القائمة بكلمة «align». <span class="ui">حذف الكل</span> يلغي النقاط المرجعية جميعها.</p></div>
+</div>
+
+<h2 id="c6-6"><span class="n">6.6</span>تنظيف الرسمة</h2>
+<p>الرسومات القادمة من برامج أخرى قد تحتوي نقاطاً مكررة أو خطوطاً قصيرة جداً أو خطوطاً مقطّعة. في قسم <span class="ui">تنظيف</span>، اكتب القيمة بالمليمتر ثم اضغط الزر، وكلها تعمل على الأشكال المحددة ويظهر إشعار بالنتيجة:</p>
+<table class="compact">
+  <thead><tr><th>الزر</th><th>القيمة الافتراضية</th><th>ما يفعله</th></tr></thead>
+  <tbody>
+    <tr><td><span class="ui">دمج النقاط القريبة</span></td><td class="lat">0.30</td><td>يدمج النقاط المتتالية الأقرب من هذه المسافة في نقطة واحدة.</td></tr>
+    <tr><td><span class="ui">حذف الخطوط الأقصر</span></td><td class="lat">3.50</td><td>يحذف الخطوط التي طولها أقل من هذه القيمة.</td></tr>
+    <tr><td><span class="ui">ربط أطراف الخطوط</span> <span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>J</kbd></span></td><td class="lat">2.00</td><td>يصل الخطوط التي تقترب أطرافها إلى هذه المسافة في شكل واحد. إن لم يجد أطرافاً قريبة تظهر رسالة بذلك.</td></tr>
+    <tr><td><span class="ui">حذف النسخ المتداخلة</span></td><td>—</td><td>يحذف الأشكال المكررة فوق بعضها.</td></tr>
+  </tbody>
+</table>
+
+<h2 id="c6-7"><span class="n">6.7</span>إضافة شكل جديد</h2>
+<div class="side w48">
+  <figure><img src="../screenshots/24-sheet-add-shape.png" alt=""><figcaption>نافذة «إضافة شكل»</figcaption></figure>
+  <div class="txt">
+    <p>اضغط <kbd>M</kbd> أو زر <b>+</b> في شريط الأدوات أو في لوحة الطبقات، أو ضغطة يمين في مكان فارغ ثم <span class="ui">إضافة شكل هنا…</span> (يُملأ الموضع بمكان الضغطة).</p>
+    <ol class="steps">
+      <li>اختر النوع: <span class="ui">نقطة</span> أو <span class="ui">خط</span> أو <span class="ui">مستطيل</span> أو <span class="ui">دائرة</span>.</li>
+      <li>اكتب <span class="ui">الموضع X</span> و<span class="ui">الموضع Y</span> بالمليمتر.</li>
+      <li>اكتب <span class="ui">الطول / العرض / نصف القطر</span> (حسب النوع)، و<span class="ui">الارتفاع (مستطيل)</span> للمستطيل.</li>
+      <li>اختر <span class="ui">طبقة</span> ثم <span class="ui">إضافة</span>.</li>
+    </ol>
+    <p class="result">يظهر الشكل في الرسمة ويُحدد، مع إشعار «تمت إضافة الشكل».</p>
+  </div>
+</div>
+
+<h2 id="c6-8"><span class="n">6.8</span>القوائم المختصرة والحافظة</h2>
+<div class="side w33">
+  <figure><img src="../annotated/a09-menu-shape.png" alt=""><figcaption>القائمة المختصرة لشكل</figcaption></figure>
+  <div class="txt">
+    <p><b>ضغطة يمين على شكل</b> تحدده وتعرض: <span class="ui">ابدأ الخياطة من هنا</span> (من النقطة التي ضغطت عليها)، <span class="ui">عكس الاتجاه</span>، <span class="ui">كوبي</span> (نسخ إلى الحافظة)، <span class="ui">نسخ</span> (نسخة مزاحة 5 مم مباشرة)، <span class="ui">عكس يمين–شمال</span>، <span class="ui">عكس فوق–تحت</span>، <span class="ui">تقسيم عند أقرب نقطة</span> (يقسم الشكل إلى اثنين عند أقرب نقطة من الضغطة)، <span class="ui">تعديل النقاط…</span>، <span class="ui">أجزاء (زجزاج، رجوع)…</span>، و<span class="ui">حذف</span>.</p>
+    <p><b>ضغطة يمين في مكان فارغ</b> تعرض: <span class="ui">إضافة شكل هنا…</span>، و<span class="ui">لزق هنا</span> (إذا نسخت شيئاً)، و<span class="ui">ملاءمة الرسمة</span>، و<span class="ui">تحديد الكل</span>.</p>
+  </div>
+</div>
+<figure class="small"><img src="../annotated/a10-menu-empty.png" alt=""><figcaption>القائمة المختصرة في مكان فارغ</figcaption></figure>
+<p><b>الحافظة داخل البرنامج:</b> <span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>C</kbd></span> ينسخ المحدد، و<span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>X</kbd></span> يقصه، و<span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>V</kbd></span> يلصقه في منتصف المنظر الحالي، و<span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>F</kbd></span> يلصقه في مكانه نفسه ويُخاط آخراً، و<span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>B</kbd></span> يلصقه في مكانه ويُخاط أولاً. هذه الحافظة خاصة بالبرنامج ولا تُشارك مع برامج أخرى.</p>
+
+<h2 id="c6-9"><span class="n">6.9</span>أداة القياس</h2>
+<div class="side w48">
+  <figure><img src="../annotated/a14-measure.png" alt=""><figcaption>أداة القياس أثناء السحب</figcaption></figure>
+  <div class="txt">
+    <p>اضغط <kbd>I</kbd> ثم اسحب من نقطة إلى أخرى. يُرسم خط متقطع بينهما، ويظهر فوقه شريط داكن مخصص لعرض المسافة بالمليمتر والزاوية وفرق <span class="lat">X</span> و<span class="lat">Y</span>. اضغط <kbd>Esc</kbd> للخروج.</p>
+    <div class="box issue"><b class="t">مشكلة معروفة</b>في الواجهة العربية تُكتب قراءة القياس خارج الشريط الداكن فلا تُقرأ (كما في الصورة). للقراءة بدّل اللغة مؤقتاً إلى الإنجليزية، أو استخدم بديلاً: حدد الشكل واقرأ عرضه وارتفاعه في شريط المقاس أعلى الرسمة.</div>
+  </div>
+</div>
+
+
+<!-- ================================================================ 7 layers -->
+<h1 class="ch" id="c7"><span class="n">7</span>الطبقات</h1>
+<p class="lead">الطبقة مجموعة أشكال تشترك في الإبرة وإعدادات الغرز واللون. مثلاً: طبقة للتطريز على الإبرة 1، وطبقة لخطوط القص على الإبرة 3 (الليزر). عند فتح رسمة، تُنشأ الطبقات من طبقات ملف <code>DXF</code> أو من أقلام ملف <code>PLT</code>.</p>
+
+<h2 id="c7-1"><span class="n">7.1</span>لوحة الطبقات</h2>
+<div class="side w48">
+  <figure><img src="../annotated/a06-layers.png" alt=""><figcaption>لوحة الطبقات وأجزاء صف الطبقة</figcaption></figure>
+  <div class="txt">
+    <ol class="legend">
+      <li><b>اعمل طبقة من المحدد</b> <span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>G</kbd></span> (باهت إن لم يكن هناك تحديد).</li>
+      <li><b>طبقة جديدة فارغة:</b> يطلب اسماً للطبقة (الافتراضي «Layer 3» مثلاً).</li>
+      <li><b>إضافة شكل.</b></li>
+      <li><b>السهم:</b> يفتح الطبقة لعرض أشكالها أو يطويها.</li>
+      <li><b>لون الطبقة:</b> اضغط عليه لاختيار لون آخر. هو لون الأشكال على الرسمة فقط، ولا يؤثر في ملف الماكينة.</li>
+      <li><b>اسم الطبقة وعدد أشكالها.</b> نقرة مزدوجة على الاسم لتغييره، ثم <kbd>Enter</kbd> للحفظ أو <kbd>Esc</kbd> للإلغاء.</li>
+      <li><b>الإبرة:</b> «إ1» تعني الإبرة 1، و«ليزر» تعني طبقة قص بالليزر.</li>
+      <li><b>مفتاح الخياطة:</b> عند إيقافه لا تُكتب الطبقة في ملف الماكينة، وتظهر أشكالها باهتة بخط متقطع رمادي (مفيد لخطوط المساعدة).</li>
+      <li><b>صف الشكل:</b> صورة مصغرة واسم الشكل وطوله بالمليمتر. الأشكال مرتبة حسب ترتيب الخياطة. اضغط لتحديد الشكل (مع <kbd>Ctrl</kbd> لإضافته إلى التحديد).</li>
+    </ol>
+  </div>
+</div>
+<p>الضغط على صف طبقة يجعلها <b>الطبقة الحالية</b> (تظهر بخلفية زرقاء خفيفة)، وهي الطبقة التي تُعرض إعداداتها في مرحلة الغرز، وتُضاف إليها الأشكال الملصقة. إذا كانت في الطبقة أكثر من 300 شكل تُعرض أول 300 فقط مع ملاحظة بعدد الباقي، ويمكنك تحديد الباقي من الرسمة.</p>
+<div class="box issue"><b class="t">مشكلة معروفة</b>الضغط على زر الإبرة في صف الطبقة <b>(7)</b> يُفترض أن يفتح قائمة لاختيار الإبرة 1 أو 2 أو 3، لكن القائمة تُغلق فور فتحها في هذا الإصدار. لتغيير الإبرة استخدم قائمة <span class="ui">رأس الخياطة</span> في مرحلة الغرز (<a href="#c8-1">8.1</a>)، أو اختر الإبرة عند إنشاء الطبقة من المحدد.</div>
+
+<h2 id="c7-2"><span class="n">7.2</span>القائمة المختصرة للطبقة وسحب الطبقات</h2>
+<div class="side w40">
+  <figure><img src="../annotated/a11-menu-layer.png" alt=""><figcaption>القائمة المختصرة للطبقة</figcaption></figure>
+  <div class="txt">
+    <p>ضغطة يمين على صف الطبقة تعرض:</p>
+    <ul>
+      <li><span class="ui">تحديد كل أشكال الطبقة</span>.</li>
+      <li><span class="ui">تغيير الاسم…</span>.</li>
+      <li><span class="ui">اجعلها طبقة قص ليزر</span>، أو <span class="ui">اجعلها طبقة خياطة</span> إن كانت ليزراً (<a href="#c8-5">8.5</a>).</li>
+      <li><span class="ui">استخدم إعدادات الغرز دي لكل الطبقات</span> (لطبقات الخياطة فقط، <a href="#c8-4">8.4</a>).</li>
+      <li><span class="ui">تحريك الطبقة لفوق</span> / <span class="ui">لتحت</span>: يغيّر ترتيب الطبقات، وهو الترتيب الذي يتبعه أمر «طبقة بطبقة» في مرحلة التسلسل.</li>
+      <li><span class="ui">حذف الطبقة مع الاحتفاظ بأشكالها</span> <span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>G</kbd></span>: تُنقل أشكالها إلى الطبقة التي فوقها (لا يظهر إن كانت الطبقة الوحيدة).</li>
+      <li><span class="ui">حذف الطبقة وأشكالها</span>: يطلب تأكيداً، ويمكن التراجع عنه.</li>
+    </ul>
+  </div>
+</div>
+<figure class="small"><img src="../screenshots/41-confirm-delete-layer.png" alt=""><figcaption>تأكيد حذف الطبقة</figcaption></figure>
+<p><b>السحب في لوحة الطبقات:</b></p>
+<ul>
+  <li>اسحب <b>صف شكل</b> وأفلته فوق شكل آخر أو تحته لتغيير ترتيب خياطته. إذا أفلته في طبقة أخرى يُنقل إليها. إذا كان الشكل ضمن تحديد يتحرك التحديد كله.</li>
+  <li>أفلت الشكل على <b>صف الطبقة</b> نفسه ليوضع في آخر تلك الطبقة.</li>
+  <li>اسحب <b>صف الطبقة</b> لتغيير ترتيب الطبقات. النصف العلوي من الصف يعني «فوقه» والنصف السفلي «تحته».</li>
+</ul>
+
+<h2 id="c7-3"><span class="n">7.3</span>إنشاء طبقة من المحدد</h2>
+<div class="side w48">
+  <figure><img src="../screenshots/34-sheet-make-layer.png" alt=""><figcaption>نافذة «عمل طبقة»</figcaption></figure>
+  <div class="txt">
+    <ol class="steps">
+      <li>حدد الأشكال (مثلاً خطوط القص كلها).</li>
+      <li>اضغط <span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>G</kbd></span> أو <span class="ui">اعمل طبقة من المحدد</span>.</li>
+      <li>اكتب <span class="ui">الاسم</span>، واختر <span class="ui">الاستخدام</span>: <span class="ui">خياطة</span> أو <span class="ui">قص ليزر</span> (اختيار الليزر يختار الإبرة 3 تلقائياً).</li>
+      <li>اختر <span class="ui">إبرة</span> 1 أو 2 أو 3، و<span class="ui">اللون</span>، ثم <span class="ui">عمل الطبقة</span>.</li>
+    </ol>
+    <p class="result">تنتقل الأشكال إلى الطبقة الجديدة وتصبح هي الطبقة الحالية، مع إشعار «تم عمل الطبقة».</p>
+  </div>
+</div>
+
+<!-- ================================================================ 8 stitch -->
+<h1 class="ch" id="c8"><span class="n">8</span>مرحلة الغرز وقص الليزر</h1>
+<p class="lead">هنا تحدد كيف تُخاط كل طبقة: طول الغرزة، والرجوع في البداية والنهاية، ومعالجة الأشكال المغلقة والزوايا، أو تجعل الطبقة طبقة قص بالليزر. الإعدادات تخص الطبقة المختارة وتُطبَّق على كل أشكالها.</p>
+
+<h2 id="c8-1"><span class="n">8.1</span>الإعدادات الأساسية للطبقة</h2>
+<figure class="full"><img src="../annotated/a15-stitch.png" alt=""><figcaption>مرحلة الغرز</figcaption></figure>
+<ol class="legend">
+  <li><b>اختيار الطبقة:</b> القائمة في رأس اللوحة تحدد الطبقة التي تعدّل إعداداتها، وبجانبها لونها.</li>
+  <li><b><span class="ui">هذه الطبقة</span>: <span class="ui">خياطة</span> أو <span class="ui">قص ليزر</span></b> (<a href="#c8-5">8.5</a>).</li>
+  <li><b><span class="ui">طول الغرزة</span>:</b> اكتب القيمة بالمليمتر أو حرّك الشريط (من 0.5 إلى 12 مم، الافتراضي 2.2). تحته عدد نقاط الإبرة في الطبقة، ويتغير فوراً. الرسمة تعرض نقاط الإبرة بلون الطبقة.</li>
+</ol>
+<p>وتحت طول الغرزة:</p>
+<ul>
+  <li><span class="ui">تحويل الخطوط إلى غرز</span> (مفعّل افتراضياً): يقسّم البرنامج كل خط إلى غرز بالطول المحدد. عند إيقافه تخيط الماكينة كل خط بطول غرزتها هي.</li>
+  <li><span class="ui">رأس الخياطة</span>: الإبرة 1 أو 2 أو 3.</li>
+  <li><span class="ui">خياطة هذه الطبقة</span>: المفتاح نفسه الموجود في لوحة الطبقات.</li>
+</ul>
+<div class="box tip"><b class="t">نصيحة</b>عند كتابة رقم في أي حقل، يُحفظ عند الضغط على <kbd>Enter</kbd> أو <kbd>Tab</kbd> أو الانتقال إلى حقل آخر. يمكن استخدام الفاصلة أو النقطة للكسور العشرية.</div>
+
+<h2 id="c8-2"><span class="n">8.2</span>أقسام لوحة الغرز</h2>
+<div class="side w30">
+  <figure><img src="../annotated/a16-stitch-panel-1.png" alt=""><figcaption>لوحة الغرز (الجزء الأول)</figcaption></figure>
+  <div class="txt">
+    <ol class="legend">
+      <li><b>رأس اللوحة واختيار الطبقة.</b></li>
+      <li><b>نوع الطبقة:</b> خياطة أو قص ليزر.</li>
+      <li><b>الإعدادات الأساسية</b> (8.1).</li>
+      <li><b><span class="ui">الرجوع (الخطوط المفتوحة)</span>:</b> غرز تقفيل في بداية الخطوط المفتوحة ونهايتها حتى لا يُفك الخيط. <span class="ui">غرز البداية</span> و<span class="ui">غرز النهاية</span> عدد الغرز التي ترجع عليها الإبرة (الافتراضي 1)، و<span class="ui">تكرار البداية</span> و<span class="ui">تكرار النهاية</span> عدد مرات الذهاب والعودة (الافتراضي 1).</li>
+      <li><b><span class="ui">الأشكال المغلقة</span>:</b> <span class="ui">تقوية البداية</span> وتكرارها، و<span class="ui">التداخل بعد البداية</span> (عدد الغرز التي تكمل بعد العودة إلى نقطة البداية) وتكراره، و<span class="ui">غرز تكرار النهاية</span>. القيم الافتراضية صفر.</li>
+      <li><b><span class="ui">الزوايا</span>:</b> <span class="ui">زاوية الركن</span> (الافتراضي 45°): أي انعطاف أحدّ منها يُعامل كركن. <span class="ui">تبطيء عند الزوايا</span> (مفعّل) مع <span class="ui">غرز التبطيء</span> (5)، و<span class="ui">غرز كثيفة عند الزوايا</span> (غير مفعّل) مع <span class="ui">عدد الغرز الكثيفة</span> (5) و<span class="ui">معامل الكثافة</span> (2: الغرزة بنصف الطول).</li>
+    </ol>
+  </div>
+</div>
+<div class="side w30">
+  <figure><img src="../annotated/a16-stitch-panel-2.png" alt=""><figcaption>لوحة الغرز (الجزء الثاني)</figcaption></figure>
+  <div class="txt">
+    <ol class="legend" style="counter-reset: lg 6">
+      <li><b><span class="ui">كثافة البداية والنهاية</span>:</b> <span class="ui">غرز كثيفة في البداية / النهاية</span> مع عددها ومعامل كثافتها.</li>
+      <li><b><span class="ui">طول خاص ومزدوج</span>:</b> <span class="ui">طول الغرزة الخاص</span> للأجزاء المعلمة «طول خاص» (القيمة 0 تحتفظ بنقاط الرسمة كما هي)، و<span class="ui">السرعة الخاصة</span> (الافتراضي 1800 لفة/د) مع <span class="ui">سرعة منفصلة للأجزاء الخاصة</span>. و<span class="ui">استخدام طول غرزة مزدوج</span> مع <span class="ui">الطول المزدوج</span> (2.5 مم) وتطبيقه على <span class="ui">الغرز الفردية</span> أو <span class="ui">الزوجية</span>.</li>
+      <li><b><span class="ui">الماكينة</span>:</b> انظر 8.3. هذه الإعدادات للشغلانة كلها وليست للطبقة فقط.</li>
+      <li><b>دليل الألوان:</b> ألوان نقاط الإبرة على الرسمة: غرزة (لون الطبقة)، رجوع (برتقالي)، كثيف (بنفسجي)، بطيء (كهرماني)، زجزاج (فيروزي)، خاص (أزرق).</li>
+      <li><b><span class="ui">استخدم الإعدادات دي لكل الطبقات</span></b> (8.4).</li>
+    </ol>
+  </div>
+</div>
+
+<h2 id="c8-3"><span class="n">8.3</span>إعدادات الماكينة</h2>
+<ul>
+  <li><span class="ui">نقطة أصل الماكينة (ركن الرسمة)</span>: <span class="ui">فوق يمين</span> أو <span class="ui">فوق شمال</span> أو <span class="ui">تحت يمين</span> أو <span class="ui">تحت شمال</span> (الافتراضي). الإحداثيات في ملف الماكينة تُقاس من هذا الركن، ويظهر على الرسمة بعلامة <span class="lat">0, 0</span> ومنه تُرسم الطاولة. اختر الركن الذي تبدأ منه ماكينتك.</li>
+  <li><span class="ui">الأشكال المغلقة الصغيرة تتحول لنقطة</span> مع <span class="ui">…لو أصغر من</span> (50 مم): كل شكل مغلق أصغر من هذا المقاس يُكتب نقطة واحدة.</li>
+  <li><span class="ui">تعويض الخلوص</span>: لتعويض الخلوص الميكانيكي في محاور الماكينة؛ أدخل قيمة التعويض بالمليمتر لكل اتجاه: <span class="lat">X−</span> و<span class="lat">X+</span> و<span class="lat">Y−</span> و<span class="lat">Y+</span>.</li>
+</ul>
+<div class="box warn"><b class="t">تنبيه</b>اترك إعدادات الماكينة على قيمها الافتراضية ما لم تعرف القيم المناسبة لماكينتك؛ تغيير نقطة الأصل أو تعويض الخلوص يغيّر مواضع الخياطة الفعلية.</div>
+
+<h2 id="c8-4"><span class="n">8.4</span>نسخ إعدادات الغرز لكل الطبقات</h2>
+<p>زر <span class="ui">استخدم الإعدادات دي لكل الطبقات</span> (أو من القائمة المختصرة للطبقة) ينسخ إعدادات الغرز من الطبقة الحالية إلى كل طبقات الخياطة الأخرى، بعد رسالة تأكيد تذكر عدد الطبقات التي ستتغير. <b>طبقات الليزر لا تتأثر</b>، والأمر غير متاح من طبقة ليزر. إن كانت كل الطبقات تستخدم الإعدادات نفسها يظهر إشعار بذلك ولا يتغير شيء. يمكن التراجع عن النسخ.</p>
+
+<h2 id="c8-5"><span class="n">8.5</span>طبقة قص الليزر</h2>
+<p>في الماكينات المزودة برأس ليزر على الإبرة 3، يمكن جعل طبقة كاملة طبقة قص: الليزر يمر على كل خط مرة واحدة، بلا غرز ولا رجوع ولا تداخل.</p>
+<ol class="steps">
+  <li>في مرحلة الغرز اختر الطبقة من القائمة أعلى اللوحة.</li>
+  <li>اضغط <span class="ui">قص ليزر</span> بجوار <span class="ui">هذه الطبقة</span> (أو من القائمة المختصرة للطبقة: <span class="ui">اجعلها طبقة قص ليزر</span>).</li>
+</ol>
+<figure class="full"><img src="../annotated/a17-laser.png" alt=""><figcaption>طبقة الخطوط الخارجية بعد جعلها قص ليزر</figcaption></figure>
+<ol class="legend">
+  <li><b>نوع الطبقة:</b> <span class="ui">قص ليزر</span> مختار.</li>
+  <li><b>شرح:</b> الإبرة 3 تشغّل الليزر (المخرج <span class="lat">IO 5</span>)، والقص يمشي على كل خط مرة واحدة.</li>
+  <li><b>في لوحة الطبقات</b> تظهر كلمة «ليزر» بدل رقم الإبرة.</li>
+  <li><b>على الرسمة</b> تظهر خطوط القص بلون الطبقة مع توهج خفيف، بلا نقاط إبرة.</li>
+  <li><b><span class="ui">سرعة الليزر</span>:</b> قسم يفحص المسارات، وبجانبه الحالة «جاهز» أو «ممكن يقص ببطء».</li>
+</ol>
+<p class="result">يظهر إشعار «الطبقة دي بقت قص ليزر (الإبرة 3)». للعودة اضغط <span class="ui">خياطة</span>؛ تعود الطبقة إلى الإبرة 1 بإعدادات خياطة قياسية (رجوع غرزة واحدة مرتين في البداية والنهاية، وتبطيء عند الزوايا).</p>
+
+<h3 id="c8-6">فحص سرعة الليزر وإصلاح المسارات</h3>
+<p>القص يتباطأ عندما تتكون المسارات من أجزاء صغيرة جداً، أو عندما تكون الخطوط المتلامسة مقطوعة إلى قطع منفصلة (عند كل قطعة يتوقف الليزر وينتظر). عندئذ يظهر تحذير في قسم <span class="ui">سرعة الليزر</span>:</p>
+<figure class="full"><img src="../annotated/a49-laser-slow.png" alt=""><figcaption>طبقة ليزر قد تقص ببطء</figcaption></figure>
+<ol class="legend">
+  <li><b>الحالة:</b> «ممكن يقص ببطء».</li>
+  <li><b>التحذير:</b> «الطبقة دي ممكن تقص ببطء.».</li>
+  <li><b>سبب البطء</b> يظهر بلون كهرماني: هنا 251 جزءاً أصغر من 0.5 مم. وفي القسم أيضاً: <span class="ui">عدد القطعات المنفصلة</span>، و<span class="ui">الانتظار عند بداية ونهاية القطعات</span> بالثواني، و<span class="ui">عدد النقاط</span>، و<span class="ui">أطراف خطوط متلامسة (ممكن تبقى قطعة واحدة)</span>.</li>
+  <li><b><span class="ui">تسريع مسارات الليزر</span>:</b> يصل الخطوط المتلامسة في قطعة واحدة، ويحذف النقاط التي لا يحتاجها القص، ويرتب القطع بأقصر مسار. يبقى القص في حدود 0.05 مم من الرسمة، ويمكن التراجع عنه.</li>
+</ol>
+<figure class="full"><img src="../annotated/a51-laser-fixed.png" alt=""><figcaption>بعد تسريع مسارات الليزر</figcaption></figure>
+<ol class="legend">
+  <li><b>الحالة الجديدة:</b> «المسارات نظيفة: الليزر يقدر يقص بسرعته الكاملة.».</li>
+  <li><b>الزر باهت</b> لأنه لم يعد هناك ما يُصلح.</li>
+  <li><b>إشعار بالنتيجة:</b> عدد القطعات والنقاط والأجزاء الصغيرة قبل الإصلاح وبعده (هنا انخفضت النقاط من 881 إلى 575 والأجزاء الصغيرة من 251 إلى 0).</li>
+</ol>
+<div class="side w48">
+  <figure><img src="../screenshots/50-output-laser-warning.png" alt=""><figcaption>التنبيه نفسه في مرحلة الإخراج</figcaption></figure>
+  <div class="txt"><p>إذا انتقلت إلى مرحلة الإخراج وفي الشغلانة طبقة ليزر بطيئة، يظهر تنبيه «طبقة ليزر ممكن تقص ببطء:» مع اسم الطبقة وزر <span class="ui">صلّحها من شاشة الغرز</span> ينقلك إلى المكان الصحيح.</p></div>
+</div>
+<div class="box note"><b class="t">ملاحظة</b>تضيف الماكينة أوقات انتظار عند بداية كل قطعة ليزر ونهايتها (من الأوامر الافتراضية: 100 و50 مللي ثانية)، ولذلك يقل زمن القص كلما قل عدد القطع المنفصلة. هذه الأوقات تظهر في المحاكاة وفي الوقت المتوقع.</div>
+
+
+<!-- ================================================================ 9 sequence -->
+<h1 class="ch" id="c9"><span class="n">9</span>مرحلة التسلسل: ترتيب الخياطة والمحاكاة</h1>
+<p class="lead">ترتيب خياطة الأشكال يحدد المسافة التي تقطعها الإبرة بين الأشكال دون خياطة («حركات الانتقال»)، وبالتالي يؤثر على وقت الشغلانة. في هذه المرحلة ترتّب الأشكال وتشاهد محاكاة للخياطة.</p>
+
+<h2 id="c9-1"><span class="n">9.1</span>قائمة ترتيب الخياطة</h2>
+<figure class="full"><img src="../annotated/a19-sequence.png" alt=""><figcaption>مرحلة التسلسل</figcaption></figure>
+<ol class="legend">
+  <li><b>قائمة الترتيب:</b> كل الأشكال بترتيب خياطتها، ولكل شكل رقمه بلون طبقته، وصورة مصغرة، واسمه، واسم طبقته. الأشكال في الطبقات المتوقفة عن الخياطة تظهر باهتة. <b>اسحب</b> أي صف وأفلته فوق صف آخر أو تحته لتغيير الترتيب، واضغط عليه لتحديد الشكل.</li>
+  <li><b><span class="ui">ترتيب تلقائي</span>:</b> انظر 9.2.</li>
+  <li><b><span class="ui">محاكاة الخياطة</span>:</b> انظر 9.3.</li>
+</ol>
+<p>على الرسمة يظهر رقم كل شكل عند نقطة بدايته، وخطوط متقطعة رمادية تمثل حركات الانتقال من نهاية كل شكل إلى بداية التالي. عندما تتقارب نقاط البداية، يُخفي البرنامج بعض الأرقام حتى لا تتكدس فوق بعضها.</p>
+<figure class="full"><img src="../annotated/a19b-sequence-hover.png" alt=""><figcaption>الإشارة إلى شكل تُبرز رقمه والشكلين قبله وبعده</figcaption></figure>
+<p><b>(1)</b> عند إيقاف المؤشر فوق شكل في الرسمة أو فوق صفه في القائمة، يظهر رقمه بدائرة زرقاء أكبر (هنا 21)، ورقما الشكلين اللذين يُخاطان قبله وبعده (20 و22)، وحركتا الانتقال منه وإليه بخطين أزرقين مع أسهم الاتجاه، بينما تبهت بقية الأرقام. يحدث الشيء نفسه عند تحديد شكل (أو حتى ثلاثة أشكال).</p>
+<p>اختصارات الترتيب للأشكال المحددة (في أي مرحلة): <span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>]</kbd></span> خطوة لاحقة، <span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>[</kbd></span> خطوة سابقة، <span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>]</kbd></span> آخر الترتيب، <span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>[</kbd></span> أول الترتيب. ويمكن إظهار الأرقام في المراحل الأخرى بزر <span class="ui">الترتيب</span> في شريط العرض أو <span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>H</kbd></span>.</p>
+
+<h2 id="c9-2"><span class="n">9.2</span>الترتيب التلقائي وحركات الانتقال</h2>
+<div class="side w36">
+  <figure><img src="../annotated/a20-sequence-panel.png" alt=""><figcaption>أقسام الترتيب التلقائي وحركات الانتقال</figcaption></figure>
+  <div class="txt">
+    <ol class="legend">
+      <li><b><span class="ui">ترتيب تلقائي</span>:</b>
+        <ul>
+          <li>أربعة أزرار للترتيب في صفوف: <span class="ui">فوق ← تحت</span>، <span class="ui">تحت ← فوق</span>، <span class="ui">شمال ← يمين</span>، <span class="ui">يمين ← شمال</span>. عرض الصف تحدده <span class="ui">المسافة بين الصفوف</span> (10 مم)، و<span class="ui">ترتيب حسب نقطة النهاية</span> يرتب حسب نهايات الأشكال بدل بداياتها.</li>
+          <li><span class="ui">طبقة بطبقة (حسب ترتيب الطبقات)</span>: يخيط كل طبقة بالكامل قبل التي تليها، مثلاً الخياطة كلها أولاً ثم طبقة القص بالليزر أخيراً. غيّر ترتيب الطبقات من القائمة المختصرة للطبقة أو بسحبها.</li>
+          <li><span class="ui">أقصر مسافة انتقال (الأقرب أولاً)</span>: بعد كل شكل يختار أقرب شكل إليه.</li>
+        </ul>
+        يظهر إشعار «تم تحديث ترتيب الخياطة» بعد كل ترتيب، ويمكن التراجع عنه.</li>
+      <li><b><span class="ui">حركات الانتقال</span>:</b> بجانب العنوان مجموع مسافة الانتقال بالمتر (يقل كلما كان الترتيب أفضل). <span class="ui">أوامر الزوايا في حركات الانتقال</span> مع <span class="ui">زاوية الركن</span> (25°) يضيف أوامر الزوايا أثناء الانتقال.</li>
+      <li><b><span class="ui">محاكاة الخياطة</span>.</b></li>
+      <li><b><span class="ui">متابعة إلى الإخراج</span>.</b></li>
+    </ol>
+  </div>
+</div>
+
+<h2 id="c9-3"><span class="n">9.3</span>محاكاة الخياطة</h2>
+<p>اضغط <span class="ui">محاكاة الخياطة</span> لمشاهدة الإبرة وهي تتحرك على الأشكال بالترتيب. يظهر شريط تحكم أسفل الرسمة:</p>
+<figure class="full"><img src="../annotated/a21-simulation.png" alt=""><figcaption>المحاكاة أثناء التشغيل</figcaption></figure>
+<ol class="legend">
+  <li><b>تشغيل / إيقاف مؤقت.</b></li>
+  <li><b>شريط الموضع:</b> اسحبه للانتقال إلى أي لحظة من الخياطة.</li>
+  <li><b>سرعة المحاكاة:</b> ½× و1× و2× و5× و20×. هذه سرعة العرض فقط، و1× لا تمثل سرعة الماكينة الحقيقية.</li>
+  <li><b>العداد:</b> رقم نقطة الإبرة الحالية من المجموع.</li>
+  <li><b>إغلاق المحاكاة</b> (أو <kbd>Esc</kbd>).</li>
+</ol>
+<p>الخيط المخيط يُرسم بلون طبقته، والانتقالات بخط متقطع رمادي، وتظهر علامة «إبرة» عند رأس الخياطة. في طبقات الليزر يظهر شعاع متوهج مع كلمة «ليزر»، ويتوقف العرض عند بداية كل قطعة ليزر بمقدار الانتظار المكتوب في ملف الماكينة مع عبارة «الليزر منتظر». عند الانتهاء يظهر إشعار «انتهت المحاكاة». الانتقال إلى مرحلة أخرى يوقف المحاكاة.</p>
+<div class="box note"><b class="t">ملاحظة</b>إذا لم توجد طبقة مفعّلة فيها أشكال تظهر رسالة «لا يوجد ما يُخاط بعد: شغّل طبقة فيها أشكال.».</div>
+
+<!-- ================================================================ 10 output -->
+<h1 class="ch" id="c10"><span class="n">10</span>مرحلة الإخراج: برنامج الماكينة والحفظ</h1>
+<p class="lead">المرحلة الأخيرة: تراجع ما سيُكتب في ملف الماكينة، وتضيف الأوامر الخاصة، ثم تحفظ الملف أو تصدّره بصيغ أخرى.</p>
+<figure class="full"><img src="../annotated/a22-output.png" alt=""><figcaption>مرحلة الإخراج</figcaption></figure>
+<ol class="legend">
+  <li><b>الإحصاءات</b> (10.1).</li>
+  <li><b>البرنامج:</b> قائمة خطوات برنامج الماكينة (10.2).</li>
+  <li><b>إدراج أمر:</b> اختر الأمر واكتب قيمته ثم <span class="ui">إدراج</span>.</li>
+  <li><b><span class="ui">لفوق</span> / <span class="ui">لتحت</span> / <span class="ui">حذف</span>:</b> لتحريك أمر أضفته أو حذفه.</li>
+  <li><b><span class="ui">حفظ ملف الماكينة…</span>:</b> وتحته أزرار الحفظ على الفلاشة إن وُجدت (10.6).</li>
+  <li><b>زر الحفظ في الشريط العلوي</b> يعمل العمل نفسه من أي مرحلة.</li>
+  <li><b>زر <span class="ui">الخطوة التالية</span></b> يصبح في هذه المرحلة <span class="ui">حفظ ملف الماكينة</span>.</li>
+</ol>
+
+<h2 id="c10-1"><span class="n">10.1</span>الإحصاءات</h2>
+<ul>
+  <li><span class="ui">نقاط الإبرة</span>: عدد المواضع التي تنزل فيها الإبرة.</li>
+  <li><span class="ui">طول الخياطة</span>: بالمتر.</li>
+  <li><span class="ui">الأشكال المخيطة</span>: عدد الأشكال التي ستُخاط من إجمالي الأشكال (الأشكال في الطبقات المتوقفة لا تُحسب).</li>
+  <li><span class="ui">الوقت المتوقع</span>: تقدير للمدة حسب السرعة، وتحته أوقات الانتظار المضمنة فيها (مثل انتظار الليزر).</li>
+</ul>
+
+<h2 id="c10-2"><span class="n">10.2</span>البرنامج وإدراج الأوامر</h2>
+<div class="side w36">
+  <figure><img src="../annotated/a23-output-panel-1.png" alt=""><figcaption>الإحصاءات والبرنامج</figcaption></figure>
+  <div class="txt">
+    <p><b>(1)</b> الإحصاءات. <b>(2)</b> البرنامج: كل خطوة لها رقم ونص ووسم بنوعها: «الرأس» (اختيار الإبرة)، «انتقال» (حركة بلا خياطة)، «غرزة» (خياطة شكل مع عدد غرزه)، وغيرها. الخطوات التي تضيفها أنت تظهر باللون الأزرق.</p>
+    <p><b>لإضافة أمر:</b></p>
+    <ol class="steps">
+      <li>اضغط على خطوة في البرنامج؛ سيُدرج الأمر <b>قبل الشكل</b> الذي تخصه هذه الخطوة (أو في نهاية الشغلانة إن لم تختر خطوة). الملاحظة تحت القائمة تذكر مكان الإدراج.</li>
+      <li>اختر الأمر من القائمة: السرعة، انتظار، مخرج IO، مدخل IO، محور Z، محور U، علامة، تكرار، موضع العمود الرئيسي، قص الخيط، رفع الدواسة، إنزال الدواسة، إزاحة XY، رجوع لنقطة الأصل، إيقاف مؤقت، تغيير الإبرة.</li>
+      <li>اكتب القيمة (مثل 1200 للسرعة، أو 500 مللي ثانية للانتظار، أو «2 on» لتشغيل المخرج 2).</li>
+      <li>اضغط <span class="ui">إدراج</span>.</li>
+    </ol>
+    <div class="box warn"><b class="t">تنبيه</b>في هذا الإصدار تُكتب في ملف الماكينة أوامر <b>السرعة والانتظار ومخرج IO ومحور Z</b> فقط. بقية الأوامر تظهر بوسم «في الشغلانة فقط»: تُحفظ مع ملف الشغلانة ولا تُكتب في ملف الماكينة بعد. السرعة في ملف الماكينة محصورة بين 100 و3500 لفة/دقيقة.</div>
+    <p>لتحريك أمر أضفته أو حذفه اضغط عليه ثم <span class="ui">لفوق</span> أو <span class="ui">لتحت</span> أو <span class="ui">حذف</span>. لا يمكن تحريك الخطوات التي ينشئها البرنامج أو حذفها، وتظهر رسالة «حدد أمراً أضفته (يظهر باللون الأزرق).».</p>
+  </div>
+</div>
+
+<h2 id="c10-3"><span class="n">10.3</span>الأوامر التلقائية والسرعة والمخارج</h2>
+<div class="side w36">
+  <figure><img src="../annotated/a23-output-panel-2.png" alt=""><figcaption>الأوامر التلقائية وملف الماكينة والصيغ الأخرى</figcaption></figure>
+  <div class="txt">
+    <ol class="legend" style="counter-reset: lg 2">
+      <li><b><span class="ui">أوامر تلقائية</span>:</b>
+        <ul>
+          <li><span class="ui">الأوامر الافتراضية…</span>: انظر أدناه.</li>
+          <li><span class="ui">سرعة الخياطة</span> (1800 لفة/د): تُكتب في ملف الماكينة.</li>
+          <li><span class="ui">بدء تدريجي للسرعة</span> مع <span class="ui">سرعة البداية</span> (600): يظهر في البرنامج بوسم «في الشغلانة فقط».</li>
+          <li><span class="ui">مخرج IO عند مواضع…</span> و<span class="ui">IO أثناء الرجوع…</span>.</li>
+        </ul></li>
+      <li><b><span class="ui">ملف الماكينة</span>:</b> <span class="ui">تكبير/تصغير الإخراج</span> مع <span class="ui">المقياس X / Y</span> بالنسبة المئوية (100% = بلا تغيير). يُطبَّق على ملف الماكينة فقط دون تغيير الرسمة. الإحداثيات تُقاس من نقطة أصل الماكينة (8.3).</li>
+      <li><b><span class="ui">صيغ أخرى</span>:</b> انظر 10.5.</li>
+      <li><b>أزرار الحفظ</b> (10.6).</li>
+    </ol>
+  </div>
+</div>
+<div class="side w48">
+  <figure><img src="../screenshots/31-sheet-default-instructions.png" alt=""><figcaption>نافذة «الأوامر الافتراضية»</figcaption></figure>
+  <div class="txt">
+    <p><b>الأوامر الافتراضية</b> تُضاف تلقائياً عند نقاط محددة من كل شغلانة: بداية الشغلانة ونهايتها، وبداية الخياطة ونهايتها، وبداية كل طبقة وشكل ونهايتهما، وعند الزوايا، وقبل نهاية الخياطة، وبداية الرأس 2 والرأس 3 ونهايتهما، وبداية أشكال كل رأس ونهايتها.</p>
+    <p>القيم المضبوطة مسبقاً تخص الليزر وأشكال الغرز، مثل: «بداية الرأس 3»: تشغيل المخرج 5 وانتظار 200؛ «بداية شكل الرأس 3»: تشغيل المخرج 2، انتظار 100، محور Z 100.</p>
+    <ul>
+      <li>لإضافة أمر: اختر الحدث والأمر واكتب القيمة ثم <span class="ui">إضافة</span>.</li>
+      <li>لحذف أمر: اضغط عليه (عليه علامة ×).</li>
+      <li><span class="ui">إعادة ضبط</span> يعيد القيم الأصلية، و<span class="ui">حفظ</span> يحفظ التغييرات.</li>
+    </ul>
+  </div>
+</div>
+<div class="side w48">
+  <figure><img src="../screenshots/32-sheet-io-positions.png" alt=""><figcaption>نافذة «مخرج IO عند مواضع»</figcaption></figure>
+  <div class="txt"><p><b>مخرج IO عند مواضع:</b> يشغّل مخرجاً من مخارج الماكينة عند غرزة معينة من شكل معين. اختر الشكل، واكتب رقم الغرزة ورقم المخرج، ثم <span class="ui">إضافة</span>، ثم <span class="ui">حفظ</span>. يمكن حذف أي سطر بزر <span class="ui">إزالة</span>.</p></div>
+</div>
+<div class="side w48">
+  <figure><img src="../screenshots/33-sheet-io-reverse.png" alt=""><figcaption>نافذة «IO أثناء الرجوع»</figcaption></figure>
+  <div class="txt"><p><b>IO أثناء الرجوع:</b> يشغّل مخرجاً أثناء خياطة الماكينة للخلف (غرز الرجوع). فعّل <span class="ui">استخدام مخرج أثناء الخياطة للخلف</span> واكتب <span class="ui">رقم المخرج</span> ثم <span class="ui">حفظ</span>.</p></div>
+</div>
+<div class="box warn"><b class="t">تنبيه</b>أرقام المخارج وأوامرها تختلف بين الماكينات. لا تغيّر الأوامر الافتراضية أو المخارج إلا إذا كنت تعرف توصيلات ماكينتك؛ أوامر خاطئة قد تشغّل أجزاء غير مقصودة من الماكينة.</div>
+
+<h2 id="c10-5"><span class="n">10.5</span>التصدير بصيغ أخرى</h2>
+<p>من قسم <span class="ui">صيغ أخرى</span>. اختر أولاً <span class="ui">محتوى DXF / PLT</span>: <span class="ui">خطوط</span> (الأشكال كما هي) أو <span class="ui">الغرز</span> (نقاط الإبرة).</p>
+<table class="compact">
+  <thead><tr><th>الزر</th><th>الملف الناتج</th><th>الاستخدام</th></tr></thead>
+  <tbody>
+    <tr><td><span class="ui">PLT…</span></td><td><code>اسم.plt</code></td><td>ملف راسمة <span class="lat">HPGL</span> بالدقة المحددة في الاستيراد.</td></tr>
+    <tr><td><span class="ui">DXF…</span></td><td><code>اسم.dxf</code></td><td>رسمة تفتحها برامج التصميم.</td></tr>
+    <tr><td><span class="ui">صورة…</span></td><td><code>اسم.svg</code></td><td>صورة للرسمة والغرز تُفتح في المتصفح.</td></tr>
+    <tr><td><span class="ui">قائمة الغرز…</span></td><td><code>اسم_stitches.csv</code></td><td>جدول (إكسل) بكل نقطة إبرة: الترتيب والشكل والطبقة والإبرة ورقم الغرزة وإحداثياتها ونوعها.</td></tr>
+  </tbody>
+</table>
+<p>تظهر نافذة الحفظ في ويندوز مع اسم مقترح من اسم الشغلانة، وبعد الحفظ يظهر إشعار مثل «تم تصدير 41 شكل إلى demo.plt».</p>
+
+<h2 id="c10-6"><span class="n">10.6</span>حفظ ملف الماكينة</h2>
+<ol class="steps">
+  <li>تأكد أن طبقة واحدة على الأقل مفعّلة للخياطة، وإلا تظهر رسالة «لا يوجد ما يُخاط: شغّل طبقة واحدة على الأقل.».</li>
+  <li>اضغط <span class="ui">حفظ ملف الماكينة…</span> (أو <span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>E</kbd></span>، أو زر الشريط العلوي، أو <span class="ui">الخطوة التالية</span> في مرحلة الإخراج).</li>
+  <li>في نافذة الحفظ اختر المكان؛ الاسم المقترح هو اسم الشغلانة بامتداد <code>.slw</code>.</li>
+  <li>اضغط «حفظ» (<span class="lat">Save</span>).</li>
+</ol>
+<p class="result">يظهر إشعار «تم حفظ ملف الماكينة demo.slw (4555 سجل)» مثلاً.</p>
+<div class="box note"><b class="t">اسم ملف الماكينة</b>يُشتق الاسم المقترح من اسم الشغلانة بعد حذف المسافات والرموز (تبقى الحروف والأرقام والشرطة <code>-</code> والشرطة السفلية <code>_</code>)، ويُقصّ إلى 12 حرفاً، لأن الماكينات القديمة لا تقبل الأسماء الطويلة. إن لم يبقَ شيء يُستخدم الاسم <code>job</code>.</div>
+<h3>الحفظ مباشرة على فلاشة USB</h3>
+<p>عندما توصّل فلاشة <span class="lat">USB</span>، يظهر أسفل لوحة الإخراج زر <span class="ui">حفظ على الفلاشة E:</span> لكل فلاشة متصلة (حرف القرص حسب جهازك). الضغط عليه يحفظ الملف مباشرة في جذر الفلاشة دون نافذة حفظ، ويذكر الإشعار المسار الكامل. إن لم توجد فلاشة يظهر بدل الزر سطر «وصّل فلاشة USB للحفظ عليها مباشرة.». إذا فُصلت الفلاشة قبل الضغط تظهر رسالة «الفلاشة لم تعد متصلة.».</p>
+<div class="box warn"><b class="t">تنبيه</b>الحفظ على الفلاشة يستبدل أي ملف بالاسم نفسه في جذرها دون سؤال. انتظر ظهور إشعار الحفظ قبل نزع الفلاشة، واستخدم «إخراج الجهاز بأمان» من ويندوز.</div>
+<p class="small-print">تم اختبار كتابة ملف الماكينة والتصدير ورسالة «الفلاشة لم تعد متصلة» أثناء إعداد الدليل؛ لم تكن فلاشة متصلة بجهاز الفحص، فزر الحفظ على الفلاشة موصوف من شيفرة البرنامج.</p>
+
+<!-- ================================================================ 11 save -->
+<h1 class="ch" id="c11"><span class="n">11</span>الحفظ والتصدير والنسخ الاحتياطي</h1>
+<p class="lead">في البرنامج ثلاثة أنواع من الملفات الناتجة، ولكل منها غرض مختلف. فهم الفرق بينها يحميك من فقدان العمل.</p>
+
+<h2 id="c11-1"><span class="n">11.1</span>الفرق بين الحفظ والتصدير وملف الماكينة</h2>
+<table>
+  <thead><tr><th>النوع</th><th>الامتداد</th><th>كيف</th><th>الغرض</th></tr></thead>
+  <tbody>
+    <tr><td><b>ملف الشغلانة</b></td><td><code>.stitchline</code></td><td><span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>S</kbd></span>، زر الحفظ، <span class="ui">حفظ الشغلانة (.stitchline)…</span></td><td>نسختك القابلة للتعديل: الأشكال والطبقات والإعدادات والترتيب والأوامر. افتحها لاحقاً لتكمل العمل.</td></tr>
+    <tr><td><b>ملف الماكينة</b></td><td><code>.slw</code></td><td><span class="ui">حفظ ملف الماكينة</span></td><td>الملف الذي تقرؤه الماكينة. يمكن فتحه في البرنامج لكنه لا يحتفظ بالطبقات والإعدادات كما هي.</td></tr>
+    <tr><td><b>التصدير</b></td><td><code>.dxf .plt .svg .csv</code></td><td>قسم <span class="ui">صيغ أخرى</span></td><td>للبرامج الأخرى أو للمراجعة.</td></tr>
+  </tbody>
+</table>
+<div class="box tip"><b class="t">نصيحة</b>احفظ ملف الشغلانة دائماً بجانب ملف الماكينة. إذا احتجت تعديلاً لاحقاً، افتح ملف الشغلانة وليس ملف الماكينة.</div>
+
+<h2 id="c11-2"><span class="n">11.2</span>حفظ الشغلانة</h2>
+<ul>
+  <li><span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>S</kbd></span>: أول مرة تظهر نافذة الحفظ (الاسم المقترح اسم الشغلانة)، وبعدها يحفظ في الملف نفسه مباشرة.</li>
+  <li><span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd></span>: «حفظ باسم» في ملف جديد.</li>
+  <li>بعد الحفظ يصبح اسم الشغلانة هو اسم الملف، وتختفي علامة «معدّل»، ويُضاف الملف إلى الملفات الأخيرة.</li>
+</ul>
+
+<h2 id="c11-3"><span class="n">11.3</span>سؤال حفظ التعديلات</h2>
+<div class="side w48">
+  <figure><img src="../screenshots/45-unsaved-changes-dialog.png" alt=""><figcaption>سؤال حفظ التعديلات قبل فتح ملف آخر</figcaption></figure>
+  <div class="txt">
+    <p>إذا كانت في الشغلانة تعديلات غير محفوظة، يسألك البرنامج قبل أي عملية تستبدلها: فتح ملف، أو فتح ملف من القائمة الأخيرة، أو إفلات ملف، أو شغلانة جديدة، أو إغلاق البرنامج.</p>
+    <ul>
+      <li><span class="ui">حفظ</span>: يحفظ الشغلانة ثم يكمل العملية.</li>
+      <li><span class="ui">لا تحفظ</span>: يتجاهل التعديلات ويكمل.</li>
+      <li><span class="ui">إلغاء</span> أو <kbd>Esc</kbd>: لا يحدث شيء.</li>
+    </ul>
+    <p>لا يُطرح السؤال إذا كانت الشغلانة رسمة فتحتها للتو ولم تعدّلها، لأن الملف الأصلي يحتوي كل شيء.</p>
+  </div>
+</div>
+
+<h2 id="c11-4"><span class="n">11.4</span>الحفظ التلقائي واستعادة العمل</h2>
+<p>مع كل تعديل يكتب البرنامج نسخة من الشغلانة في <code>%APPDATA%\Stitchline\autosave.stitchline</code>. عند فتح البرنامج مرة أخرى تعود الشغلانة كما تركتها، حتى لو لم تحفظها أو أُغلق البرنامج فجأة، وتظهر في الصفحة الرئيسية في بطاقة <b>متابعة</b>.</p>
+<div class="box warn"><b class="t">تنبيه</b>إذا أغلقت البرنامج واخترت <span class="ui">لا تحفظ</span>، تُحذف النسخة التلقائية ويبدأ البرنامج في المرة القادمة بشغلانة جديدة. الحفظ التلقائي ليس بديلاً عن حفظ ملف الشغلانة؛ هو نسخة واحدة تُستبدل مع كل تعديل.</div>
+<h3>التراجع والإعادة</h3>
+<p>كل تعديل على الشغلانة يمكن التراجع عنه بـ <span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>Z</kbd></span> وإعادته بـ <span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd></span>، بما في ذلك الحذف والنسخ وتغيير الإعدادات والترتيب وتسريع الليزر. سحب الأشكال بالفأرة يُعد خطوة تراجع واحدة.</p>
+<h3>نصائح للنسخ الاحتياطي</h3>
+<ul>
+  <li>احفظ ملفات الشغلانة في مجلد خاص بكل عميل أو موديل، وانسخه دورياً إلى قرص خارجي أو تخزين سحابي.</li>
+  <li>قبل تعديل كبير، احفظ نسخة باسم جديد (<span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd></span>).</li>
+</ul>
+
+
+<!-- ================================================================ 12 workflows -->
+<h1 class="ch" id="c12"><span class="n">12</span>سير العمل العملي</h1>
+<p class="lead">أمثلة كاملة لأكثر المهام شيوعاً، خطوة بخطوة. استخدم الرسمة التجريبية <code>demo.plt</code> المرفقة مع البرنامج إن أردت التدرب.</p>
+
+<h2 id="c12-1"><span class="n">12.1</span>من الرسمة إلى ملف الماكينة على الفلاشة</h2>
+<p><b>الهدف:</b> تجهيز ملف <code>SLW</code> لرسمة خياطة بسيطة ونقله إلى الماكينة. <b>المتطلبات:</b> رسمة <code>DXF</code> أو <code>PLT</code>، وفلاشة <span class="lat">USB</span>. <b>نقطة البداية:</b> الصفحة الرئيسية.</p>
+<ol class="steps">
+  <li><b>افتح الرسمة:</b> اضغط <span class="ui">فتح رسمة</span> واختر الملف، أو اسحبه إلى النافذة. <span class="result">تظهر الرسمة في مرحلة الترتيب.</span></li>
+  <li><b>راجع المقاس:</b> اضغط <span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>A</kbd></span> واقرأ العرض والارتفاع في شريط المقاس أعلى الرسمة (بالسنتيمتر). إن كان المقاس خاطئاً في ملف <code>PLT</code> فراجع الدقة (5.5) أو استخدم المقياس (5.6).</li>
+  <li><b>نظّف الرسمة</b> إن لزم: من قسم <span class="ui">الرسمة كلها</span> اضغط <span class="ui">حذف التداخلات</span> و<span class="ui">ربط الخطوط &lt; 2 مم</span>.</li>
+  <li><b>انتقل إلى الغرز</b> (<span class="ui">الخطوة التالية</span>): اختر كل طبقة وراجع <span class="ui">طول الغرزة</span> وإعدادات الرجوع (8.1، 8.2).</li>
+  <li><b>اختر نقطة أصل الماكينة</b> المناسبة لماكينتك من قسم <span class="ui">الماكينة</span> (8.3).</li>
+  <li><b>انتقل إلى التسلسل:</b> اضغط <span class="ui">أقصر مسافة انتقال (الأقرب أولاً)</span>، ثم <span class="ui">محاكاة الخياطة</span> للتأكد من الترتيب (9.3).</li>
+  <li><b>انتقل إلى الإخراج:</b> راجع <span class="ui">نقاط الإبرة</span> و<span class="ui">الوقت المتوقع</span>.</li>
+  <li><b>احفظ ملف الشغلانة</b> بـ <span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>S</kbd></span> لتستطيع تعديلها لاحقاً.</li>
+  <li><b>وصّل الفلاشة</b> واضغط زر <span class="ui">حفظ على الفلاشة</span> أسفل لوحة الإخراج (أو <span class="ui">حفظ ملف الماكينة…</span> واختر الفلاشة في نافذة الحفظ).</li>
+</ol>
+<p><b>التحقق من النجاح:</b> يظهر إشعار «تم حفظ ملف الماكينة…» مع عدد السجلات، ويظهر الملف في الفلاشة بامتداد <code>.slw</code>. انزع الفلاشة بأمان وافتح الملف على الماكينة.</p>
+
+<h2 id="c12-2"><span class="n">12.2</span>شغلانة خياطة وقص ليزر معاً</h2>
+<p><b>الهدف:</b> تطريز القطعة على الإبرة 1 ثم قص حدودها بالليزر على الإبرة 3، في ملف واحد. <b>المتطلبات:</b> ماكينة برأس ليزر على الإبرة 3، ورسمة فيها خطوط التطريز وخطوط الحدود.</p>
+<ol class="steps">
+  <li>افتح الرسمة. إن كانت خطوط الحدود في طبقة مستقلة (مثل <code>Layer2</code> في الرسمة التجريبية) فانتقل للخطوة 3.</li>
+  <li>وإلا: حدد خطوط الحدود كلها (<kbd>Ctrl</kbd> + ضغطة على كل منها، أو مستطيل تحديد)، ثم <span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>G</kbd></span>، واختر <span class="ui">قص ليزر</span> و<span class="ui">عمل الطبقة</span> (7.3). انتقل للخطوة 4.</li>
+  <li>في مرحلة الغرز اختر طبقة الحدود واضغط <span class="ui">قص ليزر</span> (8.5).</li>
+  <li>افتح قسم <span class="ui">سرعة الليزر</span>؛ إن ظهر تحذير «ممكن يقص ببطء» فاضغط <span class="ui">تسريع مسارات الليزر</span>.</li>
+  <li>في مرحلة التسلسل اضغط <span class="ui">طبقة بطبقة (حسب ترتيب الطبقات)</span>، وتأكد أن طبقة الليزر هي الأخيرة في لوحة الطبقات (حرّكها لتحت من قائمتها المختصرة إن لزم)، حتى يتم القص بعد انتهاء التطريز.</li>
+  <li>شاهد المحاكاة: يجب أن يظهر التطريز أولاً ثم شعاع الليزر مع توقفات قصيرة عند بداية كل قطعة.</li>
+  <li>احفظ الشغلانة ثم ملف الماكينة.</li>
+</ol>
+<p><b>التحقق:</b> في برنامج الإخراج تظهر خطوة اختيار «الإبرة 3» بعد خطوات التطريز، وفي الإحصاءات عدد ثوانٍ «منها انتظار».</p>
+
+<h2 id="c12-3"><span class="n">12.3</span>تصحيح مقاس القطع بعد خياطة تجريبية</h2>
+<p><b>الهدف:</b> القطع المخيطة خرجت أصغر أو أكبر من الرسمة. <b>نقطة البداية:</b> الشغلانة مفتوحة.</p>
+<ol class="steps">
+  <li>اختر مسافة واضحة في الرسمة (مثلاً ضلع طوله 100 مم) وقِسها على القطعة المخيطة.</li>
+  <li>في مرحلة الاستيراد افتح <span class="ui">تكبير/تصغير الرسمة</span> واضغط <span class="ui">من قياس…</span> (5.6).</li>
+  <li>اكتب الطولين واختر المحاور ثم <span class="ui">استخدم هذا المقياس</span>.</li>
+  <li>اضغط <span class="ui">تطبيق المقياس الآن</span>. <span class="result">يتغير مقاس الرسمة كلها.</span></li>
+  <li>احفظ ملف الماكينة من جديد وخِط قطعة تجريبية أخرى للتأكد.</li>
+</ol>
+<div class="box tip"><b class="t">بديل</b>لتكبير ملف الماكينة فقط دون تغيير الرسمة، استخدم <span class="ui">تكبير/تصغير الإخراج</span> في مرحلة الإخراج (10.3). ولتطبيق المقياس على كل الرسومات التي تفتحها لاحقاً فعّل <span class="ui">تطبيق عند فتح ملف</span>.</div>
+
+<h2 id="c12-4"><span class="n">12.4</span>إضافة إيقاف مؤقت أو تغيير سرعة داخل الشغلانة</h2>
+<ol class="steps">
+  <li>في مرحلة الإخراج اضغط على خطوة الشكل الذي تريد تغيير السرعة قبله (مثلاً «خياطة شكل 5»).</li>
+  <li>اختر <span class="ui">السرعة</span> واكتب 900، ثم <span class="ui">إدراج</span>. <span class="result">يظهر الأمر باللون الأزرق قبل الشكل.</span></li>
+  <li>لإعادة السرعة بعد الشكل، اضغط خطوة الشكل التالي وأدرج <span class="ui">السرعة</span> 1800.</li>
+  <li>للتحقق راجع البرنامج، واحفظ ملف الماكينة.</li>
+</ol>
+<div class="box warn"><b class="t">تنبيه</b>أمر <span class="ui">إيقاف مؤقت</span> يظهر في البرنامج بوسم «في الشغلانة فقط» ولا يُكتب في ملف الماكينة في هذا الإصدار (10.2). استخدم بدلاً منه <span class="ui">انتظار</span> بالمللي ثانية إذا احتجت توقفاً قصيراً.</div>
+
+<!-- ================================================================ 13 settings -->
+<h1 class="ch" id="c13"><span class="n">13</span>الإعدادات والتخصيص</h1>
+<p class="lead">نافذة الإعدادات تتحكم في شكل الواجهة: اللغة والسمة والخط وحجم النص وما يظهر من أجزاء النافذة. لا تؤثر أي منها على ملف الماكينة.</p>
+
+<h2 id="c13-1"><span class="n">13.1</span>فتح الإعدادات</h2>
+<figure class="full"><img src="../annotated/a40-settings.png" alt=""><figcaption>نافذة الإعدادات (قسم «عام»)</figcaption></figure>
+<p>افتحها بزر الترس في الشريط العلوي أو في الصفحة الرئيسية، أو بـ <span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>,</kbd></span>.</p>
+<ol class="legend">
+  <li><b>عام:</b> اللغة والصفحة الرئيسية (13.2).</li>
+  <li><b>المظهر:</b> السمة واللون والحركة (13.3).</li>
+  <li><b>النصوص والخطوط:</b> الخط وحجم النص (13.3).</li>
+  <li><b>الواجهة:</b> حجم الواجهة وما يظهر منها (13.4). تنقّل بين الأقسام بالضغط أو بالسهمين لأعلى ولأسفل.</li>
+  <li><b><span class="ui">اختصارات الكيبورد</span>:</b> يفتح قائمة الاختصارات.</li>
+  <li><b><span class="ui">رجوع للافتراضي</span>:</b> يعيد كل إعدادات الواجهة إلى أصلها.</li>
+  <li><b><span class="ui">تم</span>:</b> يغلق النافذة (أو <kbd>Esc</kbd>).</li>
+</ol>
+<div class="box note"><b class="t">ملاحظة</b>كل تغيير يُطبَّق فوراً ويُحفظ تلقائياً («التغييرات بتتحفظ أول بأول»)؛ لا يوجد زر حفظ.</div>
+
+<h2 id="c13-2"><span class="n">13.2</span>عام</h2>
+<ul>
+  <li><span class="ui">لغة الواجهة</span>: العربية أو <span class="lat">English</span>. تُعاد تهيئة النافذة باللغة الجديدة وتعود إلى المكان نفسه. يمكن أيضاً التبديل من زر اللغة في الصفحة الرئيسية.</li>
+  <li><span class="ui">اعرض الرئيسية لما ستيتشلاين يفتح</span> (مفعّل افتراضياً).</li>
+</ul>
+
+<h2 id="c13-3"><span class="n">13.3</span>المظهر والنصوص</h2>
+<div class="side w48">
+  <figure><img src="../screenshots/40-settings-appearance.png" alt=""><figcaption>قسم «المظهر»</figcaption></figure>
+  <div class="txt">
+    <ul>
+      <li><span class="ui">السمة</span>: <span class="ui">فاتح</span> أو <span class="ui">داكن</span> أو <span class="ui">زي ويندوز</span> (الافتراضي: يتبع إعداد ويندوز). للتبديل السريع: <span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>L</kbd></span>.</li>
+      <li><span class="ui">اللون الأساسي</span>: لون الأزرار والتحديد والمرحلة الحالية؛ أزرق (الافتراضي) أو بنفسجي أو فيروزي أو أخضر أو برتقالي أو رمادي. لا يغيّر ألوان الغرز ولا خطوط الليزر.</li>
+      <li><span class="ui">حركة ناعمة</span>: حركة اللوحات والأزرار عند الظهور والاختفاء. أوقفها في الأجهزة البطيئة.</li>
+    </ul>
+  </div>
+</div>
+<div class="side w48">
+  <figure><img src="../screenshots/40-settings-text.png" alt=""><figcaption>قسم «النصوص والخطوط»</figcaption></figure>
+  <div class="txt">
+    <ul>
+      <li><span class="ui">الخط</span>: <span class="lat">Thmanyah Sans</span> (الافتراضي)، أو <span class="lat">Readex Pro</span>، أو <span class="lat">Segoe UI</span>، أو <span class="lat">Tahoma</span>. كل بطاقة تعرض نموذجاً عربياً ولاتينياً.</li>
+      <li><span class="ui">حجم النص</span>: صغير، عادي (الافتراضي)، كبير، أكبر.</li>
+      <li><span class="ui">نص أثقل</span>: حروف أسمك لقراءة أسهل.</li>
+      <li><span class="ui">معاينة</span>: نموذج يُظهر أثر اختياراتك فوراً.</li>
+    </ul>
+  </div>
+</div>
+<figure class="full"><img src="../screenshots/43-dark-theme.png" alt=""><figcaption>السمة الداكنة</figcaption></figure>
+
+<h2 id="c13-4"><span class="n">13.4</span>الواجهة</h2>
+<div class="side w48">
+  <figure><img src="../screenshots/40-settings-interface-2.png" alt=""><figcaption>قسم «الواجهة»: ما يظهر على الشاشة</figcaption></figure>
+  <div class="txt">
+    <ul>
+      <li><span class="ui">حجم الواجهة</span>: 90% أو 100% (الافتراضي) أو 110% أو 125% أو 150%. يكبّر الأزرار واللوحات والنصوص معاً، وتبقى الرسمة واضحة.</li>
+      <li><span class="ui">لوحة الطبقات</span> و<span class="ui">لوحة المرحلة</span> و<span class="ui">المقاس والموضع</span> و<span class="ui">شريط العرض</span> و<span class="ui">شريط التكبير</span>: إظهار هذه الأجزاء أو إخفاؤها (كلها ظاهرة افتراضياً).</li>
+      <li><span class="ui">الشبكة على الرسمة</span>: خطوط المليمتر خلف الأشكال. <b>مخفية افتراضياً</b> في هذا الإصدار؛ فعّلها إن كنت تحتاجها للمحاذاة بالعين.</li>
+      <li><span class="ui">مفاتيح الاختصار على الأزرار</span>: الحروف الصغيرة بجانب الأزرار والأدوات.</li>
+    </ul>
+  </div>
+</div>
+<div class="box tip"><b class="t">نصيحة</b>إذا اختفى جزء من النافذة ولم تعرف السبب، افتح الإعدادات واضغط <span class="ui">رجوع للافتراضي</span>.</div>
+
+<!-- ================================================================ 14 palette -->
+<h1 class="ch" id="c14"><span class="n">14</span>البحث عن أي أداة</h1>
+<p class="lead">إن لم تتذكر مكان أمر ما، ابحث عنه باسمه بالعربية أو الإنجليزية.</p>
+<figure class="full"><img src="../annotated/a39-palette.png" alt=""><figcaption>البحث عن «عكس»</figcaption></figure>
+<ol class="steps">
+  <li>اضغط <span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>K</kbd></span> أو زر البحث (العدسة) في الشريط العلوي.</li>
+  <li>اكتب جزءاً من اسم الأداة في <b>(1)</b>، مثل «غرز» أو «عكس» أو «USB». لا يهم شكل الألف ولا التاء المربوطة ولا التشكيل.</li>
+  <li>تظهر الأدوات المطابقة <b>(2)</b> <b>(3)</b> وبجانب كل منها اسم المرحلة التي تنتمي إليها، وفي الأسفل عددها <b>(4)</b> (هنا 2 من 82 أداة).</li>
+  <li>اختر بالأسهم ثم <kbd>Enter</kbd>، أو اضغط بالفأرة.</li>
+</ol>
+<p class="result">ينتقل البرنامج إلى المرحلة المناسبة وينفذ الأمر أو يفتح نافذته. بعض النتائج تنقلك فقط إلى المرحلة التي فيها الإعداد (مثل «طول الغرزة»). <kbd>Esc</kbd> يغلق البحث.</p>
+
+<!-- ================================================================ 15 shortcuts -->
+<h1 class="ch" id="c15"><span class="n">15</span>اختصارات لوحة المفاتيح</h1>
+<p class="lead">اختصارات البرنامج تشبه اختصارات <span class="lat">Adobe Illustrator</span>. تعمل الحروف بغض النظر عن لغة لوحة المفاتيح (العربية أو الإنجليزية). اضغط <kbd>?</kbd> أو <kbd>F1</kbd> في أي وقت لعرض القائمة داخل البرنامج.</p>
+<figure class="narrow"><img src="../screenshots/35-sheet-shortcuts.png" alt=""><figcaption>نافذة «اختصارات الكيبورد» داخل البرنامج</figcaption></figure>
+<h3>ملف</h3>
+<table class="keys compact"><thead><tr><th>الاختصار</th><th>الوظيفة</th></tr></thead><tbody>
+<tr><td><span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>O</kbd></span></td><td>فتح رسمة أو شغلانة</td></tr>
+<tr><td><span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>S</kbd></span></td><td>حفظ الشغلانة</td></tr>
+<tr><td><span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd></span></td><td>حفظ الشغلانة باسم…</td></tr>
+<tr><td><span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>E</kbd></span></td><td>حفظ ملف الماكينة</td></tr>
+<tr><td><span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>N</kbd></span></td><td>شغلانة جديدة</td></tr>
+<tr><td><span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd></span></td><td>إدراج رسمة في الشغلانة</td></tr>
+<tr><td><span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>H</kbd></span></td><td>الصفحة الرئيسية</td></tr>
+</tbody></table>
+<h3>تعديل</h3>
+<table class="keys compact"><thead><tr><th>الاختصار</th><th>الوظيفة</th></tr></thead><tbody>
+<tr><td><span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>Z</kbd></span></td><td>تراجع</td></tr>
+<tr><td><span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd></span></td><td>إعادة</td></tr>
+<tr><td><span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>A</kbd></span></td><td>تحديد الكل</td></tr>
+<tr><td><span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>A</kbd></span></td><td>إلغاء التحديد</td></tr>
+<tr><td><kbd>Esc</kbd></td><td>إلغاء التحديد، أو الخروج من الأداة الحالية أو من المحاكاة أو إغلاق النافذة المفتوحة</td></tr>
+<tr><td><span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>Ctrl</kbd>+<kbd>X</kbd></span></td><td>نسخ / قص المحدد (داخل البرنامج)</td></tr>
+<tr><td><span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>V</kbd></span></td><td>لصق في منتصف المنظر</td></tr>
+<tr><td><span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>F</kbd> / <kbd>Ctrl</kbd>+<kbd>B</kbd></span></td><td>لصق في المكان نفسه، يُخاط آخراً / أولاً</td></tr>
+<tr><td><kbd>Alt</kbd> أثناء السحب</td><td>نسخ أثناء السحب</td></tr>
+<tr><td><span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>D</kbd></span></td><td>تكرار آخر تحريك أو تدوير أو عكس أو تغيير مقاس</td></tr>
+<tr><td><kbd>Delete</kbd></td><td>حذف المحدد</td></tr>
+<tr><td>الأسهم / <kbd>Shift</kbd>+الأسهم</td><td>تحريك المحدد بمقدار الخطوة / عشرة أضعافها</td></tr>
+<tr><td><span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>J</kbd></span></td><td>ربط أطراف الخطوط</td></tr>
+<tr><td><span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>R</kbd></span></td><td>عكس الاتجاه</td></tr>
+<tr><td><span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>G</kbd></span></td><td>عمل طبقة من المحدد</td></tr>
+<tr><td><span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>G</kbd></span></td><td>حذف الطبقة الحالية مع الاحتفاظ بأشكالها</td></tr>
+<tr><td><span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>]</kbd> / <kbd>Ctrl</kbd>+<kbd>[</kbd></span></td><td>الخياطة بعد خطوة / قبل خطوة</td></tr>
+<tr><td><span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>]</kbd> / <kbd>[</kbd></span></td><td>الخياطة في الآخر / في الأول</td></tr>
+</tbody></table>
+<h3>أدوات</h3>
+<table class="keys compact"><thead><tr><th>الاختصار</th><th>الوظيفة</th></tr></thead><tbody>
+<tr><td><kbd>V</kbd></td><td>التحديد: تحريك الأشكال كاملة وتغيير مقاسها</td></tr>
+<tr><td><kbd>A</kbd></td><td>التحديد المباشر: تحريك مسار واحد</td></tr>
+<tr><td><span class="kc" dir="ltr"><kbd>Shift</kbd> / <kbd>Alt</kbd></span> مع المقابض</td><td>تغيير المقاس مع الحفاظ على النسب / من المنتصف</td></tr>
+<tr><td><kbd>Alt</kbd> مع مستطيل التحديد</td><td>تحديد الأشكال الواقعة بالكامل داخله فقط</td></tr>
+<tr><td><kbd>H</kbd> / ضغط مستمر على <kbd>Space</kbd></td><td>تحريك المنظر</td></tr>
+<tr><td><kbd>R</kbd></td><td>التدوير: اكتب الزاوية</td></tr>
+<tr><td><span class="kc" dir="ltr"><kbd>O</kbd> / <kbd>Shift</kbd>+<kbd>O</kbd></span></td><td>عكس يمين–شمال / فوق–تحت</td></tr>
+<tr><td><kbd>S</kbd></td><td>تغيير الحجم: اكتب المقاس</td></tr>
+<tr><td><kbd>Enter</kbd></td><td>التحريك: اكتب المسافة</td></tr>
+<tr><td><kbd>C</kbd></td><td>تحديد نقطة البداية</td></tr>
+<tr><td><kbd>I</kbd></td><td>القياس</td></tr>
+<tr><td><kbd>M</kbd></td><td>إضافة شكل</td></tr>
+</tbody></table>
+<h3>عرض ومراحل</h3>
+<table class="keys compact"><thead><tr><th>الاختصار</th><th>الوظيفة</th></tr></thead><tbody>
+<tr><td><span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>0</kbd></span></td><td>ملاءمة الرسمة كلها</td></tr>
+<tr><td><span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>1</kbd></span></td><td>الحجم الحقيقي (100%)</td></tr>
+<tr><td><span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>+</kbd> / <kbd>Ctrl</kbd>+<kbd>−</kbd></span></td><td>تكبير / تصغير</td></tr>
+<tr><td><span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>Y</kbd></span></td><td>إظهار الغرز</td></tr>
+<tr><td><span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>H</kbd></span></td><td>إظهار ترتيب الخياطة</td></tr>
+<tr><td><span class="kc" dir="ltr"><kbd>Shift</kbd>+<kbd>Tab</kbd></span></td><td>إخفاء / إظهار لوحة المرحلة</td></tr>
+<tr><td><span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>K</kbd></span></td><td>البحث عن أي أداة</td></tr>
+<tr><td><span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>L</kbd></span></td><td>فاتح / داكن</td></tr>
+<tr><td><span class="kc" dir="ltr"><kbd>Ctrl</kbd>+<kbd>,</kbd></span></td><td>الإعدادات</td></tr>
+<tr><td><span class="kc" dir="ltr"><kbd>?</kbd> / <kbd>F1</kbd> / <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd></span></td><td>اختصارات لوحة المفاتيح</td></tr>
+<tr><td><span class="kc" dir="ltr"><kbd>1</kbd> … <kbd>5</kbd></span></td><td>المراحل: استيراد، ترتيب، الغرز، التسلسل، الإخراج</td></tr>
+<tr><td><span class="kc" dir="ltr"><kbd>Page Down</kbd> / <kbd>Page Up</kbd></span></td><td>الخطوة التالية / السابقة</td></tr>
+</tbody></table>
+<div class="box note"><b class="t">ملاحظة</b>الاختصارات ذات الحرف الواحد لا تعمل أثناء الكتابة في حقل؛ اضغط <kbd>Esc</kbd> أو انقر على الرسمة أولاً. في الصفحة الرئيسية يعمل عدد محدود منها: فتح، شغلانة جديدة، الرجوع للشغلانة، السمة، والاختصارات. البرنامج يعمل على ويندوز فقط، فلا توجد اختصارات لأنظمة أخرى.</div>
+
+
+<!-- ================================================================ 16 troubleshooting -->
+<h1 class="ch" id="c16"><span class="n">16</span>حل المشكلات</h1>
+<p class="lead">المشكلات الأكثر احتمالاً ورسائل البرنامج التي تظهر معها، مع خطوات الحل. الرسائل مكتوبة كما تظهر في الواجهة العربية.</p>
+
+<h2 id="c16-1"><span class="n">16.1</span>مشكلات فتح الملفات</h2>
+<figure class="small"><img src="../screenshots/48-toast-unsupported-file.png" alt=""><figcaption>رسالة صيغة غير مدعومة</figcaption></figure>
+<table>
+  <thead><tr><th>العَرَض / الرسالة</th><th>السبب المحتمل</th><th>الحل</th></tr></thead>
+  <tbody>
+    <tr><td>«لا يمكن فتح ملفات XYZ. الصيغ المدعومة: DXF, AI, PLT, PRT, DST, DSB and SLW.»</td><td>امتداد الملف غير مدعوم.</td><td>صدّر الرسمة من برنامج التصميم بإحدى الصيغ المدعومة، ويُفضّل <code>DXF</code>.</td></tr>
+    <tr><td>«لا يمكن فتح ملفات EDI بعد. احفظ الرسمة كـ DXF وافتحها.»</td><td>صيغ برامج أخرى (<code>EDI</code>، <code>TZF</code>، <code>HLW</code>، <code>DIG</code>، <code>KLW</code>) غير مدعومة في هذا الإصدار.</td><td>افتح الرسمة في برنامجها الأصلي واحفظها <code>DXF</code>.</td></tr>
+    <tr><td>«هذا الملف لا يحتوي على رسمة.»</td><td>الملف فارغ أو لا يحتوي خطوطاً يقرؤها البرنامج.</td><td>افتح الملف في برنامج التصميم وتأكد أن فيه خطوطاً (وليس صوراً أو نصوصاً فقط).</td></tr>
+    <tr><td>رسالة تبدأ بـ «No drawing paths were found in this AI file…»</td><td>ملف إليستريتور بصيغة حديثة لا تحتوي مسارات مقروءة.</td><td>احفظ الملف من إليستريتور بصيغة «<span class="lat">Illustrator 8</span>» أو <code>DXF</code>.</td></tr>
+    <tr><td>«This is not an SLW machine file.»</td><td>ملف بامتداد <code>.slw</code> لكنه ليس ملف ماكينة صالحاً أو تالف.</td><td>تأكد من مصدر الملف، أو افتح الرسمة الأصلية بدلاً منه.</td></tr>
+    <tr><td>الرسمة تظهر بمقاس أكبر أو أصغر قليلاً من المتوقع</td><td>دقة ملف <code>PLT</code> مختلفة (1000 بدلاً من 1016 أو العكس).</td><td>غيّر <span class="ui">الدقة</span> في مرحلة الاستيراد ثم افتح الملف مرة أخرى (5.5).</td></tr>
+    <tr><td>الرسمة ضخمة جداً أو بعيدة عن الأصل، ورسالة «الرسمة كبيرة جداً…»</td><td>وحدات الرسمة خاطئة (مثلاً متر بدل مليمتر) أو نقاط بعيدة جداً.</td><td>صحح وحدات الرسمة في برنامج التصميم، أو استخدم المقياس (5.6).</td></tr>
+    <tr><td>«الشغلانة دي هيكون فيها أكثر من 2,000,000 نقطة إبرة…»</td><td>طول غرزة صغير جداً مع رسمة كبيرة، أو مقاس خاطئ.</td><td>راجع مقاس الرسمة، وزد طول الغرزة.</td></tr>
+    <tr><td>خطوط مكررة تُخاط مرتين، أو خطوط مقطّعة كثيرة</td><td>عيوب في الرسمة الأصلية.</td><td>استخدم <span class="ui">حذف التداخلات</span> و<span class="ui">ربط أطراف الخطوط</span> و<span class="ui">دمج النقاط القريبة</span> (6.6).</td></tr>
+  </tbody>
+</table>
+
+<h2 id="c16-2"><span class="n">16.2</span>مشكلات التعديل والحفظ</h2>
+<table>
+  <thead><tr><th>العَرَض / الرسالة</th><th>السبب</th><th>الحل</th></tr></thead>
+  <tbody>
+    <tr><td>«حدد شكلاً أولاً — اضغط عليه في الرسمة أو في الطبقات.»</td><td>الأمر يعمل على أشكال محددة ولا يوجد تحديد.</td><td>حدد شكلاً ثم أعد الأمر.</td></tr>
+    <tr><td>«أدخل رقماً.»</td><td>حقل رقمي يحتوي نصاً.</td><td>اكتب رقماً فقط (الفاصلة والنقطة مقبولتان).</td></tr>
+    <tr><td>«لا يوجد ما يُخاط: شغّل طبقة واحدة على الأقل.»</td><td>كل الطبقات متوقفة عن الخياطة.</td><td>فعّل مفتاح الخياطة لطبقة واحدة على الأقل في لوحة الطبقات.</td></tr>
+    <tr><td>«الفلاشة لم تعد متصلة.»</td><td>فُصلت الفلاشة بعد ظهور زرها.</td><td>أعد توصيلها وانتظر ظهور الزر من جديد، أو استخدم <span class="ui">حفظ ملف الماكينة…</span>.</td></tr>
+    <tr><td>لا يظهر زر الحفظ على الفلاشة</td><td>ويندوز لا يرى الفلاشة كقرص قابل للإزالة.</td><td>تأكد من ظهورها في مستكشف ويندوز. قائمة الفلاشات تتحدّث بعد أي تعديل على الشغلانة. أو اضغط <span class="ui">حفظ ملف الماكينة…</span> واختر الفلاشة من نافذة الحفظ.</td></tr>
+    <tr><td>زرا التراجع والإعادة باهتان</td><td>لا يوجد ما يُتراجع عنه (مثلاً بعد فتح ملف).</td><td>طبيعي.</td></tr>
+    <tr><td>جزء من النافذة اختفى (الطبقات، شريط التكبير…)</td><td>أُخفي من الإعدادات أو بـ <span class="kc" dir="ltr"><kbd>Shift</kbd>+<kbd>Tab</kbd></span>.</td><td>أظهره من الإعدادات ← الواجهة، أو <span class="ui">رجوع للافتراضي</span> (13.4).</td></tr>
+    <tr><td>الاختصارات لا تعمل</td><td>المؤشر داخل حقل كتابة، أو نافذة حوار مفتوحة، أو الصفحة الرئيسية ظاهرة.</td><td>اضغط <kbd>Esc</kbd> أو انقر على الرسمة ثم أعد المحاولة.</td></tr>
+    <tr><td>«انقطع الاتصال بالبرنامج. أغلق هذا الشباك وشغّل ستيتشلاين مرة أخرى.»</td><td>خطأ داخلي نادر بين الواجهة ومحرك البرنامج.</td><td>أغلق البرنامج وأعد تشغيله؛ تعود الشغلانة من الحفظ التلقائي (11.4). إن تكرر الأمر مع ملف معين فاحتفظ بالملف وأبلغ الدعم الفني.</td></tr>
+    <tr><td>البرنامج لا يفتح أو تظهر نافذة فارغة</td><td>مكوّن <span class="lat">WebView2</span> غير مثبّت أو تالف.</td><td>ثبّت «<span class="lat">Microsoft Edge WebView2 Runtime</span>» من موقع مايكروسوفت أو أعد تشغيل مثبّت البرنامج. إن استمرت المشكلة فهي تحتاج تدخلاً تقنياً.</td></tr>
+  </tbody>
+</table>
+
+<h2 id="c16-3"><span class="n">16.3</span>نتائج خياطة غير متوقعة</h2>
+<ul>
+  <li><b>الخياطة تبدأ من مكان خاطئ:</b> راجع نقطة البداية والاتجاه (6.4)، ونقطة أصل الماكينة (8.3).</li>
+  <li><b>القطع مقلوبة أو معكوسة على الماكينة:</b> غالباً نقطة أصل الماكينة لا تطابق ماكينتك؛ جرّب الركن الصحيح، أو استخدم العكس (6.3).</li>
+  <li><b>الخيط يُفك في الأطراف:</b> زد <span class="ui">غرز البداية</span> و<span class="ui">غرز النهاية</span> وتكرارها في قسم الرجوع (8.2).</li>
+  <li><b>الزوايا غير حادة أو مشدودة:</b> فعّل التبطيء أو الغرز الكثيفة عند الزوايا، أو عدّل زاوية الركن (8.2).</li>
+  <li><b>وقت الشغلانة طويل:</b> رتّب بأقصر مسافة انتقال (9.2)، وأصلح مسارات الليزر (8.5).</li>
+</ul>
+
+<h2 id="c16-4"><span class="n">16.4</span>مشكلات معروفة في هذا الإصدار</h2>
+<p>لوحظت أثناء إعداد الدليل واختبار البرنامج، وتم الإبلاغ عنها لفريق التطوير:</p>
+<table>
+  <thead><tr><th>المشكلة</th><th>البديل</th></tr></thead>
+  <tbody>
+    <tr><td>زر الإبرة في صف الطبقة (لوحة الطبقات) لا يُظهر قائمة اختيار الإبرة؛ تُغلق فور فتحها.</td><td>غيّر الإبرة من <span class="ui">رأس الخياطة</span> في مرحلة الغرز (8.1).</td></tr>
+    <tr><td>قراءة أداة القياس لا تظهر داخل الشريط الداكن في الواجهة العربية.</td><td>بدّل الواجهة مؤقتاً إلى الإنجليزية، أو اقرأ المقاس من شريط المقاس بعد تحديد الشكل (6.9).</td></tr>
+    <tr><td>في نافذة «شغلانة جديدة» يظهر زر المقاس الجاهز معكوس الترتيب (800 × 1000) في الواجهة العربية، بينما المقصود العرض 1000 والارتفاع 800.</td><td>اعتمد على حقلي <span class="ui">عرض الطاولة</span> و<span class="ui">ارتفاع الطاولة</span> تحت الزر.</td></tr>
+  </tbody>
+</table>
+
+<!-- ================================================================ 17 FAQ -->
+<h1 class="ch faq" id="c17"><span class="n">17</span>الأسئلة الشائعة</h1>
+<div class="faq">
+<h3>ما الفرق بين حفظ الشغلانة وحفظ ملف الماكينة؟</h3>
+<p>ملف الشغلانة (<code>.stitchline</code>) نسختك القابلة للتعديل بكل الإعدادات، وملف الماكينة (<code>.slw</code>) هو ما تقرؤه الماكينة. احفظ الاثنين (11.1).</p>
+<h3>نسيت أن أحفظ وأُغلق البرنامج. هل ضاع عملي؟</h3>
+<p>غالباً لا. عند فتح البرنامج تعود الشغلانة من الحفظ التلقائي وتظهر في بطاقة «متابعة»، إلا إذا اخترت «لا تحفظ» عند الإغلاق (11.4).</p>
+<h3>كيف أنقل الملف إلى الماكينة؟</h3>
+<p>وصّل فلاشة واضغط زر «حفظ على الفلاشة» أسفل مرحلة الإخراج، ثم انقل الفلاشة إلى الماكينة (10.6).</p>
+<h3>لماذا اسم ملف الماكينة مختلف عن اسم الشغلانة؟</h3>
+<p>البرنامج يحذف المسافات والرموز ويقصّ الاسم إلى 12 حرفاً لتتوافق مع الماكينات (10.6). اختر أسماء قصيرة بالحروف والأرقام.</p>
+<h3>كيف أجعل الخياطة تبدأ من نقطة معينة؟</h3>
+<p>اضغط <kbd>C</kbd> ثم اضغط على الشكل في تلك النقطة، أو ضغطة يمين ← «ابدأ الخياطة من هنا» (6.4).</p>
+<h3>كيف أمنع طبقة من الخياطة دون حذفها؟</h3>
+<p>أوقف مفتاح الخياطة في صفها بلوحة الطبقات (7.1).</p>
+<h3>هل يمكن خياطة جزء من خط بطريقة مختلفة؟</h3>
+<p>نعم، من «أجزاء (زجزاج…)»: زجزاج أو رجوع أو طول خاص لمقطع محدد بالمليمتر (6.5).</p>
+<h3>كيف أجعل القص بالليزر يحدث بعد الخياطة؟</h3>
+<p>اجعل طبقة الليزر آخر طبقة، ثم في مرحلة التسلسل اضغط «طبقة بطبقة» (12.2).</p>
+<h3>الواجهة صغيرة على شاشتي. ماذا أفعل؟</h3>
+<p>من الإعدادات ← الواجهة اختر حجم 110% أو 125% أو 150%، أو كبّر حجم النص من «النصوص والخطوط» (13).</p>
+<h3>كيف أغيّر لغة البرنامج؟</h3>
+<p>من زر «English» في الصفحة الرئيسية، أو الإعدادات ← عام ← لغة الواجهة (13.2).</p>
+<h3>هل محاكاة الخياطة بسرعة الماكينة الحقيقية؟</h3>
+<p>لا. هي لعرض الترتيب والمسار فقط؛ استخدم «الوقت المتوقع» في مرحلة الإخراج لتقدير المدة.</p>
+<h3>هل يحتاج البرنامج إنترنت؟</h3>
+<p>لا يحتاجه للعمل. قد يحتاجه برنامج التثبيت مرة واحدة لتنزيل مكوّن <span class="lat">WebView2</span> إذا لم يكن موجوداً.</p>
+</div>
+
+<!-- ================================================================ 18 glossary -->
+<h1 class="ch" id="c18"><span class="n">18</span>مسرد المصطلحات</h1>
+<dl class="gloss">
+  <dt>الشغلانة <span class="en">Job</span></dt><dd>مهمة العمل الكاملة: الرسمة وطبقاتها وإعداداتها وترتيبها. تُحفظ في ملف <code>.stitchline</code>.</dd>
+  <dt>ملف الماكينة <span class="en">Machine file, SLW</span></dt><dd>الملف الذي تقرؤه ماكينة خياطة الباترون، بصيغة برنامج <span class="lat">Sew_Soft</span>.</dd>
+  <dt>الطبقة <span class="en">Layer</span></dt><dd>مجموعة أشكال تشترك في الإبرة وإعدادات الغرز واللون.</dd>
+  <dt>الشكل <span class="en">Shape</span></dt><dd>خط أو مسار أو شكل مغلق أو نقطة في الرسمة.</dd>
+  <dt>شكل مغلق / مفتوح <span class="en">Closed / open shape</span></dt><dd>المغلق يعود إلى نقطة بدايته (مثل الدائرة)، والمفتوح له طرفان (مثل الخط).</dd>
+  <dt>الإبرة / الرأس <span class="en">Needle, head</span></dt><dd>رأس الخياطة في الماكينة (1 أو 2 أو 3). الإبرة 3 قد تكون رأس ليزر.</dd>
+  <dt>نقطة الإبرة <span class="en">Needle position</span></dt><dd>موضع تنزل فيه الإبرة في القماش؛ كل غرزة بين نقطتين.</dd>
+  <dt>طول الغرزة <span class="en">Stitch length</span></dt><dd>المسافة بين نقطتي إبرة متتاليتين بالمليمتر.</dd>
+  <dt>الرجوع (التقفيل) <span class="en">Back-tack</span></dt><dd>غرز ترجع فيها الإبرة على الخط في البداية أو النهاية لتثبيت الخيط.</dd>
+  <dt>التداخل <span class="en">Overlap</span></dt><dd>غرز تكمل بعد العودة إلى بداية شكل مغلق لتثبيته.</dd>
+  <dt>الزجزاج <span class="en">Zigzag</span></dt><dd>غرز متعرجة يميناً ويساراً على طول الخط.</dd>
+  <dt>الطول الخاص والمزدوج <span class="en">Special / double length</span></dt><dd>أطوال غرز بديلة لأجزاء معينة أو لغرز متبادلة.</dd>
+  <dt>حركة الانتقال <span class="en">Travel move</span></dt><dd>حركة الإبرة من نهاية شكل إلى بداية التالي دون خياطة.</dd>
+  <dt>نقطة أصل الماكينة <span class="en">Machine origin</span></dt><dd>الركن الذي تُقاس منه كل الإحداثيات في ملف الماكينة.</dd>
+  <dt>تعويض الخلوص <span class="en">Backlash compensation</span></dt><dd>تصحيح صغير لفراغ ميكانيكي في محاور الماكينة عند تغيير الاتجاه.</dd>
+  <dt>الدقة <span class="en">dpi</span></dt><dd>عدد النقاط في البوصة في ملفات <code>PLT</code>/<code>PRT</code>؛ تحدد مقاس الرسمة عند فتحها.</dd>
+  <dt>النقطة المرجعية <span class="en">Reference point</span></dt><dd>نقطة تُستخدم لمحاذاة الشغلانة على الماكينة.</dd>
+  <dt>مخرج IO <span class="en">Output IO</span></dt><dd>مخرج كهربائي في الماكينة يشغّل جهازاً (مثل الليزر أو الهواء).</dd>
+  <dt>محور Z <span class="en">Z axis</span></dt><dd>الحركة الرأسية لرأس الماكينة.</dd>
+  <dt>المحاكاة <span class="en">Simulation</span></dt><dd>عرض متحرك لترتيب الخياطة ومسار الإبرة على الشاشة.</dd>
+  <dt>التصدير <span class="en">Export</span></dt><dd>حفظ نسخة من الرسمة أو الغرز بصيغة لبرنامج آخر (<code>DXF</code>، <code>PLT</code>، <code>SVG</code>، <code>CSV</code>).</dd>
+  <dt>الحفظ التلقائي <span class="en">Autosave</span></dt><dd>نسخة يكتبها البرنامج مع كل تعديل ليعود العمل بعد إغلاق مفاجئ.</dd>
+  <dt>الفلاشة <span class="en">USB drive</span></dt><dd>ذاكرة <span class="lat">USB</span> لنقل ملف الماكينة.</dd>
+</dl>
+
+
+<!-- ================================================================ 19 index (page numbers filled in by build.mjs) -->
+<h1 class="ch" id="c19"><span class="n">19</span>فهرس الموضوعات</h1>
+<div class="idx" id="idx"><h4>ا</h4><div><a href="#c8-1">إبرة (اختيار)</a><span class="dots"></span><a class="pg" href="#c8-1">34</a></div><div><a href="#c8-5">إبرة 3 (ليزر)</a><span class="dots"></span><a class="pg" href="#c8-5">37</a></div><div><a href="#c6-5">أجزاء (زجزاج، رجوع، طول خاص)</a><span class="dots"></span><a class="pg" href="#c6-5">27</a></div><div><a href="#c10-1">إحصاءات</a><span class="dots"></span><a class="pg" href="#c10-1">44</a></div><div><a href="#c15">اختصارات لوحة المفاتيح</a><span class="dots"></span><a class="pg" href="#c15">59</a></div><div><a href="#c6-1">أداة التحديد</a><span class="dots"></span><a class="pg" href="#c6-1">23</a></div><div><a href="#c6-1">أداة التحديد المباشر</a><span class="dots"></span><a class="pg" href="#c6-1">23</a></div><div><a href="#c6-9">أداة القياس</a><span class="dots"></span><a class="pg" href="#c6-9">30</a></div><div><a href="#c10-2">إدراج أمر في البرنامج</a><span class="dots"></span><a class="pg" href="#c10-2">45</a></div><div><a href="#c5-3">إدراج رسمة</a><span class="dots"></span><a class="pg" href="#c5-3">20</a></div><div><a href="#c2-5">إزالة البرنامج</a><span class="dots"></span><a class="pg" href="#c2-5">9</a></div><div><a href="#c8-2">أشكال مغلقة</a><span class="dots"></span><a class="pg" href="#c8-2">35</a></div><div><a href="#c6-7">إضافة شكل</a><span class="dots"></span><a class="pg" href="#c6-7">29</a></div><div><a href="#c13">الإعدادات</a><span class="dots"></span><a class="pg" href="#c13">55</a></div><div><a href="#c8-3">إعدادات الماكينة</a><span class="dots"></span><a class="pg" href="#c8-3">36</a></div><div><a href="#c10-3">أوامر افتراضية</a><span class="dots"></span><a class="pg" href="#c10-3">46</a></div><h4>ب</h4><div><a href="#c14">البحث عن أداة</a><span class="dots"></span><a class="pg" href="#c14">58</a></div><h4>ت</h4><div><a href="#c2-2">تثبيت</a><span class="dots"></span><a class="pg" href="#c2-2">8</a></div><div><a href="#c6-1">تحديد بالمستطيل</a><span class="dots"></span><a class="pg" href="#c6-1">23</a></div><div><a href="#c6-3">تحريك</a><span class="dots"></span><a class="pg" href="#c6-3">25</a></div><div><a href="#c6-3">تدوير</a><span class="dots"></span><a class="pg" href="#c6-3">25</a></div><div><a href="#c11-4">تراجع وإعادة</a><span class="dots"></span><a class="pg" href="#c11-4">51</a></div><div><a href="#c9-1">ترتيب الخياطة</a><span class="dots"></span><a class="pg" href="#c9-1">40</a></div><div><a href="#c9-2">ترتيب تلقائي</a><span class="dots"></span><a class="pg" href="#c9-2">42</a></div><div><a href="#c8-6">تسريع مسارات الليزر</a><span class="dots"></span><a class="pg" href="#c8-6">38</a></div><div><a href="#c10-5">تصدير</a><span class="dots"></span><a class="pg" href="#c10-5">48</a></div><div><a href="#c6-4">تعديل النقاط</a><span class="dots"></span><a class="pg" href="#c6-4">26</a></div><div><a href="#c8-3">تعويض الخلوص</a><span class="dots"></span><a class="pg" href="#c8-3">36</a></div><div><a href="#c6-3">تغيير الحجم</a><span class="dots"></span><a class="pg" href="#c6-3">25</a></div><div><a href="#c6-6">تنظيف الرسمة</a><span class="dots"></span><a class="pg" href="#c6-6">28</a></div><h4>ح</h4><div><a href="#c6-8">حافظة (نسخ ولصق)</a><span class="dots"></span><a class="pg" href="#c6-8">29</a></div><div><a href="#c13-4">حجم الواجهة</a><span class="dots"></span><a class="pg" href="#c13-4">57</a></div><div><a href="#c7-2">حذف طبقة</a><span class="dots"></span><a class="pg" href="#c7-2">32</a></div><div><a href="#c9-2">حركات الانتقال</a><span class="dots"></span><a class="pg" href="#c9-2">42</a></div><div><a href="#c11-2">حفظ الشغلانة</a><span class="dots"></span><a class="pg" href="#c11-2">50</a></div><div><a href="#c11-4">حفظ تلقائي</a><span class="dots"></span><a class="pg" href="#c11-4">51</a></div><div><a href="#c10-6">حفظ ملف الماكينة</a><span class="dots"></span><a class="pg" href="#c10-6">48</a></div><h4>خ</h4><div><a href="#c13-3">الخط وحجم النص</a><span class="dots"></span><a class="pg" href="#c13-3">56</a></div><div><a href="#c3-2">الخطوة التالية والسابقة</a><span class="dots"></span><a class="pg" href="#c3-2">12</a></div><h4>د</h4><div><a href="#c5-5">دقة PLT (dpi)</a><span class="dots"></span><a class="pg" href="#c5-5">21</a></div><h4>ر</h4><div><a href="#c8-2">رجوع (تقفيل)</a><span class="dots"></span><a class="pg" href="#c8-2">35</a></div><h4>ز</h4><div><a href="#c8-2">زوايا</a><span class="dots"></span><a class="pg" href="#c8-2">35</a></div><h4>س</h4><div><a href="#c11-3">سؤال حفظ التعديلات</a><span class="dots"></span><a class="pg" href="#c11-3">51</a></div><div><a href="#c10-3">سرعة الخياطة</a><span class="dots"></span><a class="pg" href="#c10-3">46</a></div><div><a href="#c13-3">سمة فاتحة وداكنة</a><span class="dots"></span><a class="pg" href="#c13-3">56</a></div><h4>ش</h4><div><a href="#c13-4">شبكة الرسمة</a><span class="dots"></span><a class="pg" href="#c13-4">57</a></div><div><a href="#c3-2">شريط الخطوات</a><span class="dots"></span><a class="pg" href="#c3-2">12</a></div><div><a href="#c5-1">شغلانة جديدة</a><span class="dots"></span><a class="pg" href="#c5-1">18</a></div><h4>ص</h4><div><a href="#c3-1">الصفحة الرئيسية</a><span class="dots"></span><a class="pg" href="#c3-1">10</a></div><div><a href="#c5-2">صيغ الملفات</a><span class="dots"></span><a class="pg" href="#c5-2">19</a></div><h4>ط</h4><div><a href="#c5-7">طاولة الماكينة</a><span class="dots"></span><a class="pg" href="#c5-7">22</a></div><div><a href="#c7">الطبقات</a><span class="dots"></span><a class="pg" href="#c7">31</a></div><div><a href="#c7-3">طبقة جديدة</a><span class="dots"></span><a class="pg" href="#c7-3">33</a></div><div><a href="#c8-1">طول الغرزة</a><span class="dots"></span><a class="pg" href="#c8-1">34</a></div><h4>ع</h4><div><a href="#c6-3">عكس (مرآة)</a><span class="dots"></span><a class="pg" href="#c6-3">25</a></div><div><a href="#c6-4">عكس الاتجاه</a><span class="dots"></span><a class="pg" href="#c6-4">26</a></div><h4>ف</h4><div><a href="#c5-2">فتح ملف</a><span class="dots"></span><a class="pg" href="#c5-2">19</a></div><div><a href="#c10-6">فلاشة USB</a><span class="dots"></span><a class="pg" href="#c10-6">48</a></div><h4>ق</h4><div><a href="#c6-8">قائمة مختصرة</a><span class="dots"></span><a class="pg" href="#c6-8">29</a></div><div><a href="#c8-5">قص ليزر</a><span class="dots"></span><a class="pg" href="#c8-5">37</a></div><h4>ل</h4><div><a href="#c13-2">لغة الواجهة</a><span class="dots"></span><a class="pg" href="#c13-2">56</a></div><div><a href="#c8-6">ليزر بطيء</a><span class="dots"></span><a class="pg" href="#c8-6">38</a></div><h4>م</h4><div><a href="#c9-3">محاكاة</a><span class="dots"></span><a class="pg" href="#c9-3">42</a></div><div><a href="#c10-3">مخرج IO</a><span class="dots"></span><a class="pg" href="#c10-3">46</a></div><div><a href="#c16-4">مشكلات معروفة</a><span class="dots"></span><a class="pg" href="#c16-4">65</a></div><div><a href="#c5-6">مقياس الرسمة</a><span class="dots"></span><a class="pg" href="#c5-6">22</a></div><div><a href="#c3-1">ملفات أخيرة</a><span class="dots"></span><a class="pg" href="#c3-1">10</a></div><h4>ن</h4><div><a href="#c8-4">نسخ إعدادات الغرز</a><span class="dots"></span><a class="pg" href="#c8-4">37</a></div><div><a href="#c6-5">نسخ الأشكال</a><span class="dots"></span><a class="pg" href="#c6-5">27</a></div><div><a href="#c8-3">نقطة أصل الماكينة</a><span class="dots"></span><a class="pg" href="#c8-3">36</a></div><div><a href="#c6-4">نقطة البداية</a><span class="dots"></span><a class="pg" href="#c6-4">26</a></div><div><a href="#c6-5">نقطة مرجعية</a><span class="dots"></span><a class="pg" href="#c6-5">27</a></div></div>
+
+</body>
+</html>
