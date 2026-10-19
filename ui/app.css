@@ -134,7 +134,7 @@ input, textarea { user-select: text; }
 .tb-sep { width: 1px; height: 18px; background: var(--line); margin: 0 2px; flex: none; }
 .search {
   display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 6px 0 10px; border-radius: var(--r-sm); border: 1px solid var(--line);
-  background: var(--app); color: var(--fg-3); min-width: 170px; text-align: left; margin-inline-end: 4px;
+  background: var(--app); color: var(--fg-3); flex: 0 1 200px; min-width: 110px; text-align: left; margin-inline-end: 4px;
 }
 .search:hover { border-color: var(--line-strong); color: var(--fg-2); }
 .search span { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -144,9 +144,30 @@ kbd { font: 500 10.5px var(--mono); padding: 1px 5px; border-radius: 4px; border
 .icon-btn:hover { background: var(--well); color: var(--fg); }
 .icon-btn[disabled] { opacity: .35; pointer-events: none; }
 svg.i, .icon-btn svg, .tool svg, .btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex: none; }
-#theme .ico-sun { display: none; }
-:root[data-theme="dark"] #theme .ico-sun { display: block; color: #fcd34d; }
-:root[data-theme="dark"] #theme .ico-moon { display: none; }
+/* settings menu: language, light / dark and the shortcuts sheet live here instead of the bar */
+.set-wrap { position: relative; flex: none; }
+#settings[aria-expanded="true"] { background: var(--well); color: var(--fg); }
+#settings svg { transition: transform .25s ease; }
+#settings[aria-expanded="true"] svg { transform: rotate(45deg); }
+.setpop {
+  position: absolute; top: calc(100% + 8px); inset-inline-end: 0; z-index: 60; width: 272px; padding: 6px;
+  background: var(--app); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--shadow-pop);
+  display: grid; gap: 2px;
+}
+.setpop[hidden] { display: none; }
+.sp-title { font: 600 11px var(--font); text-transform: uppercase; letter-spacing: .06em; color: var(--fg-3); padding: 6px 8px 4px; }
+.sp-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 8px; min-height: 38px; }
+.sp-lb { color: var(--fg); }
+.setpop .seg button { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; }
+.setpop .seg button svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.setpop .seg button[data-theme-v="light"][aria-pressed="true"] svg { color: #f59e0b; }
+.setpop .seg button[data-theme-v="dark"][aria-pressed="true"] svg { color: var(--accent); }
+.setpop hr { border: 0; border-top: 1px solid var(--line); margin: 4px 2px; }
+.sp-item { display: flex; align-items: center; gap: 10px; width: 100%; height: 36px; padding: 0 8px; border: 0; border-radius: var(--r-sm); background: transparent; color: var(--fg); text-align: start; }
+.sp-item:hover { background: var(--well); }
+.sp-item span { flex: 1; }
+.sp-item svg { width: 16px; height: 16px; stroke: var(--fg-2); fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.sp-hint { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 8px 6px; font-size: 11.5px; color: var(--fg-3); }
 .tb-machine { height: 32px; margin-inline-start: 6px; gap: 8px; }
 .tb-machine kbd { background: rgba(255,255,255,.18); border-color: transparent; color: #fff; }
 
@@ -409,10 +430,6 @@ html.lite * { transition: none !important; }
 
 /* ---------- Arabic: right-to-left layout (the drawing itself is never mirrored) ---------- */
 :root[lang="ar"] body { font-size: 13.5px; letter-spacing: 0; }
-.lang-btn { font: 600 13px var(--font); }
-.lang-btn .ar-only { display: none; } .lang-btn .en-only { display: inline; }
-:root[lang="ar"] .lang-btn .ar-only { display: inline; font-family: system-ui, sans-serif; font-size: 11.5px; }
-:root[lang="ar"] .lang-btn .en-only { display: none; }
 [dir="rtl"] .layer.closed .caret { transform: rotate(90deg); }
 [dir="rtl"] .sec:not([open]) > summary .chev { transform: scaleX(-1); }
 [dir="rtl"] .sec > summary .sum { margin-left: 0; margin-right: auto; text-align: left; }

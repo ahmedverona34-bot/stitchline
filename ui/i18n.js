@@ -19,6 +19,7 @@
     'Undo (Ctrl+Z)': 'تراجع (Ctrl+Z)', 'Undo': 'تراجع', 'Redo (Ctrl+Y)': 'إعادة (Ctrl+Y)', 'Redo': 'إعادة',
     'Light / dark': 'فاتح / داكن', 'Switch light or dark': 'التبديل بين الفاتح والداكن', 'Rename job': 'تغيير اسم الشغلانة',
     'Language': 'اللغة', 'English': 'English',
+    'Settings': 'الإعدادات', 'Appearance': 'المظهر', 'Light': 'فاتح', 'Dark': 'داكن',
     // ---------------------------------------------------------------- layers panel
     'Layers': 'الطبقات', 'Layers and shapes': 'الطبقات والأشكال', 'Layer': 'طبقة',
     'Make a layer from the selection (Ctrl+G)': 'اعمل طبقة من المحدد (Ctrl+G)', 'Make a layer from the selection': 'اعمل طبقة من المحدد',
