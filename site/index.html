@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Stitchline</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Stitchline: برنامج ويندوز لماكينات الخياطة بالباترون اللي بتقرا ملفات SLW. افتح الرسمة، ظبّط الغرز أو قص الليزر، واحفظ ملف الماكينة.">
+<link rel="icon" href="img/icon.svg" type="image/svg+xml">
+<link rel="preload" href="fonts/ThmanyahSans-Black.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/ThmanyahSans-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="style.css">
+<script src="main.js" defer></script>
+</head>
+<body>
+
+<!-- ---- nav -->
+<header class="nav" id="top">
+  <div class="frame nav-in">
+    <a class="brand" href="#top" aria-label="Stitchline">
+      <svg class="brand-mark" viewBox="0 0 26 26" aria-hidden="true"><rect width="26" height="26" rx="7.5" fill="#f3f4f7"/><path d="M5.5 19.5c3.5-1 6-3.5 8.2-7.4" fill="none" stroke="#e8336d" stroke-width="2" stroke-linecap="round" stroke-dasharray="2.6 2.4"/><path d="M20.5 5.5 13 13.6" stroke="#0b0c0f" stroke-width="2.2" stroke-linecap="round"/><circle cx="19.6" cy="6.4" r=".9" fill="#f3f4f7"/></svg>
+      <span>Stitchline</span>
+    </a>
+    <nav class="links" aria-label="Main">
+      <div class="dd">
+        <button class="dd-btn" type="button" aria-expanded="false"><span data-en="Features">المميزات</span> <svg class="chev" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5 6 7.5l3-3"/></svg></button>
+        <div class="dd-panel">
+          <a href="#stitch" class="dd-item"><b data-en="Stitches">الغرز</b><span data-en="Stitch length, back-tack and corners per layer.">طول الغرزة والرجوع والزوايا لكل طبقة.</span></a>
+          <a href="#laser" class="dd-item"><b data-en="Laser">الليزر</b><span data-en="Find the paths that would cut slowly, and fix them.">يلاقي المسارات اللي هتقطع ببطء ويصلّحها.</span></a>
+          <a href="#order" class="dd-item"><b data-en="Order &amp; simulation">الترتيب والمحاكاة</b><span data-en="Choose the sewing order and watch it run.">اختار ترتيب الخياطة وشوفه وهو بيتخيط.</span></a>
+        </div>
+      </div>
+      <div class="dd">
+        <button class="dd-btn" type="button" aria-expanded="false"><span data-en="Resources">المصادر</span> <svg class="chev" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5 6 7.5l3-3"/></svg></button>
+        <div class="dd-panel">
+          <a href="https://github.com/ahmedverona34-bot/stitchline/blob/main/docs/user-manual/user-manual-ar.pdf" class="dd-item" target="_blank" rel="noopener"><b data-en="User manual">دليل المستخدم</b><span data-en="An illustrated Arabic guide (PDF).">دليل مصوّر بالعربي (PDF).</span></a>
+          <a href="https://github.com/ahmedverona34-bot/stitchline" class="dd-item" target="_blank" rel="noopener"><b data-en="Source code">الكود</b><span data-en="The whole program on GitHub, MIT licence.">البرنامج كله على GitHub، رخصة MIT.</span></a>
+        </div>
+      </div>
+      <a href="#formats" data-en="Formats">الصيغ</a>
+      <a href="#faq" data-en="FAQ">الأسئلة</a>
+    </nav>
+    <div class="nav-end">
+      <button class="lang" type="button" id="lang" aria-label="Switch language">EN</button>
+      <a class="btn btn-primary btn-sm" href="https://github.com/ahmedverona34-bot/stitchline/releases/latest" target="_blank" rel="noopener" data-en="Download">حمّل البرنامج</a>
+      <button class="burger" type="button" id="burger" aria-label="Menu" aria-expanded="false"><span></span><span></span></button>
+    </div>
+  </div>
+  <div class="mnav" id="mnav">
+    <a href="#stitch" data-en="Stitches">الغرز</a>
+    <a href="#laser" data-en="Laser">الليزر</a>
+    <a href="#order" data-en="Order &amp; simulation">الترتيب والمحاكاة</a>
+    <a href="#formats" data-en="Formats">الصيغ</a>
+    <a href="#faq" data-en="FAQ">الأسئلة</a>
+    <a href="https://github.com/ahmedverona34-bot/stitchline/blob/main/docs/user-manual/user-manual-ar.pdf" target="_blank" rel="noopener" data-en="User manual">دليل المستخدم</a>
+  </div>
+</header>
+
+<main>
+<!-- ---- announcement -->
+<div class="frame announce">
+  <span class="pill" data-en="New">جديد</span>
+  <span class="dot-sep" aria-hidden="true"></span>
+  <div class="ticker"><div class="ticker-track">
+    <span data-en="Simple mode: layers, stitch length, simulation and saving on one screen">الوضع البسيط: الطبقات وطول الغرزة والمحاكاة والحفظ في شاشة واحدة</span>
+    <span aria-hidden="true" data-en="Simple mode: layers, stitch length, simulation and saving on one screen">الوضع البسيط: الطبقات وطول الغرزة والمحاكاة والحفظ في شاشة واحدة</span>
+  </div></div>
+</div>
+
+<!-- ---- hero -->
+<section class="frame hero">
+  <div class="hero-copy">
+    <h1 data-en="From the drawing<br>to the machine file">من الرسمة<br>لملف الماكينة</h1>
+    <p class="lead" data-en="Stitchline opens your pattern, turns its lines into stitches or laser cuts, sets the sewing order and saves the SLW file your machine reads, straight onto a USB stick.">Stitchline بيفتح الباترون بتاعك، يحوّل خطوطه لغرز أو قص ليزر، يرتب الخياطة، ويحفظ ملف SLW اللي الماكينة بتقراه، على الفلاشة على طول.</p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="https://github.com/ahmedverona34-bot/stitchline/releases/latest" target="_blank" rel="noopener">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v10m0 0-4-4m4 4 4-4M4 16h12"/></svg>
+        <span data-en="Download for Windows">حمّل لويندوز</span>
+      </a>
+      <a class="btn btn-ghost" href="#how" data-en="See how it works">شوف بيشتغل إزاي</a>
+    </div>
+    <p class="meta" data-en="Windows 10 / 11 · 2.5 MB installer · Arabic and English">ويندوز 10 / 11 · المثبّت 2.5 ميجا · عربي وإنجليزي</p>
+  </div>
+  <div class="hero-art">
+    <canvas id="yarn" aria-label="A twisted thread made of fibres. Drag a fibre to pull it out, drag the space around to turn the thread, click to pluck it."></canvas>
+    <div class="yarn-tip mono" id="yarnTip" aria-hidden="true"></div>
+  </div>
+</section>
+
+<!-- ---- steps (a real sequence: the app's own stages) -->
+<section class="frame steps">
+  <div class="step">
+    <h3><span class="num">1.</span> <span data-en="Open">افتح</span></h3>
+    <p data-en="A DXF, Illustrator, PLT, DST, DSB or SLW file. Drop it on the window.">ملف DXF أو Illustrator أو PLT أو DST أو DSB أو SLW. اسحبه على الشباك.</p>
+  </div>
+  <div class="step">
+    <h3><span class="num">2.</span> <span data-en="Set up">ظبّط</span></h3>
+    <p data-en="Sewing or laser for each layer, stitch length and the sewing order.">خياطة ولا ليزر لكل طبقة، طول الغرزة، وترتيب الخياطة.</p>
+  </div>
+  <div class="step">
+    <h3><span class="num">3.</span> <span data-en="Save">احفظ</span></h3>
+    <p data-en="The SLW machine file, onto the USB stick if you like.">ملف الماكينة SLW، وعلى الفلاشة لو حابب.</p>
+  </div>
+</section>
+
+<!-- ---- marquee of file formats (stands in for the logo strip) -->
+<div class="frame logos" aria-label="Supported files">
+  <div class="logos-track">
+    <div class="logos-set">
+      <span class="logo"><i class="fx">DXF</i>AutoCAD DXF</span>
+      <span class="logo"><i class="fx">AI</i>Illustrator</span>
+      <span class="logo"><i class="fx">PLT</i>HPGL Plotter</span>
+      <span class="logo"><i class="fx">DST</i>Tajima</span>
+      <span class="logo"><i class="fx">DSB</i>Barudan</span>
+      <span class="logo"><i class="fx">SLW</i>Sew_Soft</span>
+      <span class="logo"><i class="fx">SVG</i>SVG Export</span>
+      <span class="logo"><i class="fx">CSV</i>CSV Export</span>
+    </div>
+    <div class="logos-set" aria-hidden="true">
+      <span class="logo"><i class="fx">DXF</i>AutoCAD DXF</span>
+      <span class="logo"><i class="fx">AI</i>Illustrator</span>
+      <span class="logo"><i class="fx">PLT</i>HPGL Plotter</span>
+      <span class="logo"><i class="fx">DST</i>Tajima</span>
+      <span class="logo"><i class="fx">DSB</i>Barudan</span>
+      <span class="logo"><i class="fx">SLW</i>Sew_Soft</span>
+      <span class="logo"><i class="fx">SVG</i>SVG Export</span>
+      <span class="logo"><i class="fx">CSV</i>CSV Export</span>
+    </div>
+  </div>
+</div>
+
+<!-- ---- statement + live simulation -->
+<section class="frame statement" id="how">
+  <h2 class="say" data-en="Patterns lose hours between old programs and files that won't open. <b>Stitchline turns them into a machine file in minutes.</b>">الباترون بيضيّع ساعات بين برامج قديمة وملفات مش بتفتح. <b>Stitchline بيحوّله لملف ماكينة في دقايق.</b></h2>
+  <div class="sim">
+    <div class="sim-card">
+      <div class="sim-head">
+        <span class="sim-title" data-en="Sewing simulation">محاكاة الخياطة</span>
+        <span class="sim-status"><i class="live"></i><span data-en="Sewing">بيخيّط</span></span>
+      </div>
+      <canvas id="simc" aria-label="Stitches being sewn on a sleeve piece"></canvas>
+      <div class="sim-bar">
+        <span class="sim-play" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M3 2v8l7-4z"/></svg></span>
+        <div class="sim-track"><div class="sim-fill" id="simfill"></div></div>
+        <span class="sim-speed">×20</span>
+        <span class="sim-count mono" id="simcount">0 / 0</span>
+      </div>
+    </div>
+    <div class="sim-sub mono"><span data-en="Needle 1 · stitch 2.2 mm">الإبرة 1 · غرزة 2.2 مم</span></div>
+  </div>
+</section>
+
+<!-- ---- feature: stitches -->
+<section class="frame feature" id="stitch">
+  <div class="f-copy">
+    <h2 data-en="Stitches">الغرز</h2>
+    <p data-en="Each layer has its own settings: stitch length, back-tack at the start and end, closed-shape reinforcement, slow-down and dense stitches at corners, zigzag and special-length sections.">كل طبقة ليها إعداداتها: طول الغرزة، الرجوع في البداية والنهاية، تقوية الأشكال المقفولة، تهدية ورص الغرز عند الزوايا، وأجزاء زجزاج وطول خاص.</p>
+    <ul class="mini">
+      <li><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 15c3-1 5-4 7-8M10 7l2-4M13 9l4-1" stroke-dasharray="2 2"/></svg><span data-en="Stitch length from 0.1 mm.">طول غرزة من 0.1 مم.</span></li>
+      <li><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 16V4h12"/><path d="M4 4l5 5"/></svg><span data-en="Slower and denser at corners.">أبطأ وأكثف عند الزوايا.</span></li>
+      <li><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 10l3-4 3 8 3-8 3 8 2-4"/></svg><span data-en="Zigzag and back-tack sections.">أجزاء زجزاج ورجوع.</span></li>
+    </ul>
+    <a class="more" href="#order"><span data-en="See the order">شوف الترتيب</span><i class="arr" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M8 3 5 6l3 3"/></svg></i></a>
+  </div>
+  <div class="f-art">
+    <div class="stage">
+      <svg class="rings" viewBox="0 0 400 400" aria-hidden="true"><circle cx="150" cy="200" r="140"/><circle cx="250" cy="200" r="140"/></svg>
+      <div class="layers">
+        <div class="lrow"><span class="sw" style="--c:var(--thread)"></span><div class="lname"><b data-en="Quilting">كويلتنج</b><small class="mono" data-en="39 shapes · 2.2 mm">39 شكل · 2.2 مم</small></div><span class="tag mono">N1</span><span class="state ok"><i></i><span data-en="Ready">جاهزة</span></span></div>
+        <div class="lrow"><span class="sw" style="--c:var(--laser)"></span><div class="lname"><b data-en="Laser cut">قص ليزر</b><small class="mono" data-en="2 cuts · 0.3 s wait">2 قصة · انتظار 0.3 ث</small></div><span class="tag mono" data-en="Laser">ليزر</span><span class="state ok"><i></i><span data-en="Ready">جاهزة</span></span></div>
+        <div class="lrow"><span class="sw" style="--c:var(--dense)"></span><div class="lname"><b data-en="Edges">الحواف</b><small class="mono" data-en="12 shapes · 3.0 mm">12 شكل · 3.0 مم</small></div><span class="tag mono">N2</span><span class="state warn"><i></i><span data-en="Edited">متعدلة</span></span></div>
+        <div class="lrow"><span class="sw" style="--c:var(--zig)"></span><div class="lname"><b data-en="Pocket">الجيب</b><small class="mono" data-en="4 shapes · 2.5 mm">4 أشكال · 2.5 مم</small></div><span class="tag mono">N1</span><span class="state off"><i></i><span data-en="Off">مقفولة</span></span></div>
+      </div>
+    </div>
+    <div class="ruler" aria-hidden="true"></div>
+  </div>
+</section>
+
+<!-- ---- feature: laser -->
+<section class="frame feature" id="laser">
+  <div class="f-copy">
+    <h2 data-en="Laser on needle 3">الليزر على الإبرة 3</h2>
+    <p data-en="Make any layer a laser cut. Stitchline checks each path for tiny segments and broken lines that would slow the cut, and fixes them in one click, staying within 0.05 mm of your drawing.">خلّي أي طبقة قص ليزر. Stitchline بيفحص كل مسار على الأجزاء الصغيرة والخطوط المقطّعة اللي هتبطّأ القص، ويصلّحها بضغطة، من غير ما يبعد عن رسمتك أكتر من 0.05 مم.</p>
+    <ul class="mini">
+      <li><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="6"/><path d="M10 7v3l2 2"/></svg><span data-en="Finds the slow paths.">بيلاقي المسارات البطيئة.</span></li>
+      <li><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h5m2 0h5M9 10a1 1 0 0 0 2 0"/></svg><span data-en="Joins lines that touch.">بيوصّل الخطوط اللي بتلمس بعض.</span></li>
+      <li><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 9a5 5 0 1 1 1 4M5 5v4h4"/></svg><span data-en="One undo puts it back.">تراجع واحد يرجّعه زي ما كان.</span></li>
+    </ul>
+    <a class="more" href="#faq"><span data-en="Which machines?">أنهي ماكينات؟</span><i class="arr" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M8 3 5 6l3 3"/></svg></i></a>
+  </div>
+  <div class="f-art">
+    <div class="stage">
+      <svg class="rings" viewBox="0 0 400 400" aria-hidden="true"><circle cx="200" cy="200" r="150"/><circle cx="200" cy="200" r="104"/></svg>
+      <div class="alert" id="laserCard" data-state="slow">
+        <div class="al-top">
+          <span class="badge"><span class="b-slow" data-en="Slow paths">مسارات بطيئة</span><span class="b-fast" data-en="Full speed">سرعة كاملة</span></span>
+          <span class="al-when mono" data-en="Laser cut layer">طبقة قص ليزر</span>
+        </div>
+        <h4><span class="b-slow" data-en="The laser will slow down in 14 places">الليزر هيبطّأ في 14 مكان</span><span class="b-fast" data-en="Paths are clean: full speed">المسارات نضيفة: سرعة كاملة</span></h4>
+        <p class="al-sub"><span class="b-slow" data-en="9 segments under 0.5 mm · 5 line ends that touch">9 أجزاء أقل من 0.5 مم · 5 أطراف خطوط بتلمس بعض</span><span class="b-fast" data-en="2 separate cuts · 79 points · 0 tiny segments">2 قصة منفصلة · 79 نقطة · 0 أجزاء صغيرة</span></p>
+        <svg class="speed" viewBox="0 0 300 90" preserveAspectRatio="none" aria-label="Cutting speed along the path">
+          <line x1="0" y1="20" x2="300" y2="20" class="g"/><line x1="0" y1="50" x2="300" y2="50" class="g"/><line x1="0" y1="80" x2="300" y2="80" class="g"/>
+          <path class="sp-slow" d="M0 22 L40 22 L46 70 L52 22 L96 22 L101 64 L106 22 L150 22 L154 76 L160 22 L170 22 L175 58 L180 22 L232 22 L238 72 L244 22 L300 22"/>
+          <path class="sp-fast" d="M0 22 L300 22"/>
+        </svg>
+        <div class="al-foot">
+          <button class="fix" type="button" id="laserFix"><span class="b-slow" data-en="Speed up laser paths">سرّع مسارات الليزر</span><span class="b-fast" data-en="Undo">تراجع</span></button>
+          <span class="mono al-io" data-en="Output IO 5 · needle 3">مخرج IO 5 · الإبرة 3</span>
+        </div>
+      </div>
+    </div>
+    <div class="ruler" aria-hidden="true"></div>
+  </div>
+</section>
+
+<!-- ---- feature: order -->
+<section class="frame feature" id="order">
+  <div class="f-copy">
+    <h2 data-en="Order &amp; simulation">الترتيب والمحاكاة</h2>
+    <p data-en="Drag the shapes into the order you want, or sort them by rows, by columns or by the shortest travel. Then play the simulation and watch the needle sew the job before the machine does.">اسحب الأشكال بالترتيب اللي عايزه، أو رتّبها صفوف أو أعمدة أو بأقصر مسافة. وبعدين شغّل المحاكاة وشوف الإبرة بتخيّط الشغل قبل الماكينة.</p>
+    <ul class="mini">
+      <li><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 6h12M4 10h12M4 14h12"/></svg><span data-en="Rows or columns, either way.">صفوف أو أعمدة، في أي اتجاه.</span></li>
+      <li><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="5" cy="14" r="2"/><circle cx="15" cy="6" r="2"/><path d="M7 13l6-6"/></svg><span data-en="Shortest needle travel.">أقل مشوار للإبرة.</span></li>
+      <li><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M6 4v12l10-6z"/></svg><span data-en="A simulation you can scrub.">محاكاة تقدر تقدّم وترجّع فيها.</span></li>
+    </ul>
+    <a class="more" href="#formats"><span data-en="Supported files">الملفات المدعومة</span><i class="arr" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M8 3 5 6l3 3"/></svg></i></a>
+  </div>
+  <div class="f-art">
+    <div class="stage">
+      <svg class="rings" viewBox="0 0 400 400" aria-hidden="true"><circle cx="200" cy="150" r="130"/><circle cx="200" cy="250" r="130"/></svg>
+      <div class="order">
+        <svg id="orderSvg" viewBox="0 0 320 190" aria-label="Shapes numbered in sewing order"></svg>
+        <div class="chips" role="group" aria-label="Sort">
+          <button type="button" class="chip on" data-mode="rows"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 5h10M3 8h10M3 11h10"/></svg><span data-en="Rows">صفوف</span></button>
+          <button type="button" class="chip" data-mode="cols"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3v10M8 3v10M11 3v10"/></svg><span data-en="Columns">أعمدة</span></button>
+          <button type="button" class="chip" data-mode="short"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 12l4-6 3 4 3-6"/></svg><span data-en="Shortest">أقصر مسافة</span></button>
+        </div>
+        <div class="order-foot mono"><span data-en="Travel">المشوار</span> <b id="travel">0</b> <span data-en="mm">مم</span></div>
+      </div>
+    </div>
+    <div class="ruler" aria-hidden="true"></div>
+  </div>
+</section>
+
+<!-- ---- formats ("connect your stack"): a card that runs off the page edge, a scrolling list and dim tiles -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-dxf" viewBox="0 0 32 32"><circle cx="16" cy="6" r="3" fill="#6ea0ff"/><path d="M14.6 8.6 7 27l3 .8 6-15.3 6 15.3 3-.8-7.6-18.4z" fill="#3b6fe6"/><path d="M9.5 20.5c4 2.2 9 2.2 13 0" fill="none" stroke="#a9c4ff" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-ai" viewBox="0 0 32 32"><path d="M16 3 8 15l4 11h8l4-11z" fill="#f0a63a"/><path d="M16 3v14" stroke="#7a4a07" stroke-width="1.6"/><circle cx="16" cy="17.5" r="2" fill="#7a4a07"/><rect x="11" y="26" width="10" height="3.5" rx="1" fill="#ffcf85"/></symbol>
+  <symbol id="i-plt" viewBox="0 0 32 32"><path d="M3 24c4-8 7-8 10-2s6 6 9-2 5-8 7-6" fill="none" stroke="#2fd3c9" stroke-width="2.6" stroke-linecap="round"/><path d="M22 3h6v9l-3 4-3-4z" fill="#169e96"/><path d="M25 12v4" stroke="#bff6f2" stroke-width="1.6"/></symbol>
+  <symbol id="i-dst" viewBox="0 0 32 32"><circle cx="16" cy="17" r="11" fill="none" stroke="#9b87ff" stroke-width="3"/><circle cx="16" cy="17" r="6.5" fill="none" stroke="#c9beff" stroke-width="1.6" stroke-dasharray="2 2"/><rect x="13" y="2.5" width="6" height="5" rx="1.2" fill="#6f58e8"/></symbol>
+  <symbol id="i-dsb" viewBox="0 0 32 32"><rect x="7" y="4" width="18" height="4" rx="1.5" fill="#c23a66"/><rect x="7" y="24" width="18" height="4" rx="1.5" fill="#c23a66"/><rect x="9.5" y="8" width="13" height="16" fill="#ff5c8d"/><path d="M9.5 11.5h13M9.5 15h13M9.5 18.5h13M9.5 22h13" stroke="#ffb3ca" stroke-width="1"/><path d="M22.5 20c4 1 5 4 3 7" fill="none" stroke="#ff5c8d" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  <symbol id="i-slw" viewBox="0 0 32 32"><path d="M5 27c5-1.5 9-5.5 12.5-11.5" fill="none" stroke="#3ccf7f" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="3.2 3"/><path d="M27 5 17 16" stroke="#e9fff2" stroke-width="3" stroke-linecap="round"/><circle cx="25.6" cy="6.4" r="1.1" fill="#0b0c0f"/></symbol>
+  <symbol id="t-usb" viewBox="0 0 32 32"><path d="M11 3h10v8H11zM8 11h16v12a6 6 0 0 1-6 6h-4a6 6 0 0 1-6-6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 6h1M17 6h1" stroke="currentColor" stroke-width="1.8"/></symbol>
+  <symbol id="t-machine" viewBox="0 0 32 32"><path d="M4 26h24M7 26V9h17v5H12v12M24 14v6M22 20h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></symbol>
+  <symbol id="t-laser" viewBox="0 0 32 32"><path d="M12 4h8v8l-4 5-4-5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M16 17v6M10 27h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="2 2.5"/></symbol>
+  <symbol id="t-svg" viewBox="0 0 32 32"><path d="M6 24 16 6l10 18z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="16" cy="6" r="2" fill="currentColor"/><circle cx="6" cy="24" r="2" fill="currentColor"/><circle cx="26" cy="24" r="2" fill="currentColor"/></symbol>
+  <symbol id="t-csv" viewBox="0 0 32 32"><rect x="5" y="6" width="22" height="20" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5 13h22M5 19h22M13 6v20" stroke="currentColor" stroke-width="1.8"/></symbol>
+  <symbol id="t-ruler" viewBox="0 0 32 32"><path d="M4 22 22 4l6 6-18 18z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 16l3 3M14 12l2 2M18 8l3 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+</svg>
+<section class="frame formats" id="formats">
+  <div class="fm-copy">
+    <h2 data-en="Open any drawing">افتح أي رسمة</h2>
+    <p data-en="CAD drawings, Illustrator files, plotter files, embroidery machine files and SLW files themselves. Export back to DXF, PLT, SVG and CSV.">رسومات كاد، ملفات Illustrator، ملفات بلوتر، ملفات ماكينات تطريز، وملفات SLW نفسها. وتصدّر تاني لـ DXF و PLT و SVG و CSV.</p>
+    <a class="more" href="https://github.com/ahmedverona34-bot/stitchline/blob/main/docs/user-manual/user-manual-ar.pdf" target="_blank" rel="noopener"><span data-en="Read the manual">اقرا الدليل</span><i class="arr" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M8 3 5 6l3 3"/></svg></i></a>
+  </div>
+  <div class="fm-art">
+    <div class="fm-card">
+      <div class="fm-head" data-en="Supported files">الملفات المدعومة</div>
+      <div class="fm-body">
+        <div class="fm-list">
+          <div class="fm-window"><div class="fm-scroll">
+            <div class="fm-set">
+              <div class="fm-row"><svg class="fm-ico"><use href="#i-dxf"/></svg><div><b>AutoCAD DXF</b><small><em data-en="7 entity types">7 أنواع عناصر</em> • <span data-en="and INSERT blocks">وبلوكات INSERT</span></small></div></div>
+              <div class="fm-row"><svg class="fm-ico"><use href="#i-ai"/></svg><div><b>Adobe Illustrator</b><small><em>PostScript · PDF</em> • <span data-en="paths and curves">مسارات ومنحنيات</span></small></div></div>
+              <div class="fm-row"><svg class="fm-ico"><use href="#i-plt"/></svg><div><b>HPGL · PLT · PRT</b><small><em>PU · PD · PA · PR</em> • <span data-en="plotter pen moves">حركات قلم البلوتر</span></small></div></div>
+              <div class="fm-row"><svg class="fm-ico"><use href="#i-dst"/></svg><div><b>Tajima DST</b><small><em data-en="stitches">غرز تطريز</em> • <span data-en="read back as lines">بتتقري كخطوط</span></small></div></div>
+              <div class="fm-row"><svg class="fm-ico"><use href="#i-dsb"/></svg><div><b>Barudan DSB</b><small><em data-en="stitches">غرز تطريز</em> • <span data-en="read back as lines">بتتقري كخطوط</span></small></div></div>
+              <div class="fm-row"><svg class="fm-ico"><use href="#i-slw"/></svg><div><b>Sew_Soft SLW</b><small><em data-en="open and edit">افتح وعدّل</em> • <span data-en="machine files themselves">ملفات الماكينة نفسها</span></small></div></div>
+            </div>
+            <div class="fm-set" aria-hidden="true">
+              <div class="fm-row"><svg class="fm-ico"><use href="#i-dxf"/></svg><div><b>AutoCAD DXF</b><small><em data-en="7 entity types">7 أنواع عناصر</em> • <span data-en="and INSERT blocks">وبلوكات INSERT</span></small></div></div>
+              <div class="fm-row"><svg class="fm-ico"><use href="#i-ai"/></svg><div><b>Adobe Illustrator</b><small><em>PostScript · PDF</em> • <span data-en="paths and curves">مسارات ومنحنيات</span></small></div></div>
+              <div class="fm-row"><svg class="fm-ico"><use href="#i-plt"/></svg><div><b>HPGL · PLT · PRT</b><small><em>PU · PD · PA · PR</em> • <span data-en="plotter pen moves">حركات قلم البلوتر</span></small></div></div>
+              <div class="fm-row"><svg class="fm-ico"><use href="#i-dst"/></svg><div><b>Tajima DST</b><small><em data-en="stitches">غرز تطريز</em> • <span data-en="read back as lines">بتتقري كخطوط</span></small></div></div>
+              <div class="fm-row"><svg class="fm-ico"><use href="#i-dsb"/></svg><div><b>Barudan DSB</b><small><em data-en="stitches">غرز تطريز</em> • <span data-en="read back as lines">بتتقري كخطوط</span></small></div></div>
+              <div class="fm-row"><svg class="fm-ico"><use href="#i-slw"/></svg><div><b>Sew_Soft SLW</b><small><em data-en="open and edit">افتح وعدّل</em> • <span data-en="machine files themselves">ملفات الماكينة نفسها</span></small></div></div>
+            </div>
+          </div></div>
+          <div class="fm-foot"><span><b>6</b> <span data-en="formats to open">صيغ للفتح</span></span><span><b>4</b> <span data-en="to export">للتصدير</span></span><span><b>0</b> <span data-en="plugins">إضافات</span></span></div>
+        </div>
+        <div class="fm-tiles" aria-hidden="true">
+          <span><svg><use href="#t-usb"/></svg></span><span><svg><use href="#t-machine"/></svg></span><span><svg><use href="#t-laser"/></svg></span>
+          <span><svg><use href="#t-svg"/></svg></span><span><svg><use href="#t-csv"/></svg></span><span><svg><use href="#t-ruler"/></svg></span>
+          <span><svg><use href="#t-machine"/></svg></span><span><svg><use href="#t-usb"/></svg></span><span><svg><use href="#t-svg"/></svg></span>
+          <span><svg><use href="#t-laser"/></svg></span><span><svg><use href="#t-ruler"/></svg></span><span><svg><use href="#t-csv"/></svg></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ---- proof (replaces the testimonial: a verifiable claim, no invented people) -->
+<section class="frame proof">
+  <div class="pf-copy">
+    <div class="big"><span class="count" data-to="15">15</span><small data-en="reference drawings">رسمة مرجعية</small></div>
+    <p class="pf-say" data-en="Every SLW file Stitchline writes is checked record by record against the file the original Sew_Soft program saved from the same drawing.">كل ملف SLW بيطلّعه Stitchline بيتقارن سجل بسجل بالملف اللي برنامج Sew_Soft الأصلي حفظه من نفس الرسمة.</p>
+    <div class="pf-src"><b data-en="Parity tests">اختبارات المطابقة</b><span class="mono">engine/tests/parity.rs</span></div>
+  </div>
+  <div class="pf-shot">
+    <picture>
+      <source type="image/avif" srcset="img/app-dark-800.avif 800w, img/app-dark-1400.avif 1400w" sizes="(max-width: 860px) 100vw, 660px">
+      <source type="image/webp" srcset="img/app-dark-800.webp 800w, img/app-dark-1400.webp 1400w" sizes="(max-width: 860px) 100vw, 660px">
+      <img src="img/app-dark-1400.jpg" alt="Stitchline in Arabic, dark theme, stitch settings for a quilted demo pattern" width="1400" height="827" loading="lazy" decoding="async">
+    </picture>
+  </div>
+</section>
+
+<!-- ---- numbers -->
+<section class="frame numbers">
+  <h2 class="say" data-en="Your machine already reads SLW. <b>Stitchline makes the file.</b>">ماكينتك بتقرا SLW.&rlm; <b>Stitchline بيعمل الملف.</b></h2>
+  <div class="nums">
+    <div class="n"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 20h14"/></svg><b><span class="count" data-to="2.5" data-dec="1">2.5</span><small>MB</small></b><span data-en="Installer size">حجم المثبّت</span></div>
+    <div class="n"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/></svg><b><span class="count" data-to="6">6</span></b><span data-en="Drawing formats it opens">صيغ رسم بيفتحها</span></div>
+    <div class="n"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l4 4 10-10"/></svg><b><span class="count" data-to="15">15</span><small>/15</small></b><span data-en="Parity cases passing">حالة مطابقة ناجحة</span></div>
+    <div class="n"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c3 3 3 13 0 16M12 4c-3 3-3 13 0 16"/></svg><b><span class="count" data-to="2">2</span></b><span data-en="Languages, Arabic first">لغة، العربي الأول</span></div>
+  </div>
+</section>
+
+<!-- ---- faq -->
+<section class="frame faq" id="faq">
+  <div class="faq-copy">
+    <h2 data-en="Questions">أسئلة بتتسأل كتير</h2>
+    <p data-en="Anything else is in the illustrated user manual.">أي حاجة تانية موجودة في دليل المستخدم المصوّر.</p>
+  </div>
+  <div class="qa">
+    <details>
+      <summary data-en="Which machines does it work with?">بيشتغل مع أنهي ماكينات؟</summary>
+      <p data-en="Pattern sewing machines that read SLW files, the format of the Sew_Soft pattern-sewing program, including machines with a laser head on needle 3.">ماكينات الخياطة بالباترون اللي بتقرا ملفات SLW، صيغة برنامج Sew_Soft، ومنها الماكينات اللي فيها رأس ليزر على الإبرة 3.</p>
+    </details>
+    <details>
+      <summary data-en="Is the file the same as the original program's?">الملف بيطلع زي ملف البرنامج الأصلي؟</summary>
+      <p data-en="Yes. On 15 reference drawings the SLW records match the original program's, apart from the time-stamped key record. Positions can differ by 10 micrometres where the original rounds differently.">أيوه. على 15 رسمة مرجعية سجلات SLW بتطابق سجلات البرنامج الأصلي، ما عدا سجل المفتاح اللي فيه التاريخ. المواضع ممكن تفرق 10 ميكرومتر في الأماكن اللي البرنامج الأصلي بيقرّب فيها بشكل مختلف.</p>
+    </details>
+    <details>
+      <summary data-en="What do I need to run it?">محتاج إيه عشان يشتغل؟</summary>
+      <p data-en="Windows 10 or 11. The installer is about 2.5 MB, installs for your user without administrator rights, and downloads the WebView2 runtime only if Windows lacks it.">ويندوز 10 أو 11. المثبّت حوالي 2.5 ميجا، بيتثبّت لحسابك من غير صلاحيات أدمن، وبينزّل WebView2 بس لو مش موجود على الويندوز.</p>
+    </details>
+    <details>
+      <summary data-en="Can I save straight to the USB stick?">أقدر أحفظ على الفلاشة على طول؟</summary>
+      <p data-en="Yes. In the Output step pick the USB drive and save the SLW file onto it, ready for the machine.">أيوه. من خطوة الإخراج اختار الفلاشة واحفظ ملف SLW عليها، جاهز للماكينة.</p>
+    </details>
+    <details>
+      <summary data-en="What if I make a mistake?">لو غلطت؟</summary>
+      <p data-en="Undo and redo work for every edit, and the project is saved automatically while you work.">التراجع والإعادة شغالين على كل تعديل، والمشروع بيتحفظ تلقائي وانت شغال.</p>
+    </details>
+  </div>
+</section>
+
+<!-- ---- closing cta -->
+<section class="frame closing">
+  <canvas id="burst" aria-hidden="true"></canvas>
+  <div class="closing-in">
+    <h2 data-en="Your pattern,<br>ready for the machine">الباترون بتاعك،<br>جاهز للماكينة</h2>
+    <a class="btn btn-primary" href="https://github.com/ahmedverona34-bot/stitchline/releases/latest" target="_blank" rel="noopener">
+      <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v10m0 0-4-4m4 4 4-4M4 16h12"/></svg>
+      <span data-en="Download Stitchline">حمّل Stitchline</span>
+    </a>
+  </div>
+</section>
+</main>
+
+<!-- ---- footer -->
+<footer class="frame foot">
+  <div class="foot-cols">
+    <div><h5 data-en="Program">البرنامج</h5><a href="#stitch" data-en="Stitches">الغرز</a><a href="#laser" data-en="Laser">الليزر</a><a href="#order" data-en="Order &amp; simulation">الترتيب والمحاكاة</a></div>
+    <div><h5 data-en="Files">الملفات</h5><a href="#formats" data-en="Formats">الصيغ</a><a href="#faq" data-en="FAQ">الأسئلة</a></div>
+    <div><h5 data-en="Resources">المصادر</h5><a href="https://github.com/ahmedverona34-bot/stitchline/blob/main/docs/user-manual/user-manual-ar.pdf" target="_blank" rel="noopener" data-en="User manual">دليل المستخدم</a><a href="https://github.com/ahmedverona34-bot/stitchline/releases" target="_blank" rel="noopener" data-en="Releases">الإصدارات</a></div>
+    <div><h5 data-en="Code">الكود</h5><a href="https://github.com/ahmedverona34-bot/stitchline" target="_blank" rel="noopener">GitHub <span class="ext">↗</span></a><a href="https://github.com/ahmedverona34-bot/stitchline/blob/main/LICENSE" target="_blank" rel="noopener">MIT <span class="ext">↗</span></a></div>
+  </div>
+  <div class="foot-bar">
+    <span class="status"><i class="live"></i><span data-en="Windows 10 / 11">ويندوز 10 / 11</span><span class="mono ver">v1.0.0</span></span>
+    <span class="foot-note" data-en="Rust engine · WebView2 window · no internet needed">محرك Rust · شباك WebView2 · من غير إنترنت</span>
+  </div>
+  <div class="wordmark" aria-hidden="true">
+    <svg viewBox="0 0 26 26"><path d="M5.5 19.5c3.5-1 6-3.5 8.2-7.4" fill="none" stroke-width="2" stroke-linecap="round" stroke-dasharray="2.6 2.4"/><path d="M20.5 5.5 13 13.6" stroke-width="2.2" stroke-linecap="round"/></svg>
+    <span>Stitchline</span>
+  </div>
+  <div class="foot-legal"><span>© 2026 Stitchline</span><span data-en="MIT licence">رخصة MIT</span></div>
+</footer>
+
+</body>
+</html>
