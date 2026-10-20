@@ -2362,6 +2362,11 @@
   function openFromHome(path) {
     guardUnsaved(() => api('open', { path }).then(d => { if (d) opened(); else if (homeOpen()) refreshHome(); }));
   }
+  // a project double-clicked in Explorer: the file Stitchline started with, or one a second start hands to this window
+  function openLaunched(path) {
+    if (path) guardUnsaved(() => api('open', { path }).then(d => { if (d) opened(); }));
+  }
+  window.__stitchlineOpen = openLaunched;
   const HOME_ACT = {
     new: () => openSheet('newjob'),
     open: () => ACT.open(),
@@ -2475,5 +2480,6 @@
     fitView(); if (homeOpen()) showHome();
     let sp = null; try { sp = sessionStorage.getItem('stl.setReload'); sessionStorage.removeItem('stl.setReload'); } catch {}
     if (sp) openSettings(sp);
+    tauri('launch_file').then(openLaunched, () => {});
   });
 })();

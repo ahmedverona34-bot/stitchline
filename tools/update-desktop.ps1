@@ -16,6 +16,27 @@ $lock = Join-Path $dir 'update.lock'
 New-Item -ItemType Directory -Force $dir | Out-Null
 function Log($m) { Add-Content -Path $log -Value ('{0:yyyy-MM-dd HH:mm:ss}  {1}' -f (Get-Date), $m) -Encoding utf8 }
 
+# .stitchline project files open in the desktop copy and show the project icon, like the installer does
+# (src-tauri\windows\hooks.nsh); an installed Stitchline keeps them, and so does a copy built in a git worktree
+function Register-Projects {
+    if ((git rev-parse --git-dir) -ne (git rev-parse --git-common-dir)) { return }
+    $cls = 'HKCU:\Software\Classes\Stitchline.Project'
+    $cmd = (Get-ItemProperty "$cls\shell\open\command" -ErrorAction SilentlyContinue).'(default)'
+    if ($cmd -and $cmd -notlike "*$exe*" -and $cmd -match '^"?([^"]+\.exe)' -and (Test-Path $Matches[1])) { return }
+    New-Item -Force "$cls\DefaultIcon" | Out-Null
+    New-Item -Force "$cls\shell\open\command" | Out-Null
+    Set-ItemProperty $cls '(default)' 'Stitchline project'
+    Set-ItemProperty "$cls\DefaultIcon" '(default)' (Join-Path $dir 'project.ico')
+    Set-ItemProperty "$cls\shell\open\command" '(default)' "`"$exe`" `"%1`""
+    New-Item -Force 'HKCU:\Software\Classes\.stitchline' | Out-Null
+    Set-ItemProperty 'HKCU:\Software\Classes\.stitchline' '(default)' 'Stitchline.Project'
+    # an earlier "Open with > Stitchline" choice keeps the app icon
+    $uc = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.stitchline\UserChoice'
+    if ((Get-ItemProperty $uc -ErrorAction SilentlyContinue).ProgId -in 'Applications\Stitchline.exe', 'stitchline_auto_file') { Remove-Item $uc -Force -ErrorAction SilentlyContinue }
+    Add-Type -Namespace Win32 -Name Shell -MemberDefinition '[DllImport("shell32.dll")] public static extern void SHChangeNotify(int e, int f, IntPtr a, IntPtr b);' -ErrorAction SilentlyContinue
+    [Win32.Shell]::SHChangeNotify(0x08000000, 0x1000, [IntPtr]::Zero, [IntPtr]::Zero)
+}
+
 if ($Install) {
     # git hooks: start this script hidden, so the commit does not wait for the build
     $hook = @'
@@ -78,6 +99,8 @@ try {
             if (Test-Path $to) { Move-Item $to "$to.old" -Force }
             Copy-Item $dll.FullName $to -Force
         }
+        Copy-Item (Join-Path $root 'src-tauri\icons\project.ico') (Join-Path $dir 'project.ico') -Force
+        Register-Projects
         Set-Content (Join-Path $dir 'version.txt') "$head  $(git log -1 --format='%ci  %s' $head)" -Encoding utf8
         Log "desktop copy updated to $head"
         $built = $head

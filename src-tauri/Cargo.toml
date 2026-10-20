@@ -14,4 +14,6 @@ tauri = { version = "2", features = [] }
 tauri-plugin-dialog = "2"
 # Settings › Check for updates and the Update button: signed installers from the GitHub releases (Windows TLS, no C build)
 tauri-plugin-updater = { version = "2", default-features = false, features = ["native-tls"] }
+# a second Stitchline started by opening a project file hands the file to the open window
+tauri-plugin-single-instance = "2"
 serde_json = { version = "1", features = ["preserve_order"] }

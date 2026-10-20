@@ -25,7 +25,11 @@ engine/src/            stitchline-engine (Rust lib) — a port of an earlier Pyt
   bin/cli.rs           stitchline-cli: runs a JSON script of ops, prints replies (used by compare_with_python.py)
 engine/tests/          parity.rs (SLW vs reference/), session.rs, selection_tools.rs
 src-tauri/src/main.rs  window, native dialogs, commands `api` / `upload` / `quit` / `set_zoom`, close guard.
-                       FETCH_SHIM turns the UI's fetch('/api/<op>') into invoke('api', {op, args})
+                       FETCH_SHIM turns the UI's fetch('/api/<op>') into invoke('api', {op, args}).
+                       A project passed on the command line (double-click) -> `launch_file`; single instance:
+                       a second start hands its file to the open window (window.__stitchlineOpen)
+src-tauri/windows/hooks.nsh  installer hook: .stitchline document icon (icons/project.ico, drawn by
+                       icons/project-icon.py); the association itself is tauri.conf.json fileAssociations
 ui/
   index.html           all markup (stages, inspector, sheets/dialogs, settings, palette, home)
   app.js     (~2100)   the whole UI in one IIFE. Sections marked `/* ---- name */`: state, engine calls
