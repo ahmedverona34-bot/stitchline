@@ -75,7 +75,6 @@
 
 <div class="float readout" id="readout">
   <span>W <b class="num" id="rw">0.0000</b> × H <b class="num" id="rh">0.0000</b> cm</span>
-  <span class="pos">X <b class="num" id="cx">0.0000</b> Y <b class="num" id="cy">0.0000</b> cm</span>
   <span id="rsel"></span>
 </div>
 
@@ -103,13 +102,20 @@
   <button class="tool simple-only" aria-pressed="false" id="showOrig" title="Original shape: the drawing as lines, without stitches (Ctrl+Y)"><svg viewBox="0 0 24 24"><path d="M3 17c4-2 6-8 9-10s6 0 9-2"/></svg>Original shape</button>
 </div>
 
-<div class="float zoombar" role="group" aria-label="Zoom">
-  <button class="tool" id="zoomOut" title="Zoom out (Ctrl+−)" aria-label="Zoom out"><svg viewBox="0 0 24 24"><path d="M6 12h12"/></svg></button>
-  <span class="zoomtxt" id="zoomTxt">100%</span>
-  <button class="tool" id="zoomIn" title="Zoom in (Ctrl++)" aria-label="Zoom in"><svg viewBox="0 0 24 24"><path d="M12 6v12M6 12h12"/></svg></button>
-  <span class="sep"></span>
-  <button class="tool" id="fit" title="Fit (Ctrl+0)"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>Fit</button>
-</div>
+
+<!-- the status bar along the bottom of the window: the pointer position and the zoom; it keeps the drawing and
+     the panels off the Windows taskbar -->
+<footer class="statusbar" aria-label="Status">
+  <span class="pos">X <b class="num" id="cx">0.0000</b> Y <b class="num" id="cy">0.0000</b> cm</span>
+  <span class="grow"></span>
+  <div class="zoombar" role="group" aria-label="Zoom">
+    <button class="tool" id="zoomOut" title="Zoom out (Ctrl+−)" aria-label="Zoom out"><svg viewBox="0 0 24 24"><path d="M6 12h12"/></svg></button>
+    <span class="zoomtxt" id="zoomTxt">100%</span>
+    <button class="tool" id="zoomIn" title="Zoom in (Ctrl++)" aria-label="Zoom in"><svg viewBox="0 0 24 24"><path d="M12 6v12M6 12h12"/></svg></button>
+    <span class="sep"></span>
+    <button class="tool" id="fit" title="Fit (Ctrl+0)"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>Fit</button>
+  </div>
+</footer>
 
 <aside class="inspector" aria-label="Inspector">
   <div class="scroll" id="insp"></div>
@@ -236,16 +242,36 @@
     </section>
   </div>
 </div>
-<!-- the sewing simulation: its own window over the job; the drawing appears as the needle and the laser go -->
+<!-- the sequence window: the order of sewing and laser cutting (drag to change it) beside the simulation, where the
+     drawing appears as the needle and the laser go -->
 <div class="scrim" id="simScrim" hidden>
   <div class="simwin" role="dialog" aria-modal="true" aria-labelledby="simTitle">
-    <header><h3 id="simTitle">Sewing simulation</h3><span class="sim-done" id="simDone" hidden>Finished</span>
-      <button class="icon-btn" id="simClose" title="Close (Esc)" aria-label="Close simulation"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></header>
-    <div class="simstage"><canvas id="simCv" aria-label="Simulation"></canvas></div>
+    <header><h3 id="simTitle">Sequence</h3><span class="sim-done" id="simDone" hidden>Finished</span>
+      <button class="icon-btn" id="simClose" title="Close (Esc)" aria-label="Close sequence"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></header>
+    <div class="simbody">
+      <aside class="seqside">
+        <div class="seqtools">
+          <button class="btn" id="seqSewLaser" title="Sew every sewing layer first and cut with the laser last"><svg viewBox="0 0 24 24"><path d="M2 12h7" stroke-dasharray="2 2"/><path d="M10.5 12h4M12.5 9.5 15 12l-2.5 2.5"/><path d="M19 7v3M19 14v3M14.5 12h0M21.5 12h0"/><circle cx="19" cy="12" r="1.2"/></svg>Sewing then laser</button>
+        </div>
+        <!-- shown when the best order would shorten the travel: how much, and the button that does it -->
+        <div class="seqtip" id="seqTip" hidden>
+          <svg viewBox="0 0 24 24"><circle cx="5" cy="18" r="2"/><circle cx="19" cy="6" r="2"/><path d="M7 18h4a3 3 0 0 0 3-3V9a3 3 0 0 1 3-3"/></svg>
+          <div class="t"><b id="seqTipSave"></b><small id="seqTipTime"></small></div>
+          <button class="btn primary" id="seqBest" title="Best order for every layer: the least travel between its shapes">Best order</button>
+        </div>
+        <div class="seqlist" id="seqList"></div>
+        <p class="hint seqhint">Drag layers and shapes to change the order.</p>
+      </aside>
+      <div class="simstage"><canvas id="simCv" aria-label="Simulation"></canvas><div class="simnow" id="simNow" hidden></div></div>
+    </div>
     <footer class="simbar">
-      <button class="btn primary sim-play" id="simPlay" title="Play / pause (Space)" aria-label="Play / pause (Space)"><svg viewBox="0 0 24 24" id="simIcon"><path d="M7 5v14l11-7z" fill="currentColor"/></svg></button>
-      <input type="range" id="simPos" min="0" max="1000" value="0" aria-label="Position in the sewing run">
-      <select class="sel" id="simSpeed" style="min-width:64px" aria-label="Simulation speed (not the machine's real speed)" title="Simulation speed (not the machine's real speed)"><option value="0.5">½×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="5">5×</option><option value="20">20×</option></select>
+      <div class="simctl" dir="ltr">
+        <button class="icon-btn" id="simBack" title="Step back (←, Shift+← a shape)" aria-label="Step back"><svg viewBox="0 0 24 24"><path d="M6 5v14M19 5 9 12l10 7z" fill="currentColor"/></svg></button>
+        <button class="btn primary sim-play" id="simPlay" title="Play / pause (Space)" aria-label="Play / pause (Space)"><svg viewBox="0 0 24 24" id="simIcon"><path d="M7 5v14l11-7z" fill="currentColor"/></svg></button>
+        <button class="icon-btn" id="simFwd" title="Step forward (→, Shift+→ a shape)" aria-label="Step forward"><svg viewBox="0 0 24 24"><path d="M18 5v14M5 5l10 7-10 7z" fill="currentColor"/></svg></button>
+      </div>
+      <input type="range" id="simPos" dir="ltr" min="0" max="1000" value="0" aria-label="Position in the sewing run">
+      <select class="sel" id="simSpeed" style="min-width:64px" aria-label="Simulation speed (not the machine's real speed)" title="Simulation speed (not the machine's real speed)"><option value="0.5">½×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option><option value="2">2×</option><option value="3">3×</option><option value="5">5×</option><option value="10">10×</option></select>
       <span class="num" id="simTxt">0 / 0</span>
     </footer>
   </div>

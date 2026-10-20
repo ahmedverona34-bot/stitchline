@@ -27,6 +27,7 @@
   const view = { cx: 50, cy: 30, k: 4 };   // k = screen px per mm
   let autoFit = true;                      // refit on window resize until the user zooms or pans
   const sim = { on: false, playing: false, pos: 0, speed: 1, seq: [], raf: 0, last: 0 };
+  const SIM_BASE = 1.8;   // the simulation's 1× runs a little under twice the machine's stitch rate
   const STAGES = ['import', 'arrange', 'stitch', 'sequence', 'output'];
 
   const shapeById = id => S.job.shapes.find(s => s.id === id);
@@ -38,6 +39,8 @@
   const selected = () => [...sel].map(shapeById).filter(Boolean);
   /** Black or white, whichever reads better on a #rrggbb fill (the layer colour). */
   const inkOn = c => { const m = /^#?([0-9a-f]{6})$/i.exec(c || ''); if (!m) return '#fff'; const n = parseInt(m[1], 16); return (0.299 * (n >> 16) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255)) > 160 ? '#111' : '#fff'; };
+  // a layer colour as drawn: white (the first layer's) and other very light colours are drawn in ink on the light canvas
+  const ink = c => { const m = /^#?([0-9a-f]{6})$/i.exec(c || ''); if (!m || document.documentElement.dataset.theme === 'dark') return c; const n = parseInt(m[1], 16); return (0.299 * (n >> 16) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255)) > 215 ? colors.fg : c; };
   const isSewn = s => { const L = layerOf(s); return L.output && S.job.refs.align !== L.id; };
 
   /* ------------------------------------------------------------------ engine calls */
@@ -68,6 +71,7 @@
   }
   // a file was opened (or dropped) in place of the job
   function opened() {
+    bestDone = false;
     pristine = true; sel.clear(); hideHome(); fitView();
     if (stage === 'import') setStage('arrange');
   }
@@ -90,6 +94,7 @@
     buildSim();
     renderAll();
     renderHome();
+    if (sim.on) { renderSeq(); syncSim(); simPaint(); seqTip(); }
     if (firstLoad) requestAnimationFrame(fitView);
   }
 
@@ -199,8 +204,7 @@
   /* drag in the layers list. A shape row moves the shape (and the rest of the selection, when it is selected) in the
      sewing order, into the layer of the row it lands on; dropped on a layer's own row it goes to the end of that layer.
      A layer row moves the layer. The top half of a row means above it, the bottom half below it. */
-  {
-    const box = $('#layers');
+  function wireDrag(box) {
     let lDrag = null;   // { ids, set } while dragging shapes, { layer } while dragging a layer
     const below = (e, el) => { const r = el.getBoundingClientRect(); return e.clientY > r.top + r.height / 2; };
     const clear = () => $$('.over, .under, .into', box).forEach(el => el.classList.remove('over', 'under', 'into'));
@@ -250,7 +254,15 @@
       api('place', { ids, order, ...(moved ? { layer } : {}) }, { quiet: true });
     });
   }
+  wireDrag($('#layers'));
   $('#layers').addEventListener('contextmenu', e => {
+    // a shape row: right-click a row outside the selection selects it, then the menu makes a group of the selection
+    const sr = e.target.closest('.shape-row');
+    if (sr) {
+      e.preventDefault(); const id = +sr.dataset.s;
+      if (!sel.has(id)) { sel = new Set([id]); selChanged(); }
+      return menu(e.clientX, e.clientY, [['Create group', () => ACT.groupSheet(), 'Ctrl G']]);
+    }
     const row = e.target.closest('[data-layer]'); if (!row) return;
     e.preventDefault(); const id = row.dataset.layer;
     const gi = S.job.layers.findIndex(l => l.id === id);
@@ -273,8 +285,9 @@
     ]);
   });
 
-  // in the simple mode the layers are sewn in the order of the list, so moving one also moves its shapes in the sewing order
-  const moveLayer = (id, delta) => api('move_group', { id, delta, follow: simple }, { quiet: true });
+  // in the simple mode (and in the sequence window) the layers are sewn in the order of the list, so moving one also
+  // moves its shapes in the sewing order
+  const moveLayer = (id, delta) => api('move_group', { id, delta, follow: simple || sim.on }, { quiet: true });
 
   function pick(id, toggle, add) {
     if (toggle) sel.has(id) ? sel.delete(id) : sel.add(id);
@@ -323,7 +336,10 @@
       <button class="btn primary" data-act="laserFix" ${slow ? '' : 'disabled'}>Speed up laser paths</button>
       <p class="hint">Joins lines that touch into one cut, removes points the cut does not need and cuts in the shortest order. The cut stays within 0.05 mm of the drawing. You can undo it.</p>`, slow);
   }
-  const setKind = (lid, kind) => api('update_layer', { id: lid, fields: kind === 'laser' ? { needle: 3, settings: LASER } : { needle: 1, settings: SEWING } }, { quiet: true })
+  // a laser layer is red and cut after all the sewing (the layer goes last); back to sewing, a red layer turns white
+  const LASER_RED = '#ff3b30';
+  const setKind = (lid, kind, color = LASER_RED) => api('update_layer', { id: lid, laser_last: true, fields: kind === 'laser' ? { needle: 3, settings: LASER, color }
+    : { needle: 1, settings: SEWING, ...(layerById(lid)?.color?.toLowerCase() === LASER_RED ? { color: '#ffffff' } : {}) } }, { quiet: true })
     .then(d => d && toast(kind === 'laser' ? 'This layer is now laser cut (needle 3)' : 'This layer is now sewn (needle 1)'));
   const J = () => S.job.settings;
   const lsf = (key, u = 'mm', cls = '') => fld('ls_' + key, LS()[key], u, cls, 'layer:' + key);
@@ -363,8 +379,9 @@
             <p class="hint">${n.toLocaleString()} needle positions in this layer</p></div>`}
           <div class="ss">
             <h4>Try it</h4>
+            <button class="btn big" data-act="sequence"><svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6h.01M4 12h.01M4 18h.01" stroke-width="3"/></svg>Sequence</button>
             <button class="btn big" data-act="simulate"><svg viewBox="0 0 24 24"><path d="M7 5v14l11-7z"/></svg>Simulate sewing</button>
-            <p class="hint">Watch the needle and the laser go over the job in sewing order.</p>
+            <p class="hint">See and change the order of sewing and laser cutting, and watch the needle and the laser go over the job.</p>
           </div>`,
         foot: `<div class="simple-stats"><div><span class="k">Needle positions</span><b class="num">${st.stitches.toLocaleString()}</b></div><div><span class="k">Estimated time</span><b class="num">${fmtTime(st.seconds)}</b></div></div>
           <button class="btn primary big" data-act="saveMachine">${ICO.save}Save machine file…</button>` +
@@ -723,6 +740,7 @@
     nearest: () => api('nearest').then(d => d && toast('Sewing order updated for the shortest travel')),
     byGroup: () => api('order_by_group').then(d => d && toast('Sewing order now follows the layer list')),
     simulate: () => startSim(true),
+    sequence: () => startSim(false),
     insIns: () => { const n = $('#insName').value; api('insert_instruction', { before: progAnchor(), name: n, value: $('#insVal').value }, { quiet: true }); },
     insMove: b => { const p = S.program[progSel]; if (!p || p.kind !== 'user') return toast('Select an instruction you inserted (shown in blue).', true); progSel += +b.dataset.d; api('move_instruction', { iid: p.iid, delta: +b.dataset.d }, { quiet: true }); },
     insDel: () => { const p = S.program[progSel]; if (!p || p.kind !== 'user') return toast('Select an instruction you inserted (shown in blue).', true); progSel = -1; api('delete_instruction', { iid: p.iid }, { quiet: true }); },
@@ -905,7 +923,7 @@
       const t = sel.has(s.id) ? T : null;               // this shape follows the drag
       const vb = t ? SL.applyBox(xf, bb) : bb;
       if (vb[2] < vx0 || vb[0] > vx1 || vb[3] < vy0 || vb[1] > vy1) continue;   // off screen
-      const L = layerOf(s);
+      const L = layerOf(s), LC = ink(L.color);
       const dim = viewMode === 'layer' && s.layer !== curL;
       const alpha = dim ? 0.12 : 1;
       const P0 = pathOf(s);
@@ -914,14 +932,14 @@
       const guide = !isSewn(s);
       if (P.length === 1) {
         screen(); ctx.globalAlpha = alpha;
-        ctx.fillStyle = guide ? colors.guide : (isSel ? colors.accent : L.color);
+        ctx.fillStyle = guide ? colors.guide : (isSel ? colors.accent : LC);
         ctx.beginPath(); ctx.arc(sx(P[0][0] + d[0]), sy(P[0][1] + d[1]), isSel ? 5 : 4, 0, 7); ctx.fill();
         continue;
       }
       if (!s._p) { s._p = new Path2D(); P0.forEach(([x, y], i) => i ? s._p.lineTo(x, y) : s._p.moveTo(x, y)); }
       let path = s._p;
       if (P !== P0) { path = new Path2D(); P.forEach(([x, y], i) => i ? path.lineTo(x, y) : path.moveTo(x, y)); }
-      if (t && drag.copy) { world(0, 0); ctx.globalAlpha = alpha; ctx.strokeStyle = L.color; ctx.lineWidth = 1.4 / k; ctx.stroke(s._p); }   // Alt-drag: the original stays
+      if (t && drag.copy) { world(0, 0); ctx.globalAlpha = alpha; ctx.strokeStyle = LC; ctx.lineWidth = 1.4 / k; ctx.stroke(s._p); }   // Alt-drag: the original stays
       world(d[0], d[1]);
       if (isSel || s.id === hoverId) { ctx.globalAlpha = alpha; ctx.strokeStyle = colors['accent-soft']; ctx.lineWidth = (isSel ? 9 : 6) / k; ctx.stroke(path); }
       // White arrow: the selected path is drawn dashed (gaps cut in the canvas colour) inside its glow:
@@ -931,10 +949,10 @@
       const laser = isLaser(L), dots = dotsFor(L);
       if (laser) {
         // laser cuts keep the layer's colour, with a soft glow in that colour
-        ctx.globalAlpha = alpha * 0.25; ctx.strokeStyle = L.color; ctx.lineWidth = 6 / k; ctx.stroke(path);
-        ctx.globalAlpha = alpha; ctx.strokeStyle = isSel && !stitchMode ? colors.accent : L.color; ctx.lineWidth = 1.4 / k; ctx.stroke(path);
+        ctx.globalAlpha = alpha * 0.25; ctx.strokeStyle = LC; ctx.lineWidth = 6 / k; ctx.stroke(path);
+        ctx.globalAlpha = alpha; ctx.strokeStyle = isSel && !stitchMode ? colors.accent : LC; ctx.lineWidth = 1.4 / k; ctx.stroke(path);
       } else {
-        ctx.strokeStyle = isSel && !stitchMode ? colors.accent : L.color;
+        ctx.strokeStyle = isSel && !stitchMode ? colors.accent : LC;
         ctx.lineWidth = LW / k; ctx.globalAlpha = alpha * (dots ? 0.45 : 1); ctx.stroke(path);
       }
       ctx.globalAlpha = alpha;
@@ -951,7 +969,7 @@
           const r = 1.3, p = st.p, f = st.f;
           let last = '';
           for (let i = 0, j = 0; i < p.length; i += 2, j++) {
-            const fl = f[j]; const c = fl === 's' ? L.color : (flagColor(fl) || L.color);
+            const fl = f[j]; const c = fl === 's' ? LC : (flagColor(fl) || LC);
             if (c !== last) { ctx.fillStyle = c; last = c; }
             const rr = fl === 's' ? r : r * 1.3;
             const q = t ? t(p[i], p[i + 1]) : [p[i], p[i + 1]];
@@ -1477,37 +1495,44 @@
   });
 
   /* ------------------------------------------------------------------ simulation */
+  // sim.seq: one entry per needle position [x, y, first point of a shape, layer colour, laser, shape id]
   function buildSim() {
-    sim.seq = [];
+    const keep = sim.on ? curSimShape() : null;   // an order change in the window: stay on the same shape
+    sim.seq = []; sim.starts = new Map();
     if (!S) return;
     const ids = S.program.filter(p => p.kind === 'travel').map(p => p.shape);
     for (const id of ids) {
       const s = shapeById(id); if (!s || !isSewn(s)) continue;
       const st = S.stitched[id]; if (!st) continue;
       const L = layerOf(s), laser = isLaser(L);
-      const pause = L.needle === 3 ? laserWaitMs() : 0;
-      for (let i = 0; i < st.p.length; i += 2) sim.seq.push([st.p[i], st.p[i + 1], i === 0, L.color, laser, i === 0 ? pause : 0]);
+      if (!sim.starts.has(id)) sim.starts.set(id, sim.seq.length);
+      for (let i = 0; i < st.p.length; i += 2) sim.seq.push([st.p[i], st.p[i + 1], i === 0, L.color, laser, id]);
     }
+    // the laser goes as fast as the needle: the millimetres a stitch of the sewing layers covers, per stitch time
+    const sewn = S.job.layers.filter(L => L.output && !isLaser(L)).map(L => +L.settings.stitch_len).filter(v => v > 0);
+    sim.mmPerStitch = sewn.length ? sewn.reduce((a, b) => a + b, 0) / sewn.length : 2.5;
     sim.box = null;
-    sim.pos = Math.min(sim.pos, sim.seq.length);
+    sim.pos = keep != null && sim.starts.has(keep) ? sim.starts.get(keep) + 1 : Math.min(sim.pos, sim.seq.length);
     $('#simPos').max = Math.max(1, sim.seq.length);
   }
-  /* the simulation window: opens over the job and stays until it is closed (X or Esc), also when the run is over */
+  // the shape the head is on (or about to start)
+  const curSimShape = () => sim.seq[Math.max(0, Math.ceil(sim.pos) - 1)]?.[5] ?? null;
+  /* the sequence window: opens over the job and stays until it is closed (X or Esc), also when the run is over */
   let simFrom = null;
   function startSim(play) {
-    sim.heldAt = -1; sim.hold = 0;
     if (!sim.seq.length) return toast('Nothing to sew yet: turn on a layer with shapes.', true);
     if (!sim.on) {
       simFrom = document.activeElement;
       $('#ctx').hidden = true; $('#paletteScrim').hidden = true;
-      sim.on = true; sim.pos = 0; $('#simScrim').hidden = false;
+      sim.on = true; sim.pos = 0; seqCur = undefined; $('#simScrim').hidden = false;
+      renderSeq(); seqTip();
       $('#simPlay').focus();
     }
-    if (play) { if (sim.pos >= sim.seq.length) sim.pos = 0; sim.playing = true; sim.last = performance.now(); loop(); }
+    if (play) { if (sim.pos >= sim.seq.length) sim.pos = 0; sim.playing = true; sim.last = performance.now(); seqFollow = true; loop(); }
     syncSim(); simPaint();
   }
   function stopSim() {
-    sim.on = false; sim.playing = false; cancelAnimationFrame(sim.raf); $('#simScrim').hidden = true;
+    sim.on = false; sim.playing = false; cancelAnimationFrame(sim.raf); $('#simScrim').hidden = true; $('#seqTip').hidden = true;
     if (simFrom?.isConnected) simFrom.focus({ preventScroll: true });
     simFrom = null;
   }
@@ -1516,39 +1541,128 @@
     sim.raf = requestAnimationFrame(now => {
       if (!sim.playing) return;
       const dt = Math.max(0, Math.min(0.1, (now - sim.last) / 1000)); sim.last = now;
-      const at = Math.floor(sim.pos), here = sim.seq[at];
-      if (here && here[5] && sim.heldAt !== at) { sim.heldAt = at; sim.hold = here[5] / 1000; }
-      if (sim.hold > 0) {                                          // the machine waits here (laser start / stop)
-        sim.hold -= dt * sim.speed;
-        $('#simTxt').textContent = (window.tr || (x => x))('Laser waiting') + ' ' + Math.max(0, sim.hold).toFixed(2) + ' s';
-        simPaint(); loop(); return;
-      }
       const i = Math.floor(sim.pos), a = sim.seq[i - 1], b = sim.seq[i];
-      let rate = (J().speed || 1800) / 60 * sim.speed;            // needle: stitches per second
-      if (a && b && b[4] && !b[2]) rate = 40 * sim.speed / Math.max(0.05, Math.hypot(b[0] - a[0], b[1] - a[1]));   // laser: 40 mm per second
+      let rate = (J().speed || 1800) / 60 * SIM_BASE * sim.speed;   // needle: stitches per second
+      // the laser's points are the line's corners, not stitches: it covers the same millimetres per second as the needle
+      if (a && b && b[4] && !b[2]) rate *= sim.mmPerStitch / Math.max(0.05, Math.hypot(b[0] - a[0], b[1] - a[1]));
       sim.pos = Math.min(sim.seq.length, sim.pos + dt * rate);
       if (sim.pos >= sim.seq.length) sim.playing = false;          // the end: the window stays open on the finished job
       syncSim(); simPaint();
       if (sim.playing) loop();
     });
   }
+  // ← → one needle position (held down: faster), Shift a shape at a time
+  function simStep(dir, byShape, fast) {
+    sim.playing = false; seqFollow = true;
+    const N = sim.seq.length;
+    if (byShape) {
+      const at = [...sim.starts.values()].map(i => i + 1).sort((a, b) => a - b);
+      sim.pos = dir > 0 ? (at.find(i => i > Math.floor(sim.pos)) ?? N) : (at.findLast(i => i < sim.pos - 1e-9) ?? 0);
+    } else {
+      const step = fast ? Math.max(1, Math.round(N / 400)) : 1;
+      sim.pos = dir > 0 ? Math.min(N, Math.floor(sim.pos) + step) : Math.max(0, Math.ceil(sim.pos) - step);
+    }
+    syncSim(); simPaint();
+  }
+  let seqCur;
+  /* the list follows the shape being sewn until the user scrolls it; Play, a step or a click on a row follows again.
+     seqTop is where the list itself last scrolled to, so its own scrolling is not taken for the user's */
+  let seqFollow = true, seqTop = -1;
+  function showRow(r) {
+    const L = $('#seqList'), lb = L.getBoundingClientRect(), rb = r.getBoundingClientRect();
+    const head = r.closest('.layer')?.querySelector('.layer-row')?.offsetHeight || 0;   // the sticky layer row covers the top
+    let t = L.scrollTop;
+    if (rb.top < lb.top + head) t += rb.top - lb.top - head - 4; else if (rb.bottom > lb.bottom) t += rb.bottom - lb.bottom + 4;
+    if (Math.round(t) === Math.round(L.scrollTop)) return;
+    L.scrollTop = t; seqTop = L.scrollTop;
+  }
+  $('#seqList').addEventListener('scroll', () => { if (Math.abs($('#seqList').scrollTop - seqTop) > 1) seqFollow = false; }, { passive: true });
   function syncSim() {
     $('#simPos').max = sim.seq.length; $('#simPos').value = Math.floor(sim.pos);
     $('#simTxt').textContent = `${Math.floor(sim.pos).toLocaleString()} / ${sim.seq.length.toLocaleString()}`;
     $('#simDone').hidden = sim.pos < sim.seq.length;
     $('#simIcon').innerHTML = sim.playing ? '<path d="M7 5h3v14H7zM14 5h3v14h-3z" fill="currentColor"/>' : '<path d="M7 5v14l11-7z" fill="currentColor"/>';
+    // the shape being sewn: marked in the list (kept in view while it plays) and named over the drawing
+    const id = sim.pos > 0 ? curSimShape() : null;
+    if (id === seqCur) return;
+    seqCur = id;
+    $$('#seqList [aria-current]').forEach(r => r.removeAttribute('aria-current'));
+    const r = id != null && $(`#seqList .shape-row[data-s="${id}"]`);
+    if (r) { r.setAttribute('aria-current', 'true'); if (seqFollow) showRow(r); }
+    const s = id != null && shapeById(id), L = s && layerOf(s), tr = window.tr || (x => x);
+    $('#simNow').hidden = !s;
+    if (s) $('#simNow').textContent = `${L.name} · ${tr(nameOf(s))} · ${tr(isLaser(L) ? 'Laser cut' : 'Sewing')}`;
   }
-  /* only what has been sewn or cut so far is drawn: the drawing appears as the needle and the laser go. The view
-     fits the whole run from the start, so nothing moves while it grows */
+  /* the order of the run: the layers as they are sewn, each with its shapes in sewing order. Drag to change it
+     (as in the layers list); a click on a shape goes to it in the simulation */
+  function renderSeq() {
+    if (!S) return;
+    const rank = new Map(S.job.order.map((id, i) => [id, i]));
+    $('#seqList').innerHTML = S.job.layers.map((L, li) => {
+      const shapes = S.job.shapes.filter(s => s.layer === L.id).sort((a, b) => (rank.get(a.id) ?? 1e15) - (rank.get(b.id) ?? 1e15));
+      const laser = isLaser(L);
+      return `<div class="layer ${L.output ? '' : 'off'} ${laser ? 'laser' : ''}" data-l="${L.id}">
+        <div class="layer-row" data-layer="${L.id}" draggable="true" title="${L.output ? 'Drag to sew this layer earlier or later' : 'This layer is not sewn (turned off in Layers)'}">
+          <span class="step">${li + 1}</span><span class="swatch" style="background:${esc(L.color)}"></span>
+          <span class="name">${esc(L.name)} <span class="cnt">${shapes.length}</span></span>
+          <span class="kind-pill ${laser ? 'laser' : ''}">${laser ? 'Laser' : 'Sewing'}</span>
+          <button class="icon-btn best" data-best="${L.id}" title="Best order: the least travel between this layer's shapes" aria-label="Best order"><svg viewBox="0 0 24 24"><circle cx="5" cy="18" r="2"/><circle cx="19" cy="6" r="2"/><path d="M7 18h4a3 3 0 0 0 3-3V9a3 3 0 0 1 3-3"/></svg></button>
+        </div>
+        <div class="shapes">${shapes.slice(0, 500).map(s => `
+          <button class="shape-row" data-s="${s.id}" draggable="true" aria-selected="${sel.has(s.id)}" ${s.id === seqCur ? 'aria-current="true"' : ''}><span class="no">${(rank.get(s.id) ?? -1) + 1}</span>${thumb(s.pts, s.closed)}<span class="nm">${esc(nameOf(s))}</span></button>`).join('')}
+          ${shapes.length > 500 ? `<div class="more">+ ${shapes.length - 500} more</div>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+  wireDrag($('#seqList'));
+  $('#seqList').addEventListener('click', e => {
+    const b = e.target.closest('[data-best]');
+    if (b) { bestDone = true; return api('best_order', { id: b.dataset.best }); }
+    const r = e.target.closest('.shape-row'), lr = e.target.closest('.layer-row');
+    const id = r ? +r.dataset.s : lr ? S.job.order.find(i => sim.starts.has(i) && shapeById(i).layer === lr.dataset.layer) : null;
+    if (r) { pick(id, e.ctrlKey || e.metaKey, e.shiftKey); $$('#seqList .shape-row').forEach(x => x.setAttribute('aria-selected', sel.has(+x.dataset.s))); }
+    if (id != null && sim.starts.has(id)) { sim.playing = false; seqFollow = true; sim.pos = sim.starts.get(id) + 1; syncSim(); simPaint(); }
+  });
+  $('#seqSewLaser').onclick = () => api('sew_then_laser');
+  /* the suggestion over the list: the engine works the best order out on a copy; when it would save at least 5 cm
+     and 3 % of the travel, the window says how much (and about how long, at the machine's 150 mm/s travel) */
+  // the suggestion is shown until the best order has been used once on this job: after that the user's own changes
+  // to the order are not second-guessed
+  let tipT = 0, tipN = 0, bestDone = false;
+  function seqTip() {
+    clearTimeout(tipT);
+    // its numbers are of the order before this change; the focus (its button, just pressed) stays in the window
+    if ($('#seqTip').contains(document.activeElement)) $('#simPlay').focus();
+    $('#seqTip').hidden = true;
+    const n = ++tipN;
+    if (bestDone) return;
+    tipT = setTimeout(async () => {
+      let p;
+      try { p = await (await fetch('/api/best_order_preview', { method: 'POST', body: '{}' })).json(); } catch { return; }
+      if (n !== tipN) return;      // a later change asked again
+      const save = p.travel - p.best, show = sim.on && !bestDone && save >= 50 && save >= p.travel * 0.03;
+      $('#seqTip').hidden = !show;
+      if (!show) return;
+      const t = Math.max(1, Math.round(save / 150));
+      $('#seqTipSave').textContent = `Best order saves ${save >= 1000 ? (save / 1000).toFixed(1) + ' m' : Math.round(save) + ' mm'} of travel`;
+      $('#seqTipTime').textContent = `About ${t >= 60 ? Math.floor(t / 60) + ' min ' : ''}${t % 60 || t < 60 ? (t % 60) + ' s ' : ''}less on the machine`;
+    }, 200);
+  }
+  $('#seqBest').onclick = () => { bestDone = true; api('best_order_all'); };
+
+  /* only what has been sewn or cut so far is drawn, over a faint copy of the whole run: the drawing appears as the
+     needle and the laser go. The view fits the whole run from the start, so nothing moves while it grows */
   const scv = $('#simCv'), sctx = scv.getContext('2d');
   function simPaint() {
     if (!sim.on) return;
     const R = scv.getBoundingClientRect(), dp = window.devicePixelRatio || 1, w = Math.max(1, R.width), h = Math.max(1, R.height);
     if (scv.width !== Math.round(w * dp) || scv.height !== Math.round(h * dp)) { scv.width = Math.round(w * dp); scv.height = Math.round(h * dp); }
     readColors();
-    const c = sctx;
+    const c = sctx, dark = document.documentElement.dataset.theme === 'dark';
     c.setTransform(dp, 0, 0, dp, 0, 0); c.direction = 'ltr'; c.textAlign = 'left';
     c.fillStyle = colors.canvas; c.fillRect(0, 0, w, h);
+    if (!sim.seq.length) return;
     if (!sim.box) {
       let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
       for (const [x, y] of sim.seq) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
@@ -1557,65 +1671,53 @@
     const [x0, y0, x1, y1] = sim.box, pad = 40;
     const k = Math.min((w - 2 * pad) / Math.max(1, x1 - x0), (h - 2 * pad) / Math.max(1, y1 - y0));
     const SX = x => w / 2 + (x - (x0 + x1) / 2) * k, SY = y => h / 2 - (y - (y0 + y1) / 2) * k;
-    const n = Math.floor(sim.pos); if (!n) return;
-    const frac = Math.min(1, sim.pos - n);
     c.lineJoin = c.lineCap = 'round';
+    // the whole run, faint, so the order can be followed before it is sewn
+    c.globalAlpha = dark ? 0.16 : 0.12; c.strokeStyle = colors['fg-3']; c.lineWidth = 1; c.beginPath();
+    for (const q of sim.seq) { if (q[2]) c.moveTo(SX(q[0]), SY(q[1])); else c.lineTo(SX(q[0]), SY(q[1])); }
+    c.stroke(); c.globalAlpha = 1;
+    const n = Math.floor(sim.pos);
+    const frac = Math.min(1, sim.pos - n);
     // sewn thread, laser cuts and travel moves so far; a run of the same kind and colour is one stroke
-    let kind = null, col = null, laser = false, path = null;
+    let kind = null, col = null, path = null;
     const flush = () => {
       if (!path) return;
       if (kind === 'travel') { c.strokeStyle = colors['fg-3']; c.lineWidth = 1; c.setLineDash([3, 4]); c.stroke(path); c.setLineDash([]); }
-      else if (laser) { c.globalAlpha = 0.25; c.strokeStyle = col; c.lineWidth = 5; c.stroke(path); c.globalAlpha = 1; c.lineWidth = 1.6; c.stroke(path); }
-      else { c.strokeStyle = col; c.lineWidth = 2; c.stroke(path); }
+      else { c.strokeStyle = ink(col); c.lineWidth = 2; c.stroke(path); }   // sewn or cut: the same line, in the layer's colour
     };
     for (let i = 1; i < n; i++) {
       const p = sim.seq[i - 1], q = sim.seq[i];
-      const kd = q[2] ? 'travel' : (q[4] ? 'L' : 'S') + q[3];
-      if (kd !== kind) { flush(); kind = kd; col = q[3]; laser = q[4]; path = new Path2D(); path.moveTo(SX(p[0]), SY(p[1])); }
+      const kd = q[2] ? 'travel' : 'S' + q[3];
+      if (kd !== kind) { flush(); kind = kd; col = q[3]; path = new Path2D(); path.moveTo(SX(p[0]), SY(p[1])); }
       path.lineTo(SX(q[0]), SY(q[1]));
     }
     flush();
+    if (!n) return;
     // the head moves smoothly towards the next point
     let [x, y, , , onLaser] = sim.seq[n - 1];
     const nx = sim.seq[n];
     if (nx && !nx[2]) { x += (nx[0] - x) * frac; y += (nx[1] - y) * frac; }
-    const X = SX(x), Y = SY(y), t = performance.now() / 1000;
-    if (onLaser && nx && !nx[2]) {
-      // glowing cut line up to the beam, a pulsing beam spot and a few sparks
-      c.beginPath(); c.moveTo(SX(sim.seq[n - 1][0]), SY(sim.seq[n - 1][1])); c.lineTo(X, Y);
-      c.strokeStyle = colors.laser; c.lineWidth = 2; c.stroke();
-      const r = 13 + Math.sin(t * 18) * 3;
-      const g = c.createRadialGradient(X, Y, 0, X, Y, r);
-      g.addColorStop(0, 'rgba(255,255,255,0.95)'); g.addColorStop(0.25, colors.laser); g.addColorStop(1, 'rgba(255,60,40,0)');
-      c.fillStyle = g; c.beginPath(); c.arc(X, Y, r, 0, 7); c.fill();
-      c.fillStyle = '#ffd27a';
-      for (let i = 0; i < 6; i++) {
-        const a = (i * 1.7 + t * 23) % (Math.PI * 2), d = 6 + ((i * 37 + t * 140) % 12);
-        c.fillRect(X + Math.cos(a) * d - 1, Y + Math.sin(a) * d - 1, 2, 2);
-      }
-      c.strokeStyle = colors.laser; c.lineWidth = 1; c.beginPath();
-      c.moveTo(X - 20, Y); c.lineTo(X - 8, Y); c.moveTo(X + 8, Y); c.lineTo(X + 20, Y);
-      c.moveTo(X, Y - 20); c.lineTo(X, Y - 8); c.moveTo(X, Y + 8); c.lineTo(X, Y + 20); c.stroke();
-    } else if (onLaser) {
-      // laser head travelling (beam off): an outlined crosshair
-      c.strokeStyle = colors.laser; c.lineWidth = 1.5; c.beginPath(); c.arc(X, Y, 7, 0, 7);
-      c.moveTo(X - 12, Y); c.lineTo(X + 12, Y); c.moveTo(X, Y - 12); c.lineTo(X, Y + 12); c.stroke();
-    } else {
-      // sewing needle: thread-coloured ring and needle point
-      c.fillStyle = colors['thread-soft']; c.beginPath(); c.arc(X, Y, 11, 0, 7); c.fill();
-      c.fillStyle = colors.thread; c.beginPath(); c.arc(X, Y, 4, 0, 7); c.fill();
-    }
+    const X = SX(x), Y = SY(y), lc = onLaser ? ink(sim.seq[n - 1][3]) : null;
+    // the head: a ring and a point, thread-coloured for the needle and in the layer's colour for the laser
+    c.globalAlpha = onLaser ? 0.25 : 1; c.fillStyle = onLaser ? lc : colors['thread-soft']; c.beginPath(); c.arc(X, Y, 11, 0, 7); c.fill(); c.globalAlpha = 1;
+    c.fillStyle = onLaser ? lc : colors.thread; c.beginPath(); c.arc(X, Y, 4, 0, 7); c.fill();
     const label = (window.tr || (x => x))(onLaser ? 'Laser' : 'Needle');
-    c.font = '600 11px ' + getComputedStyle(document.body).getPropertyValue('--font'); c.fillStyle = onLaser ? colors.laser : colors.thread; c.fillText(label, X + 14, Y - 14);
+    c.font = '600 11px ' + getComputedStyle(document.body).getPropertyValue('--font'); c.fillStyle = onLaser ? lc : colors.thread; c.fillText(label, X + 14, Y - 14);
   }
   $('#simPlay').onclick = () => { if (sim.playing) { sim.playing = false; syncSim(); } else startSim(true); };
+  $('#simBack').onclick = e => simStep(-1, e.shiftKey);
+  $('#simFwd').onclick = e => simStep(1, e.shiftKey);
   $('#simPos').addEventListener('input', e => { sim.playing = false; sim.pos = +e.target.value; syncSim(); simPaint(); });
   $('#simSpeed').addEventListener('change', e => { sim.speed = +e.target.value; });
   $('#simClose').onclick = stopSim;
   $('#simScrim').addEventListener('keydown', e => {
     e.stopPropagation();
     if (e.key === 'Escape') { e.preventDefault(); return stopSim(); }
-    if (e.key === ' ' && e.target.tagName !== 'SELECT') { e.preventDefault(); return $('#simPlay').click(); }
+    if (e.target.tagName === 'SELECT') return;
+    if (e.key === ' ') { e.preventDefault(); return $('#simPlay').click(); }
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); return simStep(e.key === 'ArrowRight' ? 1 : -1, e.shiftKey, e.repeat); }
+    if (e.key === 'Home' || e.key === 'End') { e.preventDefault(); sim.playing = false; sim.pos = e.key === 'Home' ? 0 : sim.seq.length; syncSim(); simPaint(); return; }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); return api(e.shiftKey ? 'redo' : 'undo', {}, { quiet: true }); }
     if (e.key === 'Tab') {   // Tab stays in the window
       const f = $$('#simScrim button, #simScrim input, #simScrim select'), i = f.indexOf(document.activeElement);
       if (i < 0 || (e.shiftKey ? i === 0 : i === f.length - 1)) { e.preventDefault(); f[e.shiftKey ? f.length - 1 : 0].focus(); }
@@ -1641,7 +1743,7 @@
   ];
   const KEYS_SIMPLE = [
     ['File', [['Open a drawing or job', 'Ctrl O'], ['Save job', 'Ctrl S'], ['Save machine file', 'Ctrl Alt E'], ['New job', 'Ctrl N'], ['Home: new job, open, recent files', 'Ctrl Shift H']]],
-    ['Edit', [['Undo', 'Ctrl Z'], ['Redo', 'Ctrl Shift Z'], ['Stop the simulation, clear the selection', 'Esc'], ['Delete selected', 'Delete'], ['Nudge the selection', '← ↑ → ↓'], ['Nudge ×10', 'Shift ← ↑ → ↓']]],
+    ['Edit', [['Undo', 'Ctrl Z'], ['Redo', 'Ctrl Shift Z'], ['Stop the simulation, clear the selection', 'Esc'], ['Delete selected', 'Delete'], ['Create group from the selection', 'Ctrl G'], ['Sequence window: step through the run', '← →'], ['Sequence window: a shape at a time', 'Shift ← →'], ['Nudge the selection', '← ↑ → ↓'], ['Nudge ×10', 'Shift ← ↑ → ↓']]],
     ['Tools', [['Selection: move and resize whole shapes', 'V'], ['Direct selection: move one path', 'A'], ['Pan', 'H'], ['Set start point', 'C'], ['Measure', 'I'], ['Add shape', 'M']]],
     ['View', [['Fit the drawing', 'Ctrl 0'], ['Real size (100%)', 'Ctrl 1'], ['Zoom in', 'Ctrl +'], ['Zoom out', 'Ctrl −'], ['Pan while held', 'Space'], ['Original shape / stitches', 'Ctrl Y'],
       ['Light / dark', 'Ctrl Shift L'], ['Settings', 'Ctrl ,'], ['Keyboard shortcuts', '?']]],
@@ -1662,7 +1764,7 @@
     group: () => `<header><h3>Make a layer</h3><p>${sel.size} selected shape${sel.size > 1 ? 's' : ''} move into a new layer with its own needle.</p></header>
       <div class="body">${row('Name', `<span class="field wide" style="width:200px"><input id="gName" value="${nextLayerName()}"></span>`)}
       ${row('Use', `<div class="seg" role="group" id="gKind"><button aria-pressed="true" data-k="sew">Sewing</button><button aria-pressed="false" data-k="laser">Laser cut</button></div>`)}
-      ${row('Needle', `<div class="seg" role="group" id="gNeedle">${[1, 2, 3].map(k => `<button aria-pressed="${k === 1}" data-k="${k}">Needle ${k}</button>`).join('')}</div>`)}
+      ${simple ? '' : row('Needle', `<div class="seg" role="group" id="gNeedle">${[1, 2, 3].map(k => `<button aria-pressed="${k === 1}" data-k="${k}">Needle ${k}</button>`).join('')}</div>`)}
       ${row('Colour', `<input type="color" id="gColor" value="${['#e8336d', '#7a5cff', '#13a3a3', '#f08c00', '#2f9e44', '#1c7ed6'][S.job.layers.length % 6]}" style="width:44px;height:28px;border:0;background:none;padding:0">`)}
       <p class="hint">Example: put everything that is embroidered in one layer on Needle 1, and the laser cut lines in another layer on Needle 3.</p></div>
       <footer><button class="btn" data-close>Cancel</button><button class="btn primary" data-ok>Make layer</button></footer>`,
@@ -1816,15 +1918,17 @@
       return guardUnsaved(async () => {
         const d = await api('new', { name, table_w: w, table_h: h }, { quiet: true });
         if (!d) return false;
-        rememberSize(w, h); pristine = true; sel.clear(); hideHome(); setStage('import'); fitView(); toast('New job');
+        rememberSize(w, h); pristine = true; bestDone = false; sel.clear(); hideHome(); setStage('import'); fitView(); toast('New job');
       });
     },
     group: async () => {
+      // the simple mode has no needle choice: a sewing group keeps the needle its shapes were sewn with
+      const sewNeedle = () => { const L = layerOf(shapeById([...sel][0])); return L && !isLaser(L) ? L.needle : 1; };
       const laser = segVal('gKind') === 'laser';
-      const d = await api('group', { ids: [...sel], name: $('#gName').value.trim(), needle: laser ? 3 : +segVal('gNeedle'), color: $('#gColor').value }, { quiet: true });
+      const d = await api('group', { ids: [...sel], name: $('#gName').value.trim(), needle: laser ? 3 : simple ? sewNeedle() : +segVal('gNeedle'), color: $('#gColor').value }, { quiet: true });
       if (d) {
         const L = d.job.layers.find(l => S.job.shapes.some(s => sel.has(s.id) && s.layer === l.id)); if (L) curLayer = L.id;
-        if (laser && L) await setKind(L.id, 'laser'); else { renderAll(); toast('Layer made'); }
+        if (laser && L) await setKind(L.id, 'laser', $('#gColor').value); else { renderAll(); toast('Layer made'); }
       }
     },
     confirm: () => sheetCtx.fn(),
@@ -1887,7 +1991,11 @@
       $$('button', sb.parentElement).forEach(b => b.setAttribute('aria-pressed', b === sb));
       if (sb.parentElement.id === 'mKind') $('#zzOpts').hidden = sb.dataset.k !== 'zigzag';
       if (sb.parentElement.id === 'rzUnit') { const wmm = num('rzW') * rzK(), hmm = num('rzH') * rzK(); sheetCtx.unit = sb.dataset.k; store.set('rzUnit', sheetCtx.unit); rzFill(wmm, hmm); }
-      if (sb.parentElement.id === 'gKind') { const k = sb.dataset.k === 'laser' ? '3' : '1'; $$('#gNeedle button').forEach(b => b.setAttribute('aria-pressed', b.dataset.k === k)); }
+      if (sb.parentElement.id === 'gKind') {
+        const k = sb.dataset.k === 'laser' ? '3' : '1'; $$('#gNeedle button').forEach(b => b.setAttribute('aria-pressed', b.dataset.k === k));
+        // a laser layer starts red; back to sewing, the colour it was offered first
+        const c = $('#gColor'); c.dataset.sew ??= c.value; c.value = k === '3' ? LASER_RED : c.dataset.sew;
+      }
       return;
     }
     const s = t.closest('.switch'); if (s) { s.setAttribute('aria-checked', s.getAttribute('aria-checked') !== 'true'); return; }
@@ -2072,6 +2180,7 @@
     if (ctrl && (e.code === 'Equal' || e.code === 'NumpadAdd')) return zoomAt(1.25);
     if (ctrl && (e.code === 'Minus' || e.code === 'NumpadSubtract')) return zoomAt(0.8);
     if (ctrl && k === 'y') { e.preventDefault(); return $('#showOrig').click(); }
+    if (ctrl && k === 'g' && !e.shiftKey) { e.preventDefault(); return ACT.groupSheet(); }
     if (e.key === 'Escape') { $('#ctx').hidden = true; if (sim.on) return stopSim(); sel.clear(); selChanged(); return; }
     if ((e.key === 'Delete' || e.key === 'Backspace') && sel.size) return api('delete', { ids: [...sel] }, { quiet: true });
     if (e.key.startsWith('Arrow') && sel.size) {

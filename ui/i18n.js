@@ -56,7 +56,7 @@
     'Stage panel': 'لوحة المرحلة', 'The settings of the current stage. Shift+Tab also hides and shows it.': 'إعدادات المرحلة الحالية. Shift+Tab كمان بيخفيها ويظهرها.',
     'Size and position': 'المقاس والموضع', 'Width, height and position of the selection, above the drawing.': 'عرض وطول وموضع المحدد، فوق الرسمة.',
     'Show bar': 'شريط العرض', 'All / layer, stitches and sewing order, under the drawing.': 'الكل / الطبقة، والغرز وترتيب الخياطة، تحت الرسمة.',
-    'Zoom bar': 'شريط التكبير', 'Zoom in, zoom out and fit, under the drawing.': 'تكبير وتصغير وملاءمة، تحت الرسمة.',
+    'Status': 'الحالة', 'Zoom bar': 'شريط التكبير', 'Zoom in, zoom out and fit, under the drawing.': 'تكبير وتصغير وملاءمة، تحت الرسمة.',
     'Grid on the drawing': 'الشبكة على الرسمة', 'Millimetre lines behind the shapes.': 'خطوط المليمتر ورا الأشكال.',
     'Shortcut keys on buttons': 'مفاتيح الاختصار على الأزرار', 'The small key names next to buttons and tools.': 'أسامي المفاتيح الصغيرة جنب الأزرار والأدوات.',
     'Changes are saved as you make them.': 'التغييرات بتتحفظ أول بأول.', 'Reset to defaults': 'رجوع للافتراضي',
@@ -65,6 +65,19 @@
     // ---------------------------------------------------------------- layers panel
     'Layers': 'الطبقات', 'Layers and shapes': 'الطبقات والأشكال', 'Layer': 'طبقة',
     'Make a layer from the selection (Ctrl+G)': 'اعمل طبقة من المحدد (Ctrl+G)', 'Make a layer from the selection': 'اعمل طبقة من المحدد',
+    'Create group': 'إنشاء مجموعة',
+    'Sewing then laser': 'خياطة ثم ليزر', 'Sew every sewing layer first and cut with the laser last': 'خيّط كل طبقات الخياطة الأول وبعدين قص الليزر في الآخر',
+    'Drag layers and shapes to change the order.': 'اسحب الطبقات والأشكال عشان تغيّر الترتيب.', 'Close sequence': 'إغلاق التسلسل',
+    'Step back (←, Shift+← a shape)': 'رجوع خطوة (←، و Shift+← شكل كامل)', 'Step forward (→, Shift+→ a shape)': 'تقديم خطوة (→، و Shift+→ شكل كامل)',
+    'Step back': 'رجوع خطوة', 'Step forward': 'تقديم خطوة', 'Drag to sew this layer earlier or later': 'اسحبها عشان تتخيط بدري أو متأخر',
+    'This layer is not sewn (turned off in Layers)': 'الطبقة دي مش هتتخيط (مقفولة في الطبقات)',
+    "Best order: the least travel between this layer's shapes": 'أفضل تسلسل: أقل مسافة انتقال بين أشكال الطبقة دي', 'Best order': 'أفضل تسلسل',
+    'Best order for every layer: the least travel between its shapes': 'أفضل تسلسل لكل الطبقات: أقل مسافة انتقال بين أشكالها',
+    'The sewing order is already the best.': 'ترتيب الخياطة أصلاً هو أفضل تسلسل.',
+    'See and change the order of sewing and laser cutting, and watch the needle and the laser go over the job.': 'شوف وغيّر ترتيب الخياطة وقص الليزر، وتابع الإبرة والليزر وهما ماشيين على المشروع.',
+    'Sewing first, then the laser': 'الخياطة الأول وبعدين الليزر', 'The sewing already comes first and the laser last.': 'الخياطة أصلاً الأول والليزر في الآخر.',
+    'Sequence window: step through the run': 'نافذة التسلسل: تقديم ورجوع خطوة خطوة', 'Sequence window: a shape at a time': 'نافذة التسلسل: شكل شكل',
+    'This layer is already sewn in the best order.': 'الطبقة دي متخيطة بأفضل تسلسل بالفعل.', 'This layer needs two or more shapes to put in order.': 'الطبقة محتاجة شكلين أو أكتر عشان تترتب.', 'Create group from the selection': 'إنشاء مجموعة من المحدد',
     'Make a layer': 'عمل طبقة', 'Make layer': 'عمل الطبقة', 'New empty layer': 'طبقة جديدة فاضية', 'Add shape': 'إضافة شكل',
     'Insert file': 'إدراج ملف', 'All': 'الكل', 'Select all (Ctrl+A)': 'تحديد الكل (Ctrl+A)',
     'Show shapes': 'إظهار الأشكال', 'Layer colour': 'لون الطبقة', 'Double-click to rename': 'دبل كليك لتغيير الاسم',
@@ -315,6 +328,13 @@
     // a tooltip that ends in its shortcut: the words are translated, the keys stay
     [/^(.+) \(((?:Ctrl|Alt|Shift)\+.+|[A-Z]|Enter)\)$/, (m, a, b) => AR[a] ? `${AR[a]} (${b})` : m],
     [/^(\d+) selected$/, (m, a) => `${a} محدد`],
+    [/^Best order saves ([\d.]+) (m|mm) of travel$/, (m, a, u) => `أفضل تسلسل يوفّر ${a} ${u === 'm' ? 'متر' : 'مم'} من مسافة الانتقال`],
+    [/^About (?:(\d+) min )?(?:(\d+) s )?less on the machine$/, (m, a, b) => {
+      // Arabic counting: 1 دقيقة, 2 دقيقتين, 3–10 دقايق, 11+ دقيقة (and the same for seconds)
+      const n = (v, one, two, few) => +v === 1 ? one : +v === 2 ? two : +v <= 10 ? `${v} ${few}` : `${v} ${one}`;
+      return `يعني حوالي ${[a && n(a, 'دقيقة', 'دقيقتين', 'دقايق'), b && n(b, 'ثانية', 'ثانيتين', 'ثواني')].filter(Boolean).join(' و')} أقل على الماكينة`;
+    }],
+    [/^Best sewing order: travel cut from (\d+) mm to (\d+) mm$/, (m, a, b) => `اترتبت بأفضل تسلسل: مسافة الانتقال قلت من ${a} مم لـ ${b} مم`],
     [/^(\d+) steps$/, (m, a) => `${a} خطوة`],
     [/^(\d+) start · (\d+) end$/, (m, a, b) => `${a} بداية · ${b} نهاية`],
     [/^(\d+(?:\.\d+)?)° · slow (\d+)(.*)$/, (m, a, b, c) => `${a}° · تبطيء ${b}${c.replace(' · dense', ' · كثيف')}`],

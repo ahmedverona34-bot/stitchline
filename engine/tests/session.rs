@@ -387,3 +387,164 @@ fn moving_a_layer_with_follow_sews_the_layers_in_list_order_in_one_undo_step() {
     assert_eq!(st["job"]["order"], json!([a, b]));
     assert_ne!(s.job.layers[0].id, l2);
 }
+
+#[test]
+fn best_order_shortens_the_travel_inside_one_layer_only_in_one_undo_step() {
+    let (mut s, _) = session(&home("best-order"));
+    // four lines along x, added out of order: 0, 300, 100, 200 (each 25 mm long, left to right)
+    let mut ids = vec![];
+    for x in [0, 300, 100, 200] {
+        let st = s.handle("add_shape", &json!({"kind": "line", "x": x, "y": 0, "size": 25})).unwrap();
+        ids.push(st["new_id"].as_i64().unwrap());
+    }
+    let l1 = s.job.shape(ids[0]).unwrap().layer.clone();
+    // a shape on another layer, sewn after them: it stays where it is
+    s.handle("add_layer", &json!({})).unwrap();
+    let l2 = s.job.layers.last().unwrap().id.clone();
+    let st = s.handle("add_shape", &json!({"kind": "line", "x": 400, "y": 0, "size": 25})).unwrap();
+    let other = st["new_id"].as_i64().unwrap();
+    let mut order = ids.clone();
+    order.push(other);
+    s.handle("place", &json!({"ids": [other], "layer": l2, "order": order})).unwrap();
+    let st = s.handle("best_order", &json!({"id": l1})).unwrap();
+    assert_eq!(s.job.order, vec![ids[0], ids[2], ids[3], ids[1], other]);
+    assert!(st["message"].as_str().unwrap_or_default().starts_with("Best sewing order: travel cut from"), "{}", st["message"]);
+    // already the best: refused, nothing changes
+    let e = error(s.handle("best_order", &json!({"id": l1})));
+    assert_eq!(e, "This layer is already sewn in the best order.");
+    assert_eq!(s.job.order, vec![ids[0], ids[2], ids[3], ids[1], other]);
+    s.handle("undo", &json!({})).unwrap();
+    assert_eq!(s.job.order, order);
+}
+
+#[test]
+fn sew_then_laser_puts_the_laser_layers_last_and_sews_in_list_order_in_one_undo_step() {
+    let (mut s, _) = session(&home("sew-then-laser"));
+    let (a, l1) = add_line(&mut s);
+    s.handle("add_layer", &json!({})).unwrap();
+    let laser = s.job.layers.last().unwrap().id.clone();
+    s.handle("add_layer", &json!({})).unwrap();
+    let l3 = s.job.layers.last().unwrap().id.clone();
+    let (b, _) = add_line(&mut s);
+    let (c, _) = add_line(&mut s);
+    s.handle("place", &json!({"ids": [b], "layer": laser, "order": [a, b, c]})).unwrap();
+    s.handle("place", &json!({"ids": [c], "layer": l3, "order": [b, a, c]})).unwrap();
+    s.handle("update_layer", &json!({"id": laser, "fields": {"needle": 3}})).unwrap();
+    let st = s.handle("sew_then_laser", &json!({})).unwrap();
+    assert_eq!(st["message"], json!("Sewing first, then the laser"));
+    let ids: Vec<&str> = s.job.layers.iter().map(|l| l.id.as_str()).collect();
+    assert_eq!(ids, vec![l1.as_str(), l3.as_str(), laser.as_str()]);
+    assert_eq!(s.job.order, vec![a, c, b]);
+    assert_eq!(error(s.handle("sew_then_laser", &json!({}))), "The sewing already comes first and the laser last.");
+    s.handle("undo", &json!({})).unwrap();
+    assert_eq!(s.job.order, vec![b, a, c]);
+    assert_eq!(s.job.layers[1].id, laser);
+}
+
+#[test]
+fn the_first_layer_of_a_drawing_is_white() {
+    let (mut s, _) = session(&home("white-layer"));
+    add_line(&mut s);
+    assert_eq!(s.job.layers[0].color, "#ffffff");
+}
+
+#[test]
+fn the_best_order_preview_matches_what_best_order_all_does_and_changes_nothing() {
+    let (mut s, _) = session(&home("best-all"));
+    for x in [0, 300, 100, 200] {
+        s.handle("add_shape", &json!({"kind": "line", "x": x, "y": 0, "size": 25})).unwrap();
+    }
+    s.handle("add_layer", &json!({})).unwrap();
+    let l2 = s.job.layers.last().unwrap().id.clone();
+    let mut ids = vec![];
+    for x in [500, 900, 700] {
+        let st = s.handle("add_shape", &json!({"kind": "line", "x": x, "y": 0, "size": 25, "layer": l2})).unwrap();
+        ids.push(st["new_id"].as_i64().unwrap());
+    }
+    let order = s.job.order.clone();
+    let undo = state(&mut s)["can_undo"].clone();
+    let p = s.handle("best_order_preview", &json!({})).unwrap();
+    assert_eq!(s.job.order, order);
+    assert_eq!(state(&mut s)["can_undo"], undo);
+    let (travel, best) = (p["travel"].as_f64().unwrap(), p["best"].as_f64().unwrap());
+    assert!(best < travel - 100.0, "{travel} -> {best}");
+    let st = s.handle("best_order_all", &json!({})).unwrap();
+    assert_eq!(st["message"], json!(format!("Best sewing order: travel cut from {:.0} mm to {:.0} mm", travel, best)));
+    assert_eq!(&s.job.order[4..], &[ids[0], ids[2], ids[1]]);
+    let p = s.handle("best_order_preview", &json!({})).unwrap();
+    assert_eq!(p["travel"], p["best"]);
+    assert_eq!(error(s.handle("best_order_all", &json!({}))), "The sewing order is already the best.");
+    s.handle("undo", &json!({})).unwrap();
+    assert_eq!(s.job.order, order);
+}
+
+/// Two pattern pieces in a frame, their lines added mixed up: piece A at x 10..110, piece B at x 200..300.
+fn two_pieces(s: &mut Session) -> (i64, Vec<i64>, Vec<i64>) {
+    let add = |s: &mut Session, a: Value| s.handle("add_shape", &a).unwrap()["new_id"].as_i64().unwrap();
+    let frame = add(s, json!({"kind": "rect", "x": 0, "y": 0, "w": 320, "h": 120}));
+    let a_cut = add(s, json!({"kind": "rect", "x": 10, "y": 10, "w": 100, "h": 100}));
+    let b_cut = add(s, json!({"kind": "rect", "x": 200, "y": 10, "w": 100, "h": 100}));
+    let b1 = add(s, json!({"kind": "line", "x": 210, "y": 30, "size": 40}));
+    let a1 = add(s, json!({"kind": "line", "x": 20, "y": 30, "size": 40}));
+    let b2 = add(s, json!({"kind": "line", "x": 210, "y": 80, "size": 40}));
+    // a line drawn to 2 mm past piece A's cut line still goes with A
+    let a2 = add(s, json!({"kind": "line", "x": 72, "y": 80, "size": 40}));
+    (frame, vec![a_cut, a1, a2], vec![b_cut, b1, b2])
+}
+
+#[test]
+fn pieces_go_with_the_closed_shape_they_lie_in_and_a_frame_is_not_a_piece() {
+    let (mut s, _) = session(&home("pieces"));
+    let (frame, a, b) = two_pieces(&mut s);
+    let p = stitchline_engine::ops::pieces(&s.job);
+    assert!(a.iter().all(|i| p[i] == a[0]), "{p:?}");
+    assert!(b.iter().all(|i| p[i] == b[0]), "{p:?}");
+    assert_eq!(p[&frame], frame);
+}
+
+#[test]
+fn best_order_sews_each_piece_to_the_end_before_the_next() {
+    let (mut s, _) = session(&home("pieces-order"));
+    let (frame, a, b) = two_pieces(&mut s);
+    s.handle("best_order_all", &json!({})).unwrap();
+    let piece = |i: &i64| if a.contains(i) { 'A' } else if b.contains(i) { 'B' } else { 'F' };
+    let mut runs: Vec<char> = s.job.order.iter().map(piece).collect();
+    runs.dedup();
+    assert_eq!(runs.len(), 3, "each piece in one run: {:?} (frame {frame})", s.job.order.iter().map(piece).collect::<String>());
+}
+
+#[test]
+fn on_a_laser_layer_a_piece_is_cut_out_last() {
+    let (mut s, _) = session(&home("pieces-laser"));
+    let (_, a, b) = two_pieces(&mut s);
+    let lid = s.job.layers[0].id.clone();
+    s.handle("update_layer", &json!({"id": lid, "fields": {"needle": 3}})).unwrap();
+    s.handle("best_order_all", &json!({})).unwrap();
+    for piece in [&a, &b] {
+        let at: Vec<usize> = piece.iter().map(|i| s.job.order.iter().position(|o| o == i).unwrap()).collect();
+        assert!(at[1..].iter().all(|&k| k < at[0]), "the cut line {} comes after {:?}: {:?}", piece[0], &piece[1..], s.job.order);
+    }
+}
+
+#[test]
+fn making_a_layer_laser_with_laser_last_moves_it_after_the_sewing_in_one_undo_step() {
+    let (mut s, _) = session(&home("laser-last"));
+    let (a, l1) = add_line(&mut s);
+    s.handle("add_layer", &json!({})).unwrap();
+    let l2 = s.job.layers.last().unwrap().id.clone();
+    let b = s.handle("add_shape", &json!({"kind": "line", "x": 0, "y": 50, "size": 25, "layer": l2})).unwrap()["new_id"].as_i64().unwrap();
+    // the first layer becomes the laser one: it goes after the sewing layer
+    s.handle("update_layer", &json!({"id": l1, "fields": {"needle": 3, "color": "#ff3b30"}, "laser_last": true})).unwrap();
+    let ids: Vec<&str> = s.job.layers.iter().map(|l| l.id.as_str()).collect();
+    assert_eq!(ids, vec![l2.as_str(), l1.as_str()]);
+    assert_eq!(s.job.order, vec![b, a]);
+    assert_eq!(s.job.layer(&l1).unwrap().color, "#ff3b30");
+    // already in place: nothing more moves, and no error
+    s.handle("update_layer", &json!({"id": l2, "fields": {"needle": 1}, "laser_last": true})).unwrap();
+    assert_eq!(s.job.order, vec![b, a]);
+    s.handle("undo", &json!({})).unwrap();
+    s.handle("undo", &json!({})).unwrap();
+    assert_eq!(s.job.order, vec![a, b]);
+    assert_eq!(s.job.layers[0].id, l1);
+}
+

@@ -41,6 +41,8 @@ const FETCH_SHIM: &str = r#"
       return reply(JSON.stringify({ error: err.error || 'Something went wrong.' }), err.status || 500);
     }
   };
+  // never show WebView2's own right-click menu (Back, Refresh, Save as, Inspect...); the UI opens its own menus
+  window.addEventListener('contextmenu', e => e.preventDefault());
 })();
 "#;
 

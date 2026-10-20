@@ -670,7 +670,14 @@ impl Session {
                     Value::Object(m) => m.clone(),
                     _ => return Err(Error::Unexpected("fields must be a dict".into())),
                 };
-                ops::update_layer(j, &id, &fields)?
+                ops::update_layer(j, &id, &fields)?;
+                // the window's Sewing / Laser cut: the laser layers then go last, in the same undo step
+                if a.get("laser_last").and_then(Value::as_bool).unwrap_or(false) {
+                    match ops::sew_then_laser(j) {
+                        Ok(()) | Err(Error::Op(_)) => {} // already sewing first and laser last
+                        Err(e) => return Err(e),
+                    }
+                }
             }
             "copy_layer_settings" => ops::copy_layer_settings(j, &str_arg(a, "id")?)?,
             "delete_layer" => ops::delete_layer(j, &str_arg(a, "id")?)?,
@@ -724,6 +731,14 @@ impl Session {
                 ops::sort_order(j, &dir, f(a, "spacing", 10.0)?, py::truthy(a.get("by_end")))?
             }
             "nearest" => ops::nearest_order(j)?,
+            "best_order_all" => {
+                let (before, after) = ops::best_order_all(j)?;
+                return msg(format!("Best sewing order: travel cut from {:.0} mm to {:.0} mm", before, after));
+            }
+            "best_order" => {
+                let (before, after) = ops::best_order_in_layer(j, &str_arg(a, "id")?)?;
+                return msg(format!("Best sewing order: travel cut from {:.0} mm to {:.0} mm", before, after));
+            }
             "laser_fix" => {
                 let id = str_arg(a, "id")?;
                 let tol = match a.get("tol") {
@@ -737,6 +752,10 @@ impl Session {
                 ));
             }
             "order_by_group" => ops::order_by_group(j)?,
+            "sew_then_laser" => {
+                ops::sew_then_laser(j)?;
+                return msg("Sewing first, then the laser".into());
+            }
             "insert_instruction" => {
                 let before = a.get("before").cloned().unwrap_or(json!("end"));
                 let name = str_arg(a, "name")?;
@@ -777,6 +796,13 @@ impl Session {
                 return Ok(self.with_message(st, None));
             }
             "ping" => return Ok(json!({"ok": true})),
+            // what the best order would save, worked out on a copy (the sequence window suggests it)
+            "best_order_preview" => {
+                let mut j = self.job.clone();
+                let travel = ops::travel(&j);
+                let best = ops::best_order_all(&mut j).map(|(_, a)| a).unwrap_or(travel);
+                return Ok(json!({"travel": travel, "best": best}));
+            }
             "home" => return Ok(self.home()),
             "preview" => return Ok(preview_file(&str_arg(a, "path")?, self.dpi())),
             "forget_recent" => {
