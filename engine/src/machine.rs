@@ -108,12 +108,10 @@ pub fn decode_records(body: &[u8]) -> Vec<Record> {
         off += 16;
         match key {
             None => {
-                let code = ((r[0] as u16) << 8) | r[1] as u16;
-                let w1 = ((r[2] as u16) << 8) | r[3] as u16;
-                let (d4, d8, d12) = (unswap_dword(&r[4..8]), unswap_dword(&r[8..12]), unswap_dword(&r[12..16]));
-                out.push((code, w1, d4, d8, d12));
-                if code == 0x33 {
-                    key = Some(key_from_rec33(d4, d8));
+                let rec = be_record(r);
+                out.push(rec);
+                if rec.0 == 0x33 {
+                    key = Some(key_from_rec33(rec.2, rec.3));
                 }
             }
             Some(kv) => {
@@ -127,6 +125,138 @@ pub fn decode_records(body: &[u8]) -> Vec<Record> {
         }
     }
     out
+}
+
+/// A record stored big-endian, as before the 0x33 record.
+fn be_record(r: &[u8]) -> Record {
+    let code = ((r[0] as u16) << 8) | r[1] as u16;
+    let w1 = ((r[2] as u16) << 8) | r[3] as u16;
+    (code, w1, unswap_dword(&r[4..8]), unswap_dword(&r[8..12]), unswap_dword(&r[12..16]))
+}
+
+// ------------------------------------------------------------------ files from newer Sew_Soft versions
+
+/// Newer Sew_Soft versions mark their 0x33 record with `w1 = d12 ^ 0x47AB` instead of `d12 = d4 ^ d8 ^ 0x9672A1D6`.
+/// After it the records stay big-endian, and every byte is XORed with a key byte that changes every X bytes
+/// (X depends on the file, e.g. 1128 or 5275), cycling through these 16 values XORed with a per-file constant.
+/// The key schedule itself is not known, so it is measured from the file: the w1 word of almost every record
+/// is 0, so its two bytes show the key.
+const SEG_KEYS: [u8; 16] = [0x90, 0x85, 0x9F, 0xB8, 0xBD, 0x99, 0x9E, 0xC0, 0xA4, 0xB3, 0xD1, 0x81, 0xB9, 0x18, 0x06, 0x93];
+
+/// Records of an SLW body (after the outer container), in either the 180112 format or the newer one.
+pub fn read_records(body: &[u8]) -> Vec<Record> {
+    let recs = decode_records(body);
+    let Some(i33) = recs.iter().position(|r| r.0 == 0x33) else { return recs };
+    let (_, w1, d4, d8, d12) = recs[i33];
+    if d4 ^ d8 ^ 0x9672A1D6 == d12 || (d12 as u16) ^ 0x47AB != w1 {
+        return recs;
+    }
+    let start = (i33 + 1) * 16;
+    let end = body.len() / 16 * 16;
+    let plain = |keys: &dyn Fn(usize) -> u8| -> Vec<Record> {
+        let mut b = body[..end].to_vec();
+        for (p, v) in b.iter_mut().enumerate().skip(start) {
+            *v ^= keys(p - start);
+        }
+        b.chunks_exact(16).map(be_record).collect()
+    };
+
+    // the code's high byte and the w1 bytes are mostly 0, so two of them that agree show the key;
+    // runs of records with the same key, where short runs are stray non-zero bytes
+    let mut runs: Vec<(usize, usize, u8, usize)> = vec![]; // first byte, last byte, key, probes
+    for p in (start..end).step_by(16) {
+        let (b0, b2, b3) = (body[p], body[p + 2], body[p + 3]);
+        let (first, last, k) = if b2 == b3 {
+            (p + 2, p + 3, b2)
+        } else if b0 == b3 {
+            (p, p + 3, b0)
+        } else if b0 == b2 {
+            (p, p + 2, b0)
+        } else {
+            continue;
+        };
+        match runs.last_mut() {
+            Some(r) if r.2 == k => {
+                r.1 = last;
+                r.3 += 1;
+            }
+            _ => runs.push((first, last, k, 1)),
+        }
+    }
+    let mut segs: Vec<(usize, usize, u8)> = vec![];
+    for r in runs.into_iter().filter(|r| r.3 >= 4) {
+        match segs.last_mut() {
+            Some(s) if s.2 == r.2 => s.1 = r.1,
+            _ => segs.push((r.0, r.1, r.2)),
+        }
+    }
+    let Some(&(_, _, k0)) = segs.first() else { return recs };
+    if segs.len() == 1 {
+        return plain(&|_| k0);
+    }
+
+    // the key of segment j: from the 16-value cycle when the file follows it, else as measured
+    let vals: Vec<u8> = segs.iter().map(|s| s.2).collect();
+    let cycle = (0..16).find(|&s| vals.iter().enumerate().all(|(j, &v)| v == SEG_KEYS[(s + j) % 16] ^ SEG_KEYS[s] ^ k0));
+    let key_of = |j: usize| match cycle {
+        Some(s) => SEG_KEYS[(s + j) % 16] ^ SEG_KEYS[s] ^ k0,
+        None => vals[j.min(vals.len() - 1)],
+    };
+
+    // boundary j (1-based) lies at offset j*X - q0 from `start`; each run pair bounds it
+    let iv: Vec<(i64, i64)> = (1..segs.len()).map(|j| ((segs[j - 1].1 + 1 - start) as i64, (segs[j].0 - start) as i64)).collect();
+    let mut cands: Vec<(i64, i64)> = vec![];
+    if iv.len() == 1 {
+        cands.extend((iv[0].0..=iv[0].1).map(|q| (q, 0)));
+    } else {
+        let (first, last, n) = (iv[0], iv[iv.len() - 1], iv.len() as i64 - 1);
+        let xlo = (last.0 - first.1 + n - 1).div_euclid(n);
+        let xhi = (last.1 - first.0).div_euclid(n);
+        for x in xlo.max(1)..=xhi {
+            let (mut lo, mut hi) = (i64::MIN, i64::MAX);
+            for (j, &(a, b)) in iv.iter().enumerate() {
+                let jx = (j as i64 + 1) * x;
+                lo = lo.max(jx - b);
+                hi = hi.min(jx - a);
+            }
+            cands.extend((lo..=hi).map(|q0| (x, q0)));
+            if cands.len() > 400 {
+                break;
+            }
+        }
+    }
+    let decode_with = |x: i64, q0: i64| plain(&|q| key_of((q as i64 + q0).div_euclid(x).max(0) as usize));
+    let best = cands.iter().map(|&(x, q0)| (implausibility(&decode_with(x, q0)[i33 + 1..]), x, q0)).min();
+    match best {
+        Some((_, x, q0)) => decode_with(x, q0),
+        // no steady segment length: switch keys where the next run starts
+        None => plain(&|q| key_of(iv.iter().take_while(|&&(_, b)| q as i64 >= b).count())),
+    }
+}
+
+/// How unlikely decoded records are: unknown codes, coordinates out of range, and points that stick out of
+/// the line through their neighbours (a byte decoded with the wrong key moves a point by 0.25 mm or more).
+fn implausibility(recs: &[Record]) -> i64 {
+    const FAR: i64 = 1_000_000;
+    let mut bad = 0;
+    let mut pts: Vec<(i64, i64)> = vec![];
+    for &(code, w1, d4, d8, _) in recs {
+        if code > 0xFF && code >> 8 != 0x75 {
+            bad += FAR;
+        } else if matches!(code, 0x1E | 0x34 | 0x35 | 0x7595) || (code == 0x43 && w1 == 0) {
+            let (x, y) = (s32(d4), s32(d8));
+            if x.abs() > 10_000_000 || y.abs() > 10_000_000 {
+                bad += FAR;
+            } else {
+                pts.push((x, y));
+            }
+        }
+    }
+    for w in pts.windows(3) {
+        let (dx, dy) = (2 * w[1].0 - w[0].0 - w[2].0, 2 * w[1].1 - w[0].1 - w[2].1);
+        bad += (dx.abs() + dy.abs()).min(FAR);
+    }
+    bad
 }
 
 pub fn s32(v: u32) -> i64 {
@@ -623,7 +753,7 @@ pub fn read_slw(data: &[u8]) -> Result<Vec<crate::importers::RawPath>, String> {
         return Err("This file is too short to be a machine file.".into());
     }
     let body = slw_container::decode(data)?;
-    let recs = decode_records(&body);
+    let recs = read_records(&body);
     if recs.is_empty() || recs[0].0 != 0 || !recs.iter().any(|r| r.0 == 0x33) {
         return Err("This is not an SLW machine file.".into());
     }
@@ -644,10 +774,21 @@ pub fn read_slw(data: &[u8]) -> Result<Vec<crate::importers::RawPath>, String> {
                 cur = vec![];
                 sewing = false;
             }
-        } else if code == 0x34 || code == 0x35 {
+        } else if code == 0x34 || code == 0x35 || code == 0x1E {
+            // 0x1E: the newer versions' 0x35
             if sewing {
                 cur.push(p);
+            } else if cur.len() > 1 {
+                // a move ends a run of 0x7595 stitches
+                out.push(RawPath { layer: "Layer1".into(), pts: std::mem::take(&mut cur), closed: false });
             }
+            last = Some(p);
+        } else if code == 0x7595 {
+            // newer versions: a stitch that is sewn without a 0x43 before it
+            if cur.is_empty() {
+                cur = last.map(|l| vec![l]).unwrap_or_default();
+            }
+            cur.push(p);
             last = Some(p);
         } else if code == 0x01 {
             break;

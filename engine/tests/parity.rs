@@ -244,3 +244,40 @@ fn reads_back_the_reference_file() {
     let paths = machine::read_slw(&data).unwrap();
     assert_eq!(paths.len(), 3, "test_machine.py reads back 3 sewn paths");
 }
+
+/// A reference file rewritten the way newer Sew_Soft versions store records: big-endian after the 0x33
+/// record too, with every byte XORed by a key byte that changes every `x` bytes (offset `q0`), cycling
+/// through 16 values. These files must open as the same drawing.
+fn as_newer_version(data: &[u8], x: usize, q0: usize, s: usize, c: u8) -> Vec<u8> {
+    const KEYS: [u8; 16] = [0x90, 0x85, 0x9F, 0xB8, 0xBD, 0x99, 0x9E, 0xC0, 0xA4, 0xB3, 0xD1, 0x81, 0xB9, 0x18, 0x06, 0x93];
+    let recs = machine::decode_records(&slw_container::decode(data).unwrap());
+    let i33 = recs.iter().position(|r| r.0 == 0x33).unwrap();
+    let mut body = vec![];
+    for (i, &(code, w1, d4, d8, d12)) in recs.iter().enumerate() {
+        let (w1, d4, d8, d12) = if i == i33 { (0xA226 ^ 0x47AB, 0x16FE_ABCD, 0x0055_6776, 0xBC82_A226) } else { (w1, d4, d8, d12) };
+        body.extend_from_slice(&code.to_be_bytes());
+        body.extend_from_slice(&w1.to_be_bytes());
+        for v in [d4, d8, d12] {
+            body.extend_from_slice(&[(v >> 8) as u8, v as u8, (v >> 24) as u8, (v >> 16) as u8]);
+        }
+    }
+    let start = (i33 + 1) * 16;
+    for (q, b) in body[start..].iter_mut().enumerate() {
+        *b ^= KEYS[(s + (q + q0) / x) % 16] ^ c;
+    }
+    let (header, scrambled) = slw_container::encode(&body).unwrap();
+    [header.to_vec(), scrambled].concat()
+}
+
+#[test]
+fn reads_files_of_newer_versions() {
+    for name in ["p3_circles_arcs.slw", "p2_polylines.stitch.slw", "p9_exported_plt.slw"] {
+        let data = std::fs::read(rebuild().join("reference").join("parity").join(name)).unwrap();
+        let want: Vec<_> = machine::read_slw(&data).unwrap().into_iter().map(|p| (p.pts, p.closed)).collect();
+        for (x, q0, s, c) in [(1128, 4, 0, 0x00), (300, 7, 5, 0x5A), (517, 0, 11, 0xC3), (1_000_000, 0, 2, 0x11)] {
+            let newer = as_newer_version(&data, x, q0, s, c);
+            let got: Vec<_> = machine::read_slw(&newer).unwrap().into_iter().map(|p| (p.pts, p.closed)).collect();
+            assert_eq!(got, want, "{} with segments of {} bytes", name, x);
+        }
+    }
+}
