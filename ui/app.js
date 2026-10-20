@@ -1177,7 +1177,6 @@
      for overlap; shapes not sewn yet are dimmed. Leader lines are drawn first so they never cross a number */
   function classicNumbers() {
     ctx.font = '700 14px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.lineJoin = 'round'; ctx.lineWidth = 4;
     const RINGS = [12, 20, 30, 42, 56, 72], DIRS = [[-1, -1], [0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0]];
     const placed = [], marks = [], h = 16;
     for (const { s, n } of orderList()) {
@@ -1214,6 +1213,7 @@
         ctx.beginPath(); ctx.arc(m.ax, m.ay, 2, 0, 7); ctx.fill();
       }
     }
+    ctx.lineJoin = 'round'; ctx.lineWidth = 4;
     for (const m of marks) {
       ctx.globalAlpha = m.sewn ? 1 : .45;
       ctx.strokeStyle = colors.canvas; ctx.strokeText(m.t, m.c[0], m.c[1]);
