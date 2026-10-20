@@ -581,7 +581,7 @@
     sequence: () => {
       const all = S.job.order.map(shapeById).filter(Boolean);
       return {
-        title: 'Sewing order', sub: 'Drag to reorder. Point at a shape to see its number and the shapes sewn before and after it.',
+        title: 'Sewing order', sub: 'Drag to reorder.',
         body: `
           <div class="sec plain"><div class="sec-body">
             <ol class="order" id="order">${all.map((s, i) => `<li draggable="true" data-id="${s.id}" class="${sel.has(s.id) ? 'sel' : ''}" style="${isSewn(s) ? '' : 'opacity:.45'}"><span class="badge" style="background:${esc(layerOf(s).color)};color:${inkOn(layerOf(s).color)}">${i + 1}</span>${thumb(s.pts, s.closed)}<span class="nm">${esc(nameOf(s))}</span><span class="mono" style="color:var(--fg-3);font-size:11px">${esc(layerOf(s).name)}</span></li>`).join('')}</ol>
@@ -1139,66 +1139,87 @@
     }
     return out;
   }
-  /* sewing order on the drawing, in two styles. 'classic' (Sew_Soft): every number in bold next to its shape's start point
+  /* sewing order on the drawing, in two styles. 'classic' (Sew_Soft): every number next to its shape's start point
      (classicNumbers). 'badges': numbers would pile up where pieces start close together, so each badge looks for a free
-     spot around its start point and is left out when there is none; the shape under the pointer (or the selection)
-     always shows its number, those of the shapes sewn just before and after it. Both draw the travel moves between them */
+     spot around its start point and is left out when there is none. Both draw the travel moves between them as thin dashed lines */
   function drawOrder() {
     const items = [];
     orderList().forEach(({ s, n }) => {
       const st = isSewn(s) && S.stitched[s.id];
       if (st && st.p.length) items.push({ id: s.id, n, a: [sx(st.p[0]), sy(st.p[1])], z: [sx(st.p.at(-2)), sy(st.p.at(-1))] });
     });
-    const focus = new Set(hoverId != null ? [hoverId] : sel.size <= 3 ? sel : []);   // a big selection would bring the pile back
-    // travel moves: quiet dashed lines, the ones next to the focused shape solid with an arrow
+    // travel moves: quiet dashed lines from the end of one shape to the start of the next
+    ctx.strokeStyle = colors['fg-3']; ctx.globalAlpha = .5; ctx.lineWidth = 1; ctx.setLineDash([3, 4]);
     items.forEach((it, i) => {
       if (!i) return;
-      const [x0, y0] = items[i - 1].z, [x1, y1] = it.a, on = focus.has(it.id) || focus.has(items[i - 1].id);
-      ctx.strokeStyle = on ? colors.accent : colors['fg-3']; ctx.globalAlpha = on ? 1 : (focus.size ? .25 : .5);
-      ctx.lineWidth = on ? 1.5 : 1; ctx.setLineDash(on ? [] : [3, 4]);
-      ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke(); ctx.setLineDash([]);
-      if (on && Math.hypot(x1 - x0, y1 - y0) > 40) {
-        const ang = Math.atan2(y1 - y0, x1 - x0), mx = (x0 + x1) / 2, my = (y0 + y1) / 2;
-        ctx.fillStyle = colors.accent; ctx.beginPath(); ctx.moveTo(mx + Math.cos(ang) * 6, my + Math.sin(ang) * 6);
-        ctx.lineTo(mx + Math.cos(ang + 2.4) * 6, my + Math.sin(ang + 2.4) * 6); ctx.lineTo(mx + Math.cos(ang - 2.4) * 6, my + Math.sin(ang - 2.4) * 6); ctx.fill();
-      }
+      const [x0, y0] = items[i - 1].z, [x1, y1] = it.a;
+      ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
     });
-    ctx.globalAlpha = 1;
-    if (orderStyle === 'classic') return classicNumbers(focus);
-    const near = new Set();
-    items.forEach((it, i) => { if (focus.has(it.id)) { near.add(i); if (i) near.add(i - 1); if (i + 1 < items.length) near.add(i + 1); } });
-    // badges: the focused shape and its neighbours first, so they always find a place
+    ctx.setLineDash([]); ctx.globalAlpha = 1;
+    if (orderStyle === 'classic') return classicNumbers();
+    // badges: every badge has the same rank, so they are placed in sewing order
     const OFF = [[-12, -12], [12, -12], [-12, 12], [12, 12], [0, -17], [17, 0], [0, 17], [-17, 0]];
-    const placed = [], rank = i => focus.has(items[i].id) ? 0 : near.has(i) ? 1 : 2;
-    const idx = items.map((_, i) => i).sort((p, q) => rank(p) - rank(q) || p - q);
+    const placed = [], r = 9;
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    for (const i of idx) {
-      const it = items[i], big = rank(i) === 0, r = big ? 11 : 9;
+    for (const it of items) {
       const free = ([dx, dy]) => placed.every(([X, Y, R]) => Math.hypot(it.a[0] + dx - X, it.a[1] + dy - Y) > r + R + 2);
-      const off = OFF.find(free) || (rank(i) < 2 ? OFF[0] : null);
+      const off = OFF.find(free);
       if (!off) continue;
       const X = it.a[0] + off[0], Y = it.a[1] + off[1];
       placed.push([X, Y, r]);
-      ctx.globalAlpha = focus.size && rank(i) === 2 ? .3 : 1;
-      ctx.fillStyle = big ? colors.accent : colors.fg; ctx.beginPath(); ctx.arc(X, Y, r, 0, 7); ctx.fill();
-      ctx.fillStyle = colors.canvas; ctx.font = `600 ${big ? 12 : 11}px system-ui`; ctx.fillText(String(it.n), X, Y + .5);
+      ctx.fillStyle = colors.fg; ctx.beginPath(); ctx.arc(X, Y, r, 0, 7); ctx.fill();
+      ctx.fillStyle = colors.canvas; ctx.font = '600 11px system-ui'; ctx.fillText(String(it.n), X, Y + .5);
     }
-    ctx.globalAlpha = 1; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
   }
-  /* the classic numbers: bold plain text up and left of each shape's start point, a canvas-coloured outline under it so it
-     reads over the lines. Every shape gets one and none is left out for overlap; shapes not sewn yet are dimmed */
-  function classicNumbers(focus) {
-    ctx.font = '700 12px system-ui'; ctx.textAlign = 'right'; ctx.textBaseline = 'alphabetic';
-    ctx.lineJoin = 'round'; ctx.lineWidth = 3;
+  /* the classic numbers: bold text in a canvas-coloured outline, each one in a free box next to its shape's start point,
+     moved out on a ring (with a leader line) when the spot next to it is taken. Every shape gets one and none is left out
+     for overlap; shapes not sewn yet are dimmed. Leader lines are drawn first so they never cross a number */
+  function classicNumbers() {
+    ctx.font = '700 14px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.lineJoin = 'round'; ctx.lineWidth = 4;
+    const RINGS = [12, 20, 30, 42, 56, 72], DIRS = [[-1, -1], [0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0]];
+    const placed = [], marks = [], h = 16;
     for (const { s, n } of orderList()) {
       const st = isSewn(s) && S.stitched[s.id], sewn = !!(st && st.p.length);
       const p = sewn ? [st.p[0], st.p[1]] : s.pts[0];
-      const X = sx(p[0]) - 6, Y = sy(p[1]) - 6, t = String(n);
-      ctx.globalAlpha = sewn ? 1 : .45;
-      ctx.strokeStyle = colors.canvas; ctx.strokeText(t, X, Y);
-      ctx.fillStyle = focus.has(s.id) ? colors.accent : colors.fg; ctx.fillText(t, X, Y);
+      const ax = sx(p[0]), ay = sy(p[1]), t = String(n), w = ctx.measureText(t).width + 4;
+      const fits = ([cx, cy]) => cx - w / 2 >= 0 && cx + w / 2 <= W && cy - h / 2 >= 0 && cy + h / 2 <= H;
+      const free = ([cx, cy]) => placed.every(([X, Y, PW, PH]) => Math.abs(cx - X) >= (w + PW) / 2 + 2 || Math.abs(cy - Y) >= (h + PH) / 2 + 2);
+      let c = null, last = null;
+      for (const r of RINGS) {
+        const cands = DIRS.map(([dx, dy]) => { const k = dx && dy ? Math.SQRT1_2 : 1; return [ax + dx * k * r, ay + dy * k * r]; }).filter(fits);
+        if (!cands.length) continue;
+        last = cands[0];
+        c = cands.find(free);
+        if (c) break;
+      }
+      if (!c) c = last || [Math.min(Math.max(ax, w / 2), W - w / 2), Math.min(Math.max(ay, h / 2), H - h / 2)];   // never skip a number
+      placed.push([c[0], c[1], w, h]);
+      let lead = null;
+      if (Math.hypot(c[0] - ax, c[1] - ay) > 16) {
+        // the leader ends on the box edge, on the line from the box centre to the anchor
+        const dx = c[0] - ax, dy = c[1] - ay;
+        const k = Math.min(Math.abs(dx) ? (w / 2) / Math.abs(dx) : Infinity, Math.abs(dy) ? (h / 2) / Math.abs(dy) : Infinity);
+        lead = [ax, ay, c[0] - dx * k, c[1] - dy * k];
+      }
+      marks.push({ s, t, sewn, c, ax, ay, lead });
     }
-    ctx.globalAlpha = 1; ctx.textAlign = 'left'; ctx.lineWidth = 1;
+    // leader lines and anchor dots first, then the numbers, so a line never crosses over a number
+    ctx.strokeStyle = colors['fg-3']; ctx.fillStyle = colors['fg-3'];
+    for (const m of marks) {
+      ctx.globalAlpha = (m.sewn ? 1 : .45) * .7;
+      if (m.lead) {
+        ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(m.lead[0], m.lead[1]); ctx.lineTo(m.lead[2], m.lead[3]); ctx.stroke();
+        ctx.beginPath(); ctx.arc(m.ax, m.ay, 2, 0, 7); ctx.fill();
+      }
+    }
+    for (const m of marks) {
+      ctx.globalAlpha = m.sewn ? 1 : .45;
+      ctx.strokeStyle = colors.canvas; ctx.strokeText(m.t, m.c[0], m.c[1]);
+      ctx.fillStyle = sel.has(m.s.id) ? colors.accent : colors.fg; ctx.fillText(m.t, m.c[0], m.c[1]);
+    }
+    ctx.globalAlpha = 1; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; ctx.lineWidth = 1;
   }
 
   /* selection tools: black arrow (tool 'select', V) moves and resizes whole shapes inside a bounding box;

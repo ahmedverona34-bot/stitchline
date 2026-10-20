@@ -192,7 +192,7 @@
     'Use these settings for every layer': 'استخدم الإعدادات دي لكل الطبقات', 'Continue to Sequence': 'متابعة إلى التسلسل',
     'origin bottom-left': 'الأصل تحت شمال', 'origin bottom-right': 'الأصل تحت يمين', 'origin top-left': 'الأصل فوق شمال', 'origin top-right': 'الأصل فوق يمين', 'off': 'مقفول',
     // ---------------------------------------------------------------- sequence
-    'Sewing order': 'ترتيب الخياطة', 'Drag to reorder. Point at a shape to see its number and the shapes sewn before and after it.': 'اسحب لتغيير الترتيب. أشِر إلى أي شكل لترى رقمه والشكلين اللذين يُخاطان قبله وبعده.',
+    'Sewing order': 'ترتيب الخياطة', 'Drag to reorder.': 'اسحب لتغيير الترتيب.',
     'Sort automatically': 'ترتيب تلقائي', 'rows': 'صفوف', 'Layer by layer (follow the layer list)': 'طبقة بطبقة (حسب ترتيب الطبقات)',
     'Sews each layer completely before the next one, e.g. all sewing first and the laser cut layer last. Move a layer up or down by right-clicking it.':
       'يخلّص كل طبقة بالكامل قبل اللي بعدها، مثلاً الخياطة كلها الأول وطبقة القص بالليزر في الآخر. حرّك الطبقة لفوق أو لتحت بكليك يمين عليها.',
