@@ -1540,12 +1540,20 @@
     cancelAnimationFrame(sim.raf);
     sim.raf = requestAnimationFrame(now => {
       if (!sim.playing) return;
-      const dt = Math.max(0, Math.min(0.1, (now - sim.last) / 1000)); sim.last = now;
-      const i = Math.floor(sim.pos), a = sim.seq[i - 1], b = sim.seq[i];
-      let rate = (J().speed || 1800) / 60 * SIM_BASE * sim.speed;   // needle: stitches per second
-      // the laser's points are the line's corners, not stitches: it covers the same millimetres per second as the needle
-      if (a && b && b[4] && !b[2]) rate *= sim.mmPerStitch / Math.max(0.05, Math.hypot(b[0] - a[0], b[1] - a[1]));
-      sim.pos = Math.min(sim.seq.length, sim.pos + dt * rate);
+      let dt = Math.max(0, Math.min(0.1, (now - sim.last) / 1000)); sim.last = now;
+      const base = (J().speed || 1800) / 60 * SIM_BASE * sim.speed;   // needle: stitches per second
+      // the frame's time is spent segment by segment, each at its own rate, so a short segment's rate never carries
+      // the head along the next (long) one
+      while (dt > 0 && sim.pos < sim.seq.length) {
+        const i = Math.floor(sim.pos), a = sim.seq[i - 1], b = sim.seq[i];
+        let rate = base;
+        // the laser's points are the line's corners, not stitches: it covers the same millimetres per second as the needle
+        if (a && b && b[4] && !b[2]) rate *= sim.mmPerStitch / Math.max(0.05, Math.hypot(b[0] - a[0], b[1] - a[1]));
+        const left = (i + 1 - sim.pos) / rate;
+        if (left > dt) { sim.pos += dt * rate; break; }
+        sim.pos = i + 1; dt -= left;
+      }
+      sim.pos = Math.min(sim.seq.length, sim.pos);
       if (sim.pos >= sim.seq.length) sim.playing = false;          // the end: the window stays open on the finished job
       syncSim(); simPaint();
       if (sim.playing) loop();
@@ -1678,6 +1686,10 @@
     c.stroke(); c.globalAlpha = 1;
     const n = Math.floor(sim.pos);
     const frac = Math.min(1, sim.pos - n);
+    // the head moves smoothly towards the next point
+    const nx = sim.seq[n], onSeg = n > 0 && nx && !nx[2] && frac > 0;
+    let [x, y, , , onLaser] = sim.seq[Math.max(0, n - 1)];
+    if (onSeg) { x += (nx[0] - x) * frac; y += (nx[1] - y) * frac; }
     // sewn thread, laser cuts and travel moves so far; a run of the same kind and colour is one stroke
     let kind = null, col = null, path = null;
     const flush = () => {
@@ -1691,12 +1703,14 @@
       if (kd !== kind) { flush(); kind = kd; col = q[3]; path = new Path2D(); path.moveTo(SX(p[0]), SY(p[1])); }
       path.lineTo(SX(q[0]), SY(q[1]));
     }
+    // the segment the head is on is drawn up to the head, so the line keeps up with it (a laser segment can be long)
+    if (onSeg) {
+      const p = sim.seq[n - 1], kd = 'S' + nx[3];
+      if (kd !== kind) { flush(); kind = kd; col = nx[3]; path = new Path2D(); path.moveTo(SX(p[0]), SY(p[1])); }
+      path.lineTo(SX(x), SY(y));
+    }
     flush();
     if (!n) return;
-    // the head moves smoothly towards the next point
-    let [x, y, , , onLaser] = sim.seq[n - 1];
-    const nx = sim.seq[n];
-    if (nx && !nx[2]) { x += (nx[0] - x) * frac; y += (nx[1] - y) * frac; }
     const X = SX(x), Y = SY(y), lc = onLaser ? ink(sim.seq[n - 1][3]) : null;
     // the head: a ring and a point, thread-coloured for the needle and in the layer's colour for the laser
     c.globalAlpha = onLaser ? 0.25 : 1; c.fillStyle = onLaser ? lc : colors['thread-soft']; c.beginPath(); c.arc(X, Y, 11, 0, 7); c.fill(); c.globalAlpha = 1;

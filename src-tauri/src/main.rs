@@ -241,6 +241,8 @@ fn main() {
                 .inner_size(1480.0, 920.0)
                 .min_inner_size(900.0, 600.0)
                 .center()
+                // open full screen (the size above is what Restore goes back to)
+                .maximized(true)
                 // the UI draws its own title bar (top bar + window buttons), in the app's colours
                 .decorations(false)
                 .initialization_script(FETCH_SHIM)
