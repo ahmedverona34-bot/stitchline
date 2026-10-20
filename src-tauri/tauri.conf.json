@@ -19,10 +19,20 @@
     "shortDescription": "Stitchline pattern sewing",
     "longDescription": "Stitchline: open drawings, set up stitches and laser cuts, and save SLW machine files.",
     "icon": ["icons/icon.ico", "icons/icon.png"],
+    "resources": { "icons/project.ico": "project.ico" },
+    "fileAssociations": [
+      {
+        "ext": ["stitchline"],
+        "name": "Stitchline.Project",
+        "description": "Stitchline project",
+        "role": "Editor"
+      }
+    ],
     "windows": {
       "nsis": {
         "installMode": "currentUser",
         "installerIcon": "icons/icon.ico",
+        "installerHooks": "windows/hooks.nsh",
         "languages": ["Arabic", "English"],
         "displayLanguageSelector": true
       }

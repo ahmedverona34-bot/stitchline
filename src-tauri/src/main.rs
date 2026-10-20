@@ -265,6 +265,31 @@ fn on_close_requested(app: &AppHandle, api: &tauri::CloseRequestApi) {
     }
 }
 
+/// The file Stitchline was started with (a project double-clicked in Explorer, "Open with"): the first argument
+/// that is a file, relative paths taken from `cwd`.
+fn file_arg(args: &[String], cwd: &str) -> Option<String> {
+    args.iter().skip(1).filter(|a| !a.starts_with('-')).map(|a| PathBuf::from(cwd).join(a)).find(|p| p.is_file()).map(|p| p.to_string_lossy().into_owned())
+}
+
+/// The start-up file, until the UI takes it (once: a language switch reloads the page and must not open it again).
+struct Launch(Mutex<Option<String>>);
+
+#[tauri::command]
+fn launch_file(app: AppHandle) -> Option<String> {
+    app.state::<Launch>().0.lock().unwrap_or_else(|e| e.into_inner()).take()
+}
+
+/// Another Stitchline was started while this one is open (a second file double-clicked): bring this window up
+/// and open the file here, so two windows never share one autosave.
+fn second_instance(app: &AppHandle, args: Vec<String>, cwd: String) {
+    let Some(w) = app.get_webview_window("main") else { return };
+    let _ = w.unminimize();
+    let _ = w.set_focus();
+    if let Some(p) = file_arg(&args, &cwd) {
+        let _ = w.eval(format!("window.__stitchlineOpen && window.__stitchlineOpen({})", json!(p)));
+    }
+}
+
 fn percent_decode(s: &str) -> String {
     let b = s.as_bytes();
     let mut out = Vec::with_capacity(b.len());
@@ -284,11 +309,19 @@ fn percent_decode(s: &str) -> String {
 }
 
 fn main() {
-    tauri::Builder::default()
+    let args: Vec<String> = std::env::args().collect();
+    let cwd = std::env::current_dir().map(|d| d.to_string_lossy().into_owned()).unwrap_or_default();
+    let mut builder = tauri::Builder::default();
+    // tests (STITCHLINE_HOME) run beside an installed Stitchline that may be open
+    if std::env::var_os("STITCHLINE_HOME").is_none() {
+        builder = builder.plugin(tauri_plugin_single_instance::init(second_instance));
+    }
+    builder
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(Updates::default())
-        .invoke_handler(tauri::generate_handler![api, upload, quit, set_zoom, window_ctl, update_check, update_install, update_progress])
+        .manage(Launch(Mutex::new(file_arg(&args, &cwd))))
+        .invoke_handler(tauri::generate_handler![api, upload, quit, set_zoom, window_ctl, update_check, update_install, update_progress, launch_file])
         .on_window_event(|window, event| {
             if let WindowEvent::CloseRequested { api, .. } = event {
                 on_close_requested(window.app_handle(), api);
