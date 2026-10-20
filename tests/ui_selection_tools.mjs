@@ -77,6 +77,11 @@ function pickPoint(shapes, s) {
 }
 
 // ---------------------------------------------------------------- run
+// these tools are in the advanced mode (a fresh profile starts in the simple one)
+if (await js(`localStorage.getItem('stl.simple')`) !== 'false') {
+  await js(`localStorage.setItem('stl.simple', 'false'); location.reload()`).catch(() => {});
+  await sleep(3000);
+}
 const b64 = fs.readFileSync(file).toString('base64');
 await js(`(() => { const bin = atob(${JSON.stringify(b64)}); const u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
   const dt = new DataTransfer(); dt.items.add(new File([u], ${JSON.stringify(path.basename(file))})); window.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true })); })()`);

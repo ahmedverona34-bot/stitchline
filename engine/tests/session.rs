@@ -367,3 +367,23 @@ fn copying_a_sewing_layers_settings_leaves_laser_layers_alone_in_one_undo_step()
     assert_eq!(s.job.layer(&other).unwrap().settings, other_before);
     assert_eq!(s.job.layer(&sew).unwrap().settings["stitch_len"], json!(4.5));
 }
+
+#[test]
+fn moving_a_layer_with_follow_sews_the_layers_in_list_order_in_one_undo_step() {
+    let (mut s, _) = session(&home("move-follow"));
+    let (a, _) = add_line(&mut s);
+    s.handle("add_layer", &json!({})).unwrap();
+    let l2 = s.job.layers.last().unwrap().id.clone();
+    let (b, _) = add_line(&mut s);
+    s.handle("place", &json!({"ids": [b], "layer": l2, "order": [a, b]})).unwrap();
+    // without follow only the layer list changes
+    s.handle("move_group", &json!({"id": l2, "delta": -1})).unwrap();
+    assert_eq!(s.job.layers[0].id, l2);
+    assert_eq!(s.job.order, vec![a, b]);
+    s.handle("undo", &json!({})).unwrap();
+    let st = s.handle("move_group", &json!({"id": l2, "delta": -1, "follow": true})).unwrap();
+    assert_eq!(st["job"]["order"], json!([b, a]));
+    let st = s.handle("undo", &json!({})).unwrap();
+    assert_eq!(st["job"]["order"], json!([a, b]));
+    assert_ne!(s.job.layers[0].id, l2);
+}
