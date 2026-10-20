@@ -193,8 +193,8 @@ kbd { font: 500 calc(10.5px * var(--ts)) var(--mono); padding: 1px 5px; border-r
 svg.i, .icon-btn svg, .tool svg, .btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 .tb-machine { height: 32px; margin-inline-start: 6px; gap: 8px; }
 /* a new version is out: the Update button in the top bar and on Home */
-.tb-update { height: 32px; gap: 6px; color: var(--accent); background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
-.tb-update:hover { border-color: var(--accent); }
+.btn.tb-update { height: 32px; gap: 6px; color: var(--accent); background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
+.btn.tb-update:hover { border-color: var(--accent); }
 .tb-machine kbd { background: rgba(255,255,255,.18); border-color: transparent; color: #fff; }
 
 /* ---------- tool rail ---------- */

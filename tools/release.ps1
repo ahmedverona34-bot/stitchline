@@ -5,9 +5,11 @@
 # Add -Draft to step 2 to check the release on GitHub before publishing it there.
 # Needs: gh (logged in) and the signing key %USERPROFILE%\.tauri\stitchline.key. Keep a copy of that key: without it no
 # installed Stitchline accepts a new version.
-param([string]$Version, [string]$Notes = '', [switch]$Draft)
+# -NotesFile notes.txt reads the notes from a UTF-8 file instead (safer for Arabic text and several lines).
+param([string]$Version, [string]$Notes = '', [string]$NotesFile, [switch]$Draft)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot
+if ($NotesFile) { $Notes = [IO.File]::ReadAllText((Resolve-Path $NotesFile)).Trim() }
 Set-Location $root
 $repo = 'ahmedverona34-bot/stitchline'
 $conf = Join-Path $root 'src-tauri\tauri.conf.json'
@@ -62,7 +64,10 @@ $manifest = [ordered]@{
 }
 [IO.File]::WriteAllText($latest, ($manifest | ConvertTo-Json -Depth 5), $utf8)
 
-$ghArgs = @($tag, $setup, $latest, '--repo', $repo, '--title', "Stitchline $ver", '--notes', $(if ($Notes) { $Notes } else { "Stitchline $ver" }), '--target', (git rev-parse HEAD).Trim())
+# the notes go through a file: Windows PowerShell mangles quotes and new lines in a native command's arguments
+$notesTmp = Join-Path $env:TEMP 'stitchline_release_notes.md'
+[IO.File]::WriteAllText($notesTmp, $(if ($Notes) { $Notes } else { "Stitchline $ver" }), $utf8)
+$ghArgs = @($tag, $setup, $latest, '--repo', $repo, '--title', "Stitchline $ver", '--notes-file', $notesTmp, '--target', (git rev-parse HEAD).Trim())
 if ($Draft) { $ghArgs += '--draft' }
 gh release create @ghArgs
 if ($LASTEXITCODE) { throw 'gh release create failed' }
