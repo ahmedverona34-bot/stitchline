@@ -31,8 +31,11 @@ function Register-Projects {
     New-Item -Force 'HKCU:\Software\Classes\.stitchline' | Out-Null
     Set-ItemProperty 'HKCU:\Software\Classes\.stitchline' '(default)' 'Stitchline.Project'
     # an earlier "Open with > Stitchline" choice keeps the app icon
-    $uc = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.stitchline\UserChoice'
-    if ((Get-ItemProperty $uc -ErrorAction SilentlyContinue).ProgId -in 'Applications\Stitchline.exe', 'stitchline_auto_file') { Remove-Item $uc -Force -ErrorAction SilentlyContinue }
+    # (Windows denies setting values there, which makes Remove-Item fail; deleting the key itself is allowed)
+    $uc = 'Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.stitchline\UserChoice'
+    if ((Get-ItemProperty "HKCU:\$uc" -ErrorAction SilentlyContinue).ProgId -in 'Applications\Stitchline.exe', 'stitchline_auto_file') {
+        try { [Microsoft.Win32.Registry]::CurrentUser.DeleteSubKey($uc, $false) } catch { Log "could not reset the Open with choice for .stitchline: $_" }
+    }
     Add-Type -Namespace Win32 -Name Shell -MemberDefinition '[DllImport("shell32.dll")] public static extern void SHChangeNotify(int e, int f, IntPtr a, IntPtr b);' -ErrorAction SilentlyContinue
     [Win32.Shell]::SHChangeNotify(0x08000000, 0x1000, [IntPtr]::Zero, [IntPtr]::Zero)
 }
