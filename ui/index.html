@@ -69,6 +69,13 @@
     </span>
   </div>
   <div class="scroll" id="layers"></div>
+  <!-- sewing order of the selected shapes (or the position of the current layer): Up, Down, and a number with Ok -->
+  <div class="order-bar" id="orderBar" role="group" aria-label="Sewing order">
+    <button class="btn sm" id="ordUp" title="Sew earlier (Ctrl+[)">Up</button>
+    <button class="btn sm" id="ordDown" title="Sew later (Ctrl+])">Down</button>
+    <input id="ordNum" class="ord-num" inputmode="numeric" autocomplete="off" title="Move to this number (Enter)" aria-label="Sewing number">
+    <button class="btn sm primary" id="ordOk" title="Move to this number (Enter)">Ok</button>
+  </div>
   <div class="p-foot">
     <button class="btn grow" data-act="insert" title="Insert file (Ctrl+Shift+P)"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Insert file</button>
     <button class="btn" data-act="selectAll" title="Select all (Ctrl+A)">All</button>

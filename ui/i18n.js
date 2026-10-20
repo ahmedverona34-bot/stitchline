@@ -96,6 +96,15 @@
     'Make this a laser cut layer': 'اجعلها طبقة قص ليزر', 'Make this a sewing layer': 'اجعلها طبقة خياطة',
     'Use these stitch settings for every layer': 'استخدم إعدادات الغرز دي لكل الطبقات',
     'Move layer up': 'تحريك الطبقة لفوق', 'Move layer down': 'تحريك الطبقة لتحت',
+    'Move layer up (Alt+↑)': 'تحريك الطبقة لفوق (Alt+↑)', 'Move layer down (Alt+↓)': 'تحريك الطبقة لتحت (Alt+↓)',
+    'Move the layer earlier / later (no shape selected)': 'تحريك الطبقة بدري / بعدين (من غير شكل محدد)',
+    // sewing order: the numbers on the drawing and in the list, Up / Down and the number box
+    'Number all shapes': 'رقّم كل الأشكال', 'Number the current layer only': 'رقّم الطبقة الحالية بس',
+    'Numbers style: plain': 'شكل الأرقام: عادي', 'Numbers style: badges': 'شكل الأرقام: دوائر',
+    'Number by clicking': 'رقّم بالضغط', 'Sew earlier': 'تتخيط بدري', 'Sew later': 'تتخيط بعدين',
+    'Sew earlier (Ctrl+[)': 'تتخيط بدري (Ctrl+[)', 'Sew later (Ctrl+])': 'تتخيط بعدين (Ctrl+])',
+    'Move to this number (Enter)': 'انقل للرقم ده (Enter)', 'Ok': 'تمام', 'Sewing number': 'رقم الخياطة',
+    'Click the shapes in the order you want them sewn. Esc stops.': 'اضغط الأشكال بالترتيب اللي عايز تتخيط بيه. Esc للإيقاف.',
     'Delete layer, keep its shapes': 'حذف الطبقة مع الاحتفاظ بأشكالها', 'Delete layer and its shapes': 'حذف الطبقة وأشكالها',
     'Delete layer?': 'حذف الطبقة؟', 'No layers yet. Open a drawing or add a shape.': 'لا توجد طبقات بعد. افتح رسمة أو أضف شكلاً.',
     'New layer': 'طبقة جديدة', 'New layer…': 'طبقة جديدة…', 'Name of the new layer': 'اسم الطبقة الجديدة', 'Name of the new empty layer': 'اسم الطبقة الجديدة الفاضية',
@@ -371,6 +380,7 @@
     [/^Layer change → (.+)$/, (m, a) => `تغيير الطبقة ← ${a}`],
     [/^Needle (\d)( \(laser\))?$/, (m, a, b) => `الإبرة ${a}${b ? ' (ليزر)' : ''}`],
     [/^✓ Needle (\d)$/, (m, a) => `✓ الإبرة ${a}`],
+    [/^✓ (.+)$/, (m, a) => AR[a] ? `✓ ${AR[a]}` : m],   // a checked item of a menu
     [/^N(\d)$/, (m, a) => `إ${a}`],
     [/^Output IO (\d+) (on|off)( ✕)?$/, (m, a, b, c) => `مخرج IO ${a} ${b === 'on' ? 'تشغيل' : 'إيقاف'}${c || ''}`],
     [/^Output IO (\d+) at stitch (\d+)$/, (m, a, b) => `مخرج IO ${a} عند الغرزة ${b}`],
