@@ -83,9 +83,23 @@ powershell -ExecutionPolicy Bypass -File build.ps1          # installer
 powershell -ExecutionPolicy Bypass -File build.ps1 -Test    # engine tests first
 ```
 
-Output: `target\release\bundle\nsis\Stitchline_1.0.0_x64-setup.exe`. `build.ps1` puts the MinGW tools on
+Output: `target\release\bundle\nsis\Stitchline_<version>_x64-setup.exe`. `build.ps1` puts the MinGW tools on
 PATH and links with Rust's own bundled gcc (MinGW's gcc adds a second application manifest that clashes with
 Tauri's).
+
+### Publishing an update
+
+Installed copies look for a new version at start-up (and in Settings › Check for updates) in the latest GitHub
+release's `latest.json`, and show an **Update** button when there is one. To publish one:
+
+```
+powershell -ExecutionPolicy Bypass -File tools\release.ps1 -Version 1.0.2 -Notes "What changed"
+```
+
+`-Version` writes the new version into `tauri.conf.json`, `src-tauri\Cargo.toml` and `package.json`; commit and
+push that, then run the script again (without `-Version`). It builds the installer signed with
+`%USERPROFILE%\.tauri\stitchline.key` (its public half is in `tauri.conf.json`), writes `latest.json` and creates
+the GitHub release with both. Keep a safe copy of that key: without it, installed copies cannot be updated.
 
 For a development build: `cargo build -p stitchline` (the window loads `ui/` built into the exe), or
 `tests/dev_run.ps1`, which also starts it on a fresh test profile with DevTools on port 9333.

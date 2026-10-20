@@ -61,6 +61,16 @@
     'Shortcut keys on buttons': 'مفاتيح الاختصار على الأزرار', 'The small key names next to buttons and tools.': 'أسامي المفاتيح الصغيرة جنب الأزرار والأدوات.',
     'Changes are saved as you make them.': 'التغييرات بتتحفظ أول بأول.', 'Reset to defaults': 'رجوع للافتراضي',
     'Settings are back to their defaults': 'الإعدادات رجعت للافتراضي',
+    // ---------------------------------------------------------------- updates
+    'Update': 'تحديث', 'Update Stitchline': 'تحديث Stitchline', 'Updates': 'التحديثات',
+    'The mode, the language, what you see when Stitchline starts and updates.': 'الوضع واللغة وأول حاجة تشوفها لما Stitchline يفتح والتحديثات.',
+    'Stitchline looks for a new version when it starts and shows an Update button at the top when there is one.': 'Stitchline بيدوّر على نسخة جديدة لما يفتح، ولو لقى نسخة بيظهر زرار "تحديث" فوق.',
+    'Check for updates': 'التحقق من وجود تحديث', 'Checking for updates…': 'جاري التحقق من وجود تحديث…',
+    'Stitchline is up to date.': 'عندك أحدث نسخة من Stitchline.',
+    "Couldn't check for updates. Check the internet connection and try again.": 'معرفناش نتحقق من التحديثات. اتأكد من الإنترنت وجرّب تاني.',
+    'Stitchline downloads the new version, closes and opens again. Your job is kept.': 'Stitchline هينزّل النسخة الجديدة ويقفل ويفتح تاني. مشروعك هيفضل زي ما هو.',
+    'Update now': 'حدّث دلوقتي', 'Downloading the update…': 'جاري تنزيل التحديث…',
+    "The update couldn't be installed. Try again later.": 'التحديث متثبتش. جرّب تاني بعدين.',
     'Settings: language, theme, fonts, text size, interface (Ctrl+,)': 'الإعدادات: اللغة، السمة، الخطوط، حجم النص، الواجهة (Ctrl+,)',
     // ---------------------------------------------------------------- layers panel
     'Layers': 'الطبقات', 'Layers and shapes': 'الطبقات والأشكال', 'Layer': 'طبقة',
@@ -328,6 +338,11 @@
     // a tooltip that ends in its shortcut: the words are translated, the keys stay
     [/^(.+) \(((?:Ctrl|Alt|Shift)\+.+|[A-Z]|Enter)\)$/, (m, a, b) => AR[a] ? `${AR[a]} (${b})` : m],
     [/^(\d+) selected$/, (m, a) => `${a} محدد`],
+    [/^Version ([\d.]+)$/, (m, a) => `النسخة ${a}`],
+    [/^Update to ([\d.]+)$/, (m, a) => `تحديث للنسخة ${a}`],
+    [/^Version ([\d.]+) is ready to install\.$/, (m, a) => `النسخة ${a} جاهزة للتثبيت.`],
+    [/^Update Stitchline to ([\d.]+)\?$/, (m, a) => `تحديث Stitchline للنسخة ${a}؟`],
+    [/^Downloading the update… (\d+)%$/, (m, a) => `جاري تنزيل التحديث… ${a}%`],
     [/^Best order saves ([\d.]+) (m|mm) of travel$/, (m, a, u) => `أفضل تسلسل يوفّر ${a} ${u === 'm' ? 'متر' : 'مم'} من مسافة الانتقال`],
     [/^About (?:(\d+) min )?(?:(\d+) s )?less on the machine$/, (m, a, b) => {
       // Arabic counting: 1 دقيقة, 2 دقيقتين, 3–10 دقايق, 11+ دقيقة (and the same for seconds)

@@ -2370,6 +2370,7 @@
     lang: () => setLang(window.STL_LANG === 'ar' ? 'en' : 'ar'),
     theme: () => toggleTheme(),
     settings: () => openSettings(),
+    update: () => askUpdate(),
   };
   $('#home').addEventListener('click', async e => {
     if (!S) return;
@@ -2393,6 +2394,55 @@
   });
   $('#homeFilter').addEventListener('input', renderRecent);
   $('#btnHome').onclick = showHome;
+
+  /* ------------------------------------------------------------------ updates */
+  /* Stitchline looks for a new version (the latest GitHub release) at start-up and every few hours; when there is one,
+     the Update button shows in the top bar and on Home. Settings › General › Check for updates looks at once. The
+     installer is downloaded and checked by the app, then it closes Stitchline and opens the new version. */
+  const tauri = (cmd, args) => window.__TAURI_INTERNALS__ ? window.__TAURI_INTERNALS__.invoke(cmd, args) : Promise.reject(new Error('not in the app'));
+  let upd = null, updating = false;
+  const updTxt = (t, err = false) => { const e = $('#updTxt'); e.textContent = t; e.style.color = err ? 'var(--bad)' : ''; };
+  tauri('plugin:app|version').then(v => { $('#updVer').textContent = `Version ${v}`; }).catch(() => {});
+  function showUpdate(u) {
+    upd = u;
+    $$('.tb-update').forEach(b => { b.hidden = !u; if (u) { b.title = `Update to ${u.version}`; b.setAttribute('aria-label', b.title); } });
+  }
+  async function checkUpdates(manual) {
+    if (updating) return;
+    const b = $('#updCheck');
+    if (manual) { b.disabled = true; updTxt('Checking for updates…'); }
+    try {
+      const r = await tauri('update_check');
+      showUpdate(r.version ? r : null);
+      if (manual) {
+        updTxt(r.version ? `Version ${r.version} is ready to install.` : 'Stitchline is up to date.');
+        if (r.version) askUpdate();
+      }
+    } catch {
+      if (manual) updTxt("Couldn't check for updates. Check the internet connection and try again.", true);
+    } finally { b.disabled = false; }
+  }
+  function askUpdate() {
+    if (!upd || updating) return;
+    closeSettings();
+    const notes = upd.notes ? `<br><br><span data-notr style="white-space:pre-line">${esc(upd.notes)}</span>` : '';
+    confirmSheet(`Update Stitchline to ${esc(upd.version)}?`, `Stitchline downloads the new version, closes and opens again. Your job is kept.${notes}`, 'Update now',
+      () => { installUpdate(); });
+  }
+  async function installUpdate() {
+    updating = true;
+    const msg = (got, total) => total ? `Downloading the update… ${Math.min(100, Math.round(got / total * 100))}%` : 'Downloading the update…';
+    $('#busyTxt').textContent = msg(0, 0); $('#busy').hidden = false;
+    const tick = setInterval(() => tauri('update_progress').then(([got, total]) => { $('#busyTxt').textContent = msg(got, total); }).catch(() => {}), 250);
+    try {
+      await tauri('update_install');                       // returns only if it failed: the installer closes the app
+    } catch {
+      toast("The update couldn't be installed. Try again later.", true);
+    } finally { clearInterval(tick); $('#busy').hidden = true; updating = false; }
+  }
+  $('#updCheck').addEventListener('click', () => checkUpdates(true));
+  $('#btnUpdate').addEventListener('click', askUpdate);
+  if (window.__TAURI_INTERNALS__) { setTimeout(() => checkUpdates(false), 5000); setInterval(() => checkUpdates(false), 6 * 3600e3); }
 
   /* ------------------------------------------------------------------ toast */
   let tt;

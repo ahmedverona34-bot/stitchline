@@ -7,13 +7,14 @@
 use serde_json::{json, Value};
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Mutex, TryLockError};
 use stitchline_engine::session::{app_dir, preview_file, Dialogs, FileTypes, Session};
 use stitchline_engine::Error;
 use tauri::ipc::{InvokeBody, Request, Response};
 use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder, WindowEvent};
 use tauri_plugin_dialog::DialogExt;
+use tauri_plugin_updater::{Update, UpdaterExt};
 
 /// fetch('/api/<op>') -> invoke('api' | 'upload'); '/api/ping' answers at once.
 const FETCH_SHIM: &str = r#"
@@ -185,6 +186,65 @@ fn window_ctl(window: tauri::WebviewWindow, action: String) -> Result<bool, Stri
     window.is_maximized().map_err(|e| e.to_string())
 }
 
+/// Updates (Settings › Check for updates, the Update button): the signed installer of the latest GitHub release
+/// (tauri.conf.json › plugins.updater). The update found by the last check, and how much of it is downloaded.
+#[derive(Default)]
+struct Updates {
+    found: Mutex<Option<Update>>,
+    got: AtomicU64,
+    total: AtomicU64,
+}
+
+/// {current, version, notes}: `version` is null when this is the latest one. An error when the check fails (offline).
+#[tauri::command]
+async fn update_check(app: AppHandle) -> Result<Value, String> {
+    let current = app.package_info().version.to_string();
+    let found = app.updater().map_err(|e| e.to_string())?.check().await.map_err(|e| e.to_string())?;
+    let reply = json!({
+        "current": current,
+        "version": found.as_ref().map(|u| u.version.clone()),
+        "notes": found.as_ref().and_then(|u| u.body.clone()),
+    });
+    *app.state::<Updates>().found.lock().unwrap_or_else(|e| e.into_inner()) = found;
+    Ok(reply)
+}
+
+/// Download the update found by update_check and run its installer, which closes Stitchline and opens the new
+/// version (an unsaved job comes back from the autosave). Returns only if it fails.
+#[tauri::command]
+async fn update_install(app: AppHandle) -> Result<(), String> {
+    let update = app.state::<Updates>().found.lock().unwrap_or_else(|e| e.into_inner()).clone();
+    let update = update.ok_or("No update to install.")?;
+    let st = app.state::<Updates>();
+    st.got.store(0, Ordering::SeqCst);
+    st.total.store(0, Ordering::SeqCst);
+    let bytes = update
+        .download(
+            |n, total| {
+                st.got.fetch_add(n as u64, Ordering::SeqCst);
+                st.total.store(total.unwrap_or(0), Ordering::SeqCst);
+            },
+            || {},
+        )
+        .await
+        .map_err(|e| e.to_string())?;
+    // not in the middle of an engine call (an autosave being written)
+    let session = app.state::<App>();
+    let _session = session.0.lock().unwrap_or_else(|e| e.into_inner());
+    QUITTING.store(true, Ordering::SeqCst);
+    update.install(bytes).map_err(|e| {
+        QUITTING.store(false, Ordering::SeqCst);
+        e.to_string()
+    })
+}
+
+/// [downloaded, total] bytes of the update being downloaded (total 0 while unknown).
+#[tauri::command]
+fn update_progress(app: AppHandle) -> [u64; 2] {
+    let st = app.state::<Updates>();
+    [st.got.load(Ordering::SeqCst), st.total.load(Ordering::SeqCst)]
+}
+
 /// The window's X (or Alt+F4) with unsaved changes: keep the window and let the UI ask Save / Don't save / Cancel.
 fn on_close_requested(app: &AppHandle, api: &tauri::CloseRequestApi) {
     if QUITTING.load(Ordering::SeqCst) {
@@ -226,7 +286,9 @@ fn percent_decode(s: &str) -> String {
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
-        .invoke_handler(tauri::generate_handler![api, upload, quit, set_zoom, window_ctl])
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .manage(Updates::default())
+        .invoke_handler(tauri::generate_handler![api, upload, quit, set_zoom, window_ctl, update_check, update_install, update_progress])
         .on_window_event(|window, event| {
             if let WindowEvent::CloseRequested { api, .. } = event {
                 on_close_requested(window.app_handle(), api);

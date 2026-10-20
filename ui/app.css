@@ -192,6 +192,9 @@ kbd { font: 500 calc(10.5px * var(--ts)) var(--mono); padding: 1px 5px; border-r
 .icon-btn[disabled] { opacity: .35; pointer-events: none; }
 svg.i, .icon-btn svg, .tool svg, .btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 .tb-machine { height: 32px; margin-inline-start: 6px; gap: 8px; }
+/* a new version is out: the Update button in the top bar and on Home */
+.tb-update { height: 32px; gap: 6px; color: var(--accent); background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
+.tb-update:hover { border-color: var(--accent); }
 .tb-machine kbd { background: rgba(255,255,255,.18); border-color: transparent; color: #fff; }
 
 /* ---------- tool rail ---------- */
@@ -809,7 +812,7 @@ html[lang="ar"] .en-only, html:not([lang="ar"]) .ar-only { display: none; }
   :root { --sidew: 224px; --inspw: 316px; }
   .search { min-width: 0; } .search span, .search kbd { display: none; }
   .brand .file-chip { max-width: 180px; }
-  .tb-machine .lb { display: none; }
+  .tb-machine .lb, .topbar .tb-update .lb { display: none; } .topbar .tb-update { width: 32px; padding: 0; justify-content: center; }
   .stage .lb small { display: none; } .stages li + li::before { width: 20px; }
 }
 @media (max-width: 1000px) {

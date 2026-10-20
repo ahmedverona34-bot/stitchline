@@ -30,6 +30,8 @@
     <button class="icon-btn" id="undo" title="Undo (Ctrl+Z)" aria-label="Undo"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg></button>
     <button class="icon-btn" id="redo" title="Redo (Ctrl+Shift+Z)" aria-label="Redo"><svg viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H9a5 5 0 0 0 0 10h3"/></svg></button>
     <span class="tb-sep" aria-hidden="true"></span>
+    <!-- shown when a new version is out (checked at start-up and in Settings) -->
+    <button class="btn tb-update" id="btnUpdate" title="Update Stitchline" hidden><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.7L20 8.5"/><path d="M20 3.5v5h-5"/><path d="M12 8v5l3 2"/></svg><span class="lb">Update</span></button>
     <button class="icon-btn" id="settings" title="Settings (Ctrl+,)" aria-label="Settings" aria-haspopup="dialog"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
     <button class="btn primary tb-machine" id="saveTop" title="Save machine file (Ctrl+Alt+E)" aria-label="Save machine file"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span class="lb">Save machine file</span><kbd data-notr>Ctrl Alt E</kbd></button>
   </div>
@@ -130,6 +132,7 @@
     <nav class="home-acts">
       <button class="btn primary big" data-home="new" title="New job (Ctrl+N)"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span class="grow">New job</span><kbd data-notr>Ctrl N</kbd></button>
       <button class="btn big" data-home="open" title="Open (Ctrl+O)"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span class="grow">Open…</span><kbd data-notr>Ctrl O</kbd></button>
+      <button class="btn big tb-update" data-home="update" title="Update Stitchline" hidden><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.7L20 8.5"/><path d="M20 3.5v5h-5"/><path d="M12 8v5l3 2"/></svg><span class="grow">Update</span></button>
       <button class="btn ghost big back" data-home="editor" id="homeBack" title="Back to the job (Esc)"><svg viewBox="0 0 24 24"><path d="M15 6 9 12l6 6"/></svg><span class="grow">Back to the job</span><kbd data-notr>Esc</kbd></button>
     </nav>
     <div class="home-foot">
@@ -191,7 +194,7 @@
       <header class="sw-head"><div><h3 id="swTitle">General</h3><p id="swSub"></p></div>
         <button class="icon-btn" data-close-set title="Close (Esc)" aria-label="Close settings"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></header>
       <div class="sw-body">
-        <div class="sw-page" role="tabpanel" id="swp-general" aria-labelledby="swt-general" data-sub="The mode, the language and what you see when Stitchline starts.">
+        <div class="sw-page" role="tabpanel" id="swp-general" aria-labelledby="swt-general" data-sub="The mode, the language, what you see when Stitchline starts and updates.">
           <div class="sw-group"><h4>Mode</h4><div class="sw-card">
             <div class="sw-row"><span class="t"><b>Advanced mode</b><small>Shows every tool: the five steps, drawing tools, back-tack, corners, sewing order and machine instructions. Off, Stitchline shows only the layers, laser cut, stitch length, the simulation and saving.</small></span><button class="switch blue" role="switch" id="swAdvanced" aria-checked="false" aria-label="Advanced mode"></button></div>
           </div></div>
@@ -200,6 +203,9 @@
           </div></div>
           <div class="sw-group"><h4>Start-up</h4><div class="sw-card">
             <div class="sw-row"><span class="t"><b>Show Home when Stitchline starts</b><small>New job, open and your recent files, before the last job opens.</small></span><button class="switch blue" role="switch" id="swHome" aria-checked="false" aria-label="Show Home when Stitchline starts"></button></div>
+          </div></div>
+          <div class="sw-group"><h4>Updates</h4><div class="sw-card">
+            <div class="sw-row"><span class="t"><b id="updVer">Stitchline</b><small id="updTxt">Stitchline looks for a new version when it starts and shows an Update button at the top when there is one.</small></span><button class="btn" id="updCheck" title="Check for updates">Check for updates</button></div>
           </div></div>
         </div>
         <div class="sw-page" role="tabpanel" id="swp-appearance" aria-labelledby="swt-appearance" data-sub="Light or dark, the accent colour and motion." hidden>
