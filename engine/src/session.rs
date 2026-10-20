@@ -685,7 +685,11 @@ impl Session {
             "remove_empty_groups" => ops::remove_empty_groups(j),
             "move_group" => {
                 let id = str_arg(a, "id")?;
-                ops::move_group(j, &id, int_arg(a, "delta")?)?
+                ops::move_group(j, &id, int_arg(a, "delta")?)?;
+                // the simple mode sews the layers in list order: one undo step for the move and the new order
+                if a.get("follow").and_then(Value::as_bool).unwrap_or(false) {
+                    ops::order_by_group(j)?
+                }
             }
             "rename_shape" => {
                 let id = sid(a, "id")?;

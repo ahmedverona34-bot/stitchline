@@ -11,6 +11,8 @@ A Windows desktop app for pattern sewing machines that read **SLW** machine file
 the shapes, set up stitches or laser cuts, choose the sewing order, and save the SLW file for the machine,
 straight onto a USB stick if you like.
 
+- Starts in a simple mode: the layer list (drag to change the sewing order), sewing or laser cut per layer,
+  stitch length, the simulation and saving the machine file. Settings › General › Advanced mode shows every tool
 - Opens DXF, Illustrator AI, HPGL (PLT / HPGL / PRT), Tajima DST, Barudan DSB and SLW files
 - Stitch settings per layer: stitch length, back-tack, closed-shape reinforcement, slow-down and dense stitches at
   corners, zigzag / back-tack / special-length sections, double stitch length

@@ -222,6 +222,33 @@ svg.i, .icon-btn svg, .tool svg, .btn svg { width: 16px; height: 16px; stroke: c
 .hide-side .side { visibility: hidden; border: 0; }
 .hide-readout .readout, .hide-viewbar .viewbar, .hide-zoombar .zoombar { display: none; }
 .hide-kbd :is(.topbar, .home-acts) kbd, .hide-kbd .rail .tool[data-key]::after { display: none; }
+/* the simple mode (default): no step bar, size readout, tool search or layer tools; the panel stays */
+:root.simple { --steph: 0px; }
+.simple :is(.stepbar, #openPalette, #btnSave, #saveTop, .insp-toggle, .side .p-foot, #groupSel, #addLayer, #addShape, .adv) { display: none !important; }
+:root.simple.insp-off { --inspw: 348px; }
+.simple .readout .pos { display: none; }   /* the simple mode shows the size only */
+.simple-only { display: none !important; }
+.simple .simple-only { display: inline-flex !important; }
+.simple.hide-viewbar .viewbar { display: flex; }   /* its switch is an advanced one; the simple mode keeps "Original shape" */
+.simple.insp-off .inspector { visibility: visible; border-inline-start: 1px solid var(--line); }
+.kind-pill { font-size: calc(11.5px * var(--ts)); font-weight: 500; color: var(--fg-2); background: var(--well); border: 1px solid transparent; padding: 2px 9px; border-radius: 999px; white-space: nowrap; }
+.kind-pill:hover { border-color: var(--accent); color: var(--accent); }
+.kind-pill.laser { background: var(--laser-glow); color: var(--laser); }
+.kind-pill.laser:hover { border-color: var(--laser); color: var(--laser); }
+.ss { display: grid; gap: 10px; padding: 16px 14px; border-bottom: 1px solid var(--line); }
+.ss h4 { margin: 0; font-size: calc(12px * var(--ts)); font-weight: 500; color: var(--fg-3); }
+.ss .fmt { text-align: center; font: calc(11px * var(--ts)) var(--mono); color: var(--fg-3); }
+.ss .btn.big { width: 100%; }
+.kind-seg { display: grid; grid-template-columns: 1fr 1fr; padding: 3px; }
+.kind-seg button { height: 40px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: calc(13.5px * var(--ts)); }
+.kind-seg button svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; }
+.kind-seg button[data-kind="laser"][aria-pressed="true"] { color: var(--laser); }
+.simple .big-slider .field { width: 120px; height: 34px; }
+.simple .big-slider .field input { font-size: calc(15px * var(--ts)); }
+.simple-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.simple-stats > div { display: grid; gap: 2px; padding: 8px 10px; border-radius: var(--r-sm); background: var(--well); }
+.simple-stats .k { font-size: calc(11.5px * var(--ts)); color: var(--fg-3); }
+.simple-stats b { font-size: calc(16px * var(--ts)); font-weight: 600; }
 .insp-toggle {
   position: fixed; z-index: 11; top: calc(var(--top) + 14px); inset-inline-end: calc(var(--inspw) - 1px); width: 18px; height: 40px; padding: 0;
   display: grid; place-items: center; border: 1px solid var(--accent-bg); border-inline-end: 0; border-start-start-radius: 8px; border-end-start-radius: 8px;
@@ -231,7 +258,7 @@ svg.i, .icon-btn svg, .tool svg, .btn svg { width: 16px; height: 16px; stroke: c
 .insp-toggle svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .insp-off .insp-toggle svg, [dir="rtl"] .insp-toggle svg { transform: scaleX(-1); }
 [dir="rtl"].insp-off .insp-toggle svg { transform: none; }
-.scroll { overflow-y: auto; flex: 1; min-height: 0; padding-bottom: 6px; }
+.scroll { overflow-y: auto; overflow-x: hidden; flex: 1; min-height: 0; padding-bottom: 6px; }
 .p-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 8px 6px 14px; }
 .eyebrow { font-size: calc(11.5px * var(--ts)); font-weight: 500; color: var(--fg-3); }
 .p-foot { display: flex; gap: 6px; padding: 10px; border-top: 1px solid var(--line); }
@@ -268,6 +295,7 @@ svg.i, .icon-btn svg, .tool svg, .btn svg { width: 16px; height: 16px; stroke: c
 .shape-row[aria-selected="true"] { background: var(--accent-bg); color: var(--accent-fg); }
 .shape-row[aria-selected="true"] .meta { color: rgba(255,255,255,.85); }
 .layer.off .layer-row .name { color: var(--fg-3); }
+.layer-row .cnt { color: var(--fg-3); font-weight: 400; }
 /* drag in the layers list: a line above / below the row it will land next to, a ring on the layer it will go into */
 .layer.drag, .shape-row.drag { opacity: .4; }
 .shape-row.over { box-shadow: inset 0 2px 0 var(--accent); }
@@ -325,6 +353,8 @@ input[type="range"] { width: 100%; accent-color: var(--thread); }
 .sec > summary .chev { width: 12px; height: 12px; color: var(--fg-3); transition: transform .15s; flex: none; }
 .sec[open] > summary .chev { transform: rotate(90deg); }
 .sec-body { padding: 2px 14px 14px; display: grid; gap: 9px; }
+.sec-body > * { min-width: 0; }   /* long program lines shorten with … instead of widening the panel */
+.row select.sel { min-width: 0; }
 .sec.plain .sec-body { padding-top: 14px; }
 .row { display: flex; align-items: center; gap: 10px; min-height: 30px; }
 .row > label, .row > .lbl { flex: 1; color: var(--fg-2); min-width: 0; }
@@ -392,9 +422,19 @@ input[type="range"] { width: 100%; accent-color: var(--thread); }
 .float .seg button { height: 26px; }
 .float .seg button[aria-pressed="true"] { background: var(--well); box-shadow: none; }
 .sep { width: 1px; height: 18px; background: var(--line); margin: 0 3px; flex: none; }
-.sim { bottom: 56px; inset-inline-start: calc(var(--railw) + var(--sidew)); inset-inline-end: var(--inspw); width: min(460px, calc(100vw - var(--railw) - var(--sidew) - var(--inspw) - 24px)); margin: 0 auto; padding: 4px 10px 4px 4px; gap: 10px; }
-.sim input[type="range"] { flex: 1; }
-.sim .num { font-size: calc(12px * var(--ts)); color: var(--fg-2); min-width: 92px; text-align: right; }
+/* the simulation window */
+#simScrim { place-items: center; padding: 64px 24px 24px; }
+.simwin { width: min(1180px, 100%); height: 100%; max-height: 820px; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; background: var(--app); border-radius: 12px; box-shadow: var(--shadow-pop); border: 1px solid var(--line); overflow: hidden; }
+.simwin header { display: flex; align-items: center; gap: 10px; padding: 10px 10px 10px 18px; border-bottom: 1px solid var(--line); }
+[dir="rtl"] .simwin header { padding: 10px 18px 10px 10px; }
+.simwin h3 { margin: 0; font: 600 calc(15px * var(--ts)) var(--font-d); flex: 1; }
+.sim-done { font-size: calc(12px * var(--ts)); font-weight: 500; color: var(--ok); background: color-mix(in srgb, var(--ok) 14%, transparent); padding: 3px 10px; border-radius: 999px; }
+.simstage { position: relative; background: var(--canvas); min-height: 0; }
+#simCv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.simbar { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-top: 1px solid var(--line); }
+.simbar input[type="range"] { flex: 1; }
+.simbar .num { font-size: calc(12px * var(--ts)); color: var(--fg-2); min-width: 110px; text-align: center; }
+.sim-play { width: 40px; height: 34px; padding: 0; }
 .zoomtxt { font: calc(11.5px * var(--ts)) var(--mono); color: var(--fg-2); min-width: 44px; text-align: center; }
 
 /* ---------- empty state ---------- */
@@ -441,13 +481,20 @@ input[type="range"] { width: 100%; accent-color: var(--thread); }
 .ptable td:first-child { font: calc(11px * var(--ts)) var(--mono); color: var(--fg-3); width: 34px; }
 .ptable .field { width: 100%; }
 .ptable-wrap { max-height: 46vh; overflow-y: auto; border-radius: var(--r); background: var(--field); border: 1px solid var(--line); padding: 4px; }
+/* messages and the busy sign: in the drawing area, under the size readout, so they never cover the panels, the
+   bars or the readout; with a window open (settings, simulation, a question), in the strip above it */
+.toast, .busy {
+  position: fixed; top: calc(var(--top) + 54px); inset-inline: calc(var(--railw) + var(--sidew) + 24px) calc(var(--inspw) + 24px);
+  width: max-content; max-width: calc(100vw - var(--railw) - var(--sidew) - var(--inspw) - 48px); margin: 0 auto;
+}
+body:has(.scrim:not([hidden])) :is(.toast, .busy), body:has(#home:not([hidden])) :is(.toast, .busy) { top: 12px; inset-inline: 160px; max-width: calc(100vw - 320px); }
 .toast {
-  position: fixed; bottom: 56px; left: 50%; transform: translateX(-50%); background: var(--fg); color: var(--canvas); padding: 9px 14px; border-radius: var(--r);
-  box-shadow: var(--shadow-pop); font-weight: 500; z-index: 60; display: flex; gap: 8px; align-items: center; max-width: min(640px, 90vw);
+  background: var(--fg); color: var(--canvas); padding: 9px 14px; border-radius: var(--r);
+  box-shadow: var(--shadow-pop); font-weight: 500; z-index: 60; display: flex; gap: 8px; align-items: center;
 }
 .toast svg { width: 16px; height: 16px; stroke: var(--ok); fill: none; stroke-width: 2.2; flex: none; }
 .toast.err svg { stroke: var(--bad); }
-.busy { position: fixed; top: calc(var(--top) + 10px); left: 50%; transform: translateX(-50%); z-index: 70; padding: 6px 14px; border-radius: 999px; font-size: calc(12px * var(--ts)); color: var(--fg-2); display: flex; gap: 8px; align-items: center; background: var(--app); border: 1px solid var(--line); box-shadow: var(--shadow); }
+.busy { z-index: 70; padding: 6px 14px; border-radius: 999px; font-size: calc(12px * var(--ts)); color: var(--fg-2); display: flex; gap: 8px; align-items: center; background: var(--app); border: 1px solid var(--line); box-shadow: var(--shadow); }
 .spin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--line-strong); border-top-color: var(--accent); animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .ctx { position: fixed; z-index: 80; min-width: 210px; padding: 4px; border-radius: var(--r); background: var(--app); border: 1px solid var(--line); box-shadow: var(--shadow-pop); }
@@ -734,6 +781,30 @@ html[lang="ar"] .en-only, html:not([lang="ar"]) .ar-only { display: none; }
 @media (max-width: 1000px) {
   .step-nav span { display: none; } .step-nav { padding: 0 10px; }
 }
+/* small windows (the minimum is 900 × 600): narrower panels, icon-only buttons on the bars over the drawing, the
+   show bar above the zoom bar so they never cover each other, and no cursor position in the readout */
+@media (max-width: 1100px) {
+  :root { --inspw: 284px; --sidew: 216px; } :root.simple.insp-off { --inspw: 284px; }
+  .layer-row { gap: 6px; padding: 6px; } .layer-row .cnt { display: none; }
+  .kind-pill { padding: 2px 7px; }
+  .viewbar .tool, #fit { font-size: 0; gap: 0; padding: 0; width: 30px; justify-content: center; }
+  .viewbar { bottom: 54px; }
+  .readout .pos { display: none; }
+  .i-title { padding: 12px 12px 8px; } .ss { padding: 12px; gap: 8px; }
+  .stat { padding: 10px 12px; } .stat .v { font-size: calc(17px * var(--ts)); }
+}
+@media (max-width: 820px) { :root, :root.simple.insp-off { --inspw: 256px; } :root { --sidew: 196px; } .keys-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-height: 720px) {
+  :root { --steph: 46px; }
+  .stage { height: 38px; } .stage .n { width: 24px; height: 24px; } .stage .lb small { display: none; }
+  .step-nav { height: 32px; }
+  .ss { padding: 10px 12px; gap: 7px; } .ss h4 { display: none; }
+  .kind-seg button { height: 34px; }
+  .i-title { padding: 10px 12px 8px; } .i-title p { display: none; } .i-title .layer-pick { margin-top: 6px; }
+  .i-foot { padding: 8px; gap: 5px; } .i-foot .btn.big { height: 34px; }
+  .simple-stats > div { padding: 5px 9px; } .simple-stats b { font-size: calc(14px * var(--ts)); }
+  .p-head { padding-top: 6px; } .p-foot { padding: 6px 8px; }
+}
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 html.lite * { transition: none !important; }
 
@@ -752,4 +823,3 @@ html.lite * { transition: none !important; }
 [dir="rtl"] .origin { direction: ltr; }
 [dir="rtl"] .pad { direction: ltr; }
 [dir="rtl"] .switch::after { left: 2px; }
-[dir="rtl"] .sim { padding: 4px 4px 4px 10px; }

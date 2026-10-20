@@ -75,7 +75,7 @@
 
 <div class="float readout" id="readout">
   <span>W <b class="num" id="rw">0.0000</b> × H <b class="num" id="rh">0.0000</b> cm</span>
-  <span>X <b class="num" id="cx">0.0000</b> Y <b class="num" id="cy">0.0000</b> cm</span>
+  <span class="pos">X <b class="num" id="cx">0.0000</b> Y <b class="num" id="cy">0.0000</b> cm</span>
   <span id="rsel"></span>
 </div>
 
@@ -84,28 +84,23 @@
     <svg class="mark" viewBox="0 0 26 26" aria-hidden="true"><rect width="26" height="26" rx="7.5" fill="var(--fg)"/><path d="M5.5 19.5c3.5-1 6-3.5 8.2-7.4" fill="none" stroke="var(--thread)" stroke-width="2" stroke-linecap="round" stroke-dasharray="2.6 2.4"/><path d="M20.5 5.5 13 13.6" stroke="var(--canvas)" stroke-width="2.2" stroke-linecap="round"/><circle cx="19.6" cy="6.4" r=".9" fill="var(--fg)"/></svg>
     <h1>Start a sewing job</h1>
     <p>Open a pattern drawing, or drop the file anywhere in this window.</p>
-    <div style="display:flex;gap:8px"><button class="btn primary big" data-act="open">Open drawing…</button><button class="btn big" data-act="addShapeSheet">Draw a shape</button></div>
+    <div style="display:flex;gap:8px"><button class="btn primary big" data-act="open">Open drawing…</button><button class="btn big adv" data-act="addShapeSheet">Draw a shape</button></div>
     <div class="fmt">DXF · AI · PLT · PRT · DST · DSB · STITCHLINE</div>
     <div class="recent" id="heroRecent" style="width:100%"></div>
   </div>
 </div>
 
-<div class="float sim" id="sim" hidden>
-  <button class="tool" id="simPlay" aria-label="Play"><svg viewBox="0 0 24 24" id="simIcon"><path d="M7 5v14l11-7z" fill="currentColor"/></svg></button>
-  <input type="range" id="simPos" min="0" max="1000" value="1000" aria-label="Position in the sewing run">
-  <select class="sel" id="simSpeed" style="min-width:64px" aria-label="Simulation speed (not the machine's real speed)" title="Simulation speed (not the machine's real speed)"><option value="0.5">½×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="5">5×</option><option value="20">20×</option></select>
-  <span class="num" id="simTxt">0 / 0</span>
-  <button class="tool" id="simClose" aria-label="Close simulation"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
-</div>
+
 
 <div class="float viewbar" role="group" aria-label="Show">
-  <div class="seg" role="group" aria-label="Layers shown">
+  <div class="seg adv" role="group" aria-label="Layers shown">
     <button aria-pressed="true" data-view="all" title="Show all layers">All</button>
     <button aria-pressed="false" data-view="layer" title="Show only the current layer">Layer</button>
   </div>
-  <span class="sep"></span>
-  <button class="tool" aria-pressed="false" id="showStitch" title="Show stitches (Ctrl+Y)"><svg viewBox="0 0 24 24"><path d="M3 17c4-2 6-8 9-10s6 0 9-2" stroke-dasharray="2.5 2.5"/></svg>Stitches</button>
-  <button class="tool" aria-pressed="false" id="showOrder" title="Show sewing order (Ctrl+H)"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.5 6H14a4 4 0 0 1 0 8h-4a4 4 0 0 0 0 8h5.5"/></svg>Order</button>
+  <span class="sep adv"></span>
+  <button class="tool adv" aria-pressed="false" id="showStitch" title="Show stitches (Ctrl+Y)"><svg viewBox="0 0 24 24"><path d="M3 17c4-2 6-8 9-10s6 0 9-2" stroke-dasharray="2.5 2.5"/></svg>Stitches</button>
+  <button class="tool adv" aria-pressed="false" id="showOrder" title="Show sewing order (Ctrl+H)"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.5 6H14a4 4 0 0 1 0 8h-4a4 4 0 0 0 0 8h5.5"/></svg>Order</button>
+  <button class="tool simple-only" aria-pressed="false" id="showOrig" title="Original shape: the drawing as lines, without stitches (Ctrl+Y)"><svg viewBox="0 0 24 24"><path d="M3 17c4-2 6-8 9-10s6 0 9-2"/></svg>Original shape</button>
 </div>
 
 <div class="float zoombar" role="group" aria-label="Zoom">
@@ -190,7 +185,10 @@
       <header class="sw-head"><div><h3 id="swTitle">General</h3><p id="swSub"></p></div>
         <button class="icon-btn" data-close-set title="Close (Esc)" aria-label="Close settings"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></header>
       <div class="sw-body">
-        <div class="sw-page" role="tabpanel" id="swp-general" aria-labelledby="swt-general" data-sub="Language and what you see when Stitchline starts.">
+        <div class="sw-page" role="tabpanel" id="swp-general" aria-labelledby="swt-general" data-sub="The mode, the language and what you see when Stitchline starts.">
+          <div class="sw-group"><h4>Mode</h4><div class="sw-card">
+            <div class="sw-row"><span class="t"><b>Advanced mode</b><small>Shows every tool: the five steps, drawing tools, back-tack, corners, sewing order and machine instructions. Off, Stitchline shows only the layers, laser cut, stitch length, the simulation and saving.</small></span><button class="switch blue" role="switch" id="swAdvanced" aria-checked="false" aria-label="Advanced mode"></button></div>
+          </div></div>
           <div class="sw-group"><h4>Language</h4><div class="sw-card">
             <div class="sw-row"><span class="t"><b>Interface language</b><small>The window reloads in the new language and comes back to the same place.</small></span><div class="seg" role="group" aria-label="Language"><button data-lang="ar" data-notr>العربية</button><button data-lang="en" data-notr>English</button></div></div>
           </div></div>
@@ -224,9 +222,9 @@
           </div></div>
           <div class="sw-group"><h4>Show on screen</h4><div class="sw-card">
             <div class="sw-row"><span class="t"><b>Layers panel</b><small>The list of layers and shapes on the side of the drawing.</small></span><button class="switch blue" role="switch" id="swSide" aria-checked="false" aria-label="Layers panel"></button></div>
-            <div class="sw-row"><span class="t"><b>Stage panel</b><small>The settings of the current stage. Shift+Tab also hides and shows it.</small></span><button class="switch blue" role="switch" id="swInsp" aria-checked="false" aria-label="Stage panel"></button></div>
+            <div class="sw-row adv"><span class="t"><b>Stage panel</b><small>The settings of the current stage. Shift+Tab also hides and shows it.</small></span><button class="switch blue" role="switch" id="swInsp" aria-checked="false" aria-label="Stage panel"></button></div>
             <div class="sw-row"><span class="t"><b>Size and position</b><small>Width, height and position of the selection, above the drawing.</small></span><button class="switch blue" role="switch" id="swReadout" aria-checked="false" aria-label="Size and position"></button></div>
-            <div class="sw-row"><span class="t"><b>Show bar</b><small>All / layer, stitches and sewing order, under the drawing.</small></span><button class="switch blue" role="switch" id="swViewbar" aria-checked="false" aria-label="Show bar"></button></div>
+            <div class="sw-row adv"><span class="t"><b>Show bar</b><small>All / layer, stitches and sewing order, under the drawing.</small></span><button class="switch blue" role="switch" id="swViewbar" aria-checked="false" aria-label="Show bar"></button></div>
             <div class="sw-row"><span class="t"><b>Zoom bar</b><small>Zoom in, zoom out and fit, under the drawing.</small></span><button class="switch blue" role="switch" id="swZoombar" aria-checked="false" aria-label="Zoom bar"></button></div>
             <div class="sw-row"><span class="t"><b>Grid on the drawing</b><small>Millimetre lines behind the shapes.</small></span><button class="switch blue" role="switch" id="swGrid" aria-checked="false" aria-label="Grid on the drawing"></button></div>
             <div class="sw-row"><span class="t"><b>Shortcut keys on buttons</b><small>The small key names next to buttons and tools.</small></span><button class="switch blue" role="switch" id="swKbd" aria-checked="false" aria-label="Shortcut keys on buttons"></button></div>
@@ -236,6 +234,20 @@
       <footer class="sw-foot"><span class="hint"><svg viewBox="0 0 24 24"><path d="m5 12 5 5 9-10"/></svg><span>Changes are saved as you make them.</span></span>
         <button class="btn ghost" id="swReset">Reset to defaults</button><button class="btn primary" data-close-set>Done</button></footer>
     </section>
+  </div>
+</div>
+<!-- the sewing simulation: its own window over the job; the drawing appears as the needle and the laser go -->
+<div class="scrim" id="simScrim" hidden>
+  <div class="simwin" role="dialog" aria-modal="true" aria-labelledby="simTitle">
+    <header><h3 id="simTitle">Sewing simulation</h3><span class="sim-done" id="simDone" hidden>Finished</span>
+      <button class="icon-btn" id="simClose" title="Close (Esc)" aria-label="Close simulation"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></header>
+    <div class="simstage"><canvas id="simCv" aria-label="Simulation"></canvas></div>
+    <footer class="simbar">
+      <button class="btn primary sim-play" id="simPlay" title="Play / pause (Space)" aria-label="Play / pause (Space)"><svg viewBox="0 0 24 24" id="simIcon"><path d="M7 5v14l11-7z" fill="currentColor"/></svg></button>
+      <input type="range" id="simPos" min="0" max="1000" value="0" aria-label="Position in the sewing run">
+      <select class="sel" id="simSpeed" style="min-width:64px" aria-label="Simulation speed (not the machine's real speed)" title="Simulation speed (not the machine's real speed)"><option value="0.5">½×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="5">5×</option><option value="20">20×</option></select>
+      <span class="num" id="simTxt">0 / 0</span>
+    </footer>
   </div>
 </div>
 <div class="scrim" id="sheetScrim" hidden><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" id="sheet"></div></div>

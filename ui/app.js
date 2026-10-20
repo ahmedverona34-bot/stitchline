@@ -15,6 +15,9 @@
   let S = null;                          // last state from the engine
   let sel = new Set();                   // selected shape ids
   let stage = store.get('stage', 'import');
+  // the simple mode (the default): layers, laser, stitch length, simulation and saving; Settings turns on the rest
+  let simple = store.get('simple', true);
+  const stg = () => simple ? 'simple' : stage;   // the panel shown: the simple one, or the stage's
   let curLayer = null;
   let tool = 'select';
   let viewMode = 'all';
@@ -107,6 +110,7 @@
     $('#heroRecent').innerHTML = S.recent.length ? `<div class="eyebrow" style="text-align:left;padding:8px 8px 2px">Recent</div>` + S.recent.slice(0, 5).map(p => `<button data-act="openRecent" data-path="${esc(p)}"><svg class="i" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg><span>${esc(p.split(/[\\/]/).pop())}</span></button>`).join('') : '';
     $('#showOrder').setAttribute('aria-pressed', showOrder);
     $('#showStitch').setAttribute('aria-pressed', showStitch);
+    $('#showOrig').setAttribute('aria-pressed', !showStitch);
   }
 
   /* window buttons: the window has no Windows title bar; the top bar (and Home's top strip) drags it */
@@ -151,8 +155,9 @@
         <div class="layer-row" data-layer="${L.id}" draggable="true">
           <button class="caret-btn" data-toggle="${L.id}" aria-label="Show shapes"><svg class="caret" viewBox="0 0 12 12"><path d="M3 4.5 6 7.5 9 4.5" stroke="currentColor" fill="none" stroke-width="1.5"/></svg></button>
           <span class="swatch" style="background:${esc(L.color)}" title="Layer colour"><input type="color" value="${esc(L.color)}" data-color="${L.id}" aria-label="Layer colour"></span>
-          <span class="name" data-rename="${L.id}" title="Double-click to rename">${esc(L.name)}${align ? ' · align' : ''} <span style="color:var(--fg-3);font-weight:400">${shapes.length}</span></span>
-          <button class="needle" data-needle="${L.id}" title="Needle (click to change)">${isLaser(L) ? 'Laser' : 'N' + L.needle}</button>
+          <span class="name" data-rename="${L.id}" title="Double-click to rename">${esc(L.name)}${align ? ' · align' : ''} <span class="cnt">${shapes.length}</span></span>
+          ${simple ? `<button class="kind-pill ${isLaser(L) ? 'laser' : ''}" data-kindl="${L.id}" title="${isLaser(L) ? 'Laser cut: click to sew it' : 'Sewing: click to make it laser cut'}">${isLaser(L) ? 'Laser' : 'Sewing'}</button>`
+                   : `<button class="needle" data-needle="${L.id}" title="Needle (click to change)">${isLaser(L) ? 'Laser' : 'N' + L.needle}</button>`}
           <button class="switch" role="switch" aria-checked="${L.output}" data-out="${L.id}" aria-label="Sew ${esc(L.name)}" title="Sew this layer"></button>
         </div>
         <div class="shapes">${shapes.slice(0, max).map(s => `
@@ -170,6 +175,8 @@
     const o = e.target.closest('[data-out]');
     if (o) { const L = layerById(o.dataset.out); api('update_layer', { id: L.id, fields: { output: !L.output } }, { quiet: true }); return; }
     const n = e.target.closest('[data-needle]');
+    const kd = e.target.closest('[data-kindl]');
+    if (kd) { const L = layerById(kd.dataset.kindl); curLayer = L.id; setKind(L.id, isLaser(L) ? 'sew' : 'laser'); return; }
     if (n) { const L = layerById(n.dataset.needle); const r = n.getBoundingClientRect(); menu(r.left, r.bottom + 4, [1, 2, 3].map(k => [`${k === L.needle ? '✓ ' : ''}Needle ${k}`, () => api('update_layer', { id: L.id, fields: { needle: k } }, { quiet: true })])); return; }
     if (e.target.closest('[data-color]')) return;
     const row = e.target.closest('[data-layer]');
@@ -228,7 +235,7 @@
         const from = S.job.layers.findIndex(l => l.id === lDrag.layer);
         const rest = S.job.layers.map(l => l.id).filter(id => id !== lDrag.layer);
         const to = rest.indexOf(t.layer) + (t.cls === 'under' ? 1 : 0);
-        if (to !== from) api('move_group', { id: lDrag.layer, delta: to - from }, { quiet: true });
+        if (to !== from) moveLayer(lDrag.layer, to - from);
         return;
       }
       const { ids, set } = lDrag;
@@ -247,18 +254,27 @@
     const row = e.target.closest('[data-layer]'); if (!row) return;
     e.preventDefault(); const id = row.dataset.layer;
     const gi = S.job.layers.findIndex(l => l.id === id);
+    if (simple) return menu(e.clientX, e.clientY, [
+      ['Rename…', () => $(`[data-rename="${id}"]`).dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))],
+      isLaser(layerById(id)) ? ['Make this a sewing layer', () => setKind(id, 'sew')] : ['Make this a laser cut layer', () => setKind(id, 'laser')],
+      ...(gi > 0 ? [['Sew this layer earlier', () => moveLayer(id, -1)]] : []),
+      ...(gi < S.job.layers.length - 1 ? [['Sew this layer later', () => moveLayer(id, 1)]] : []),
+    ]);
     menu(e.clientX, e.clientY, [
       ['Select all shapes in this layer', () => { sel = new Set(S.job.shapes.filter(s => s.layer === id).map(s => s.id)); selChanged(); }],
       ['Rename…', () => $(`[data-rename="${id}"]`).dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))],
       isLaser(layerById(id)) ? ['Make this a sewing layer', () => setKind(id, 'sew')] : ['Make this a laser cut layer', () => setKind(id, 'laser')],
       ...(isLaser(layerById(id)) ? [] : [['Use these stitch settings for every layer', () => copySettings(id)]]),
-      ...(gi > 0 ? [['Move layer up', () => api('move_group', { id, delta: -1 }, { quiet: true })]] : []),
-      ...(gi < S.job.layers.length - 1 ? [['Move layer down', () => api('move_group', { id, delta: 1 }, { quiet: true })]] : []),
+      ...(gi > 0 ? [['Move layer up', () => moveLayer(id, -1)]] : []),
+      ...(gi < S.job.layers.length - 1 ? [['Move layer down', () => moveLayer(id, 1)]] : []),
       null,
       ...(S.job.layers.length > 1 ? [['Delete layer, keep its shapes', () => api('ungroup', { id }, { quiet: true }).then(d => d && toast('Layer removed; its shapes moved to the layer above'))]] : []),
       ['Delete layer and its shapes', () => confirmSheet('Delete layer?', `“${esc(layerById(id).name)}” and all of its shapes will be removed. You can undo this.`, 'Delete', () => api('delete_layer', { id }))],
     ]);
   });
+
+  // in the simple mode the layers are sewn in the order of the list, so moving one also moves its shapes in the sewing order
+  const moveLayer = (id, delta) => api('move_group', { id, delta, follow: simple }, { quiet: true });
 
   function pick(id, toggle, add) {
     if (toggle) sel.has(id) ? sel.delete(id) : sel.add(id);
@@ -319,6 +335,42 @@
 
   /* ------------------------------------------------------------------ inspector panels */
   const PANELS = {
+    // the simple mode: one panel for the current layer (sewing or laser, stitch length), the simulation and saving
+    simple: () => {
+      if (!S.job.shapes.length) return {
+        title: 'Start a job', sub: 'Open a pattern drawing to sew or cut it.',
+        body: `<div class="ss"><button class="btn primary big" data-act="open">Open drawing…</button><div class="fmt">DXF · AI · PLT · PRT · DST · DSB · SLW</div></div>`,
+        foot: '',
+      };
+      const L = layerById(curLayer);
+      const laser = isLaser(L), st = S.stats;
+      const n = S.job.shapes.filter(x => x.layer === L.id).reduce((a, x) => a + (S.stitched[x.id]?.f.length || 0), 0);
+      const c = S.laser && S.laser[L.id], slow = laser && c && (c.tiny > 0 || c.joinable > 0);
+      return {
+        title: 'Your job', sub: 'Pick a layer, set it, try it, then save it for the machine.',
+        pick: `<div class="layer-pick"><span class="swatch" style="background:${esc(L.color)}"></span><select class="sel" id="stitchLayer" style="flex:1" aria-label="Layer">${S.job.layers.map(l => `<option value="${l.id}" ${l.id === L.id ? 'selected' : ''}>${esc(l.name)}</option>`).join('')}</select></div>`,
+        body: `
+          <div class="ss">
+            <h4>This layer is</h4>
+            <div class="seg kind-seg" role="group" aria-label="This layer is"><button aria-pressed="${!laser}" data-act="kind" data-kind="sew"><svg viewBox="0 0 24 24"><path d="M3 17c4-2 6-8 9-10s6 0 9-2" stroke-dasharray="2.5 2.5"/></svg>Sewing</button><button aria-pressed="${laser}" data-act="kind" data-kind="laser"><svg viewBox="0 0 24 24"><path d="M12 3v7M12 14v7M3 12h7M14 12h7"/><circle cx="12" cy="12" r="1.5"/></svg>Laser cut</button></div>
+            ${laser ? `<p class="hint">Laser cut: needle 3 switches the laser on (output IO 5) and the cut follows each line once, with no stitches, back-tack or overlap.</p>` : ''}
+          </div>
+          ${laser ? (slow ? `<div class="ss">
+            <div class="callout warn" style="margin:0"><svg viewBox="0 0 24 24"><path d="M12 3 2 21h20z"/><path d="M12 10v5M12 18h.01"/></svg><div>This layer may cut slowly.</div></div>
+            <button class="btn primary" data-act="laserFix">Speed up laser paths</button></div>` : '') : `
+          <div class="ss big-slider">${row('Stitch length', fld('lenNum', +(+L.settings.stitch_len).toFixed(2), 'mm', '', 'layer:stitch_len'), 'lenNum')}
+            <input type="range" id="lenRange" min="0.5" max="12" step="0.1" value="${L.settings.stitch_len}" aria-label="Stitch length">
+            <p class="hint">${n.toLocaleString()} needle positions in this layer</p></div>`}
+          <div class="ss">
+            <h4>Try it</h4>
+            <button class="btn big" data-act="simulate"><svg viewBox="0 0 24 24"><path d="M7 5v14l11-7z"/></svg>Simulate sewing</button>
+            <p class="hint">Watch the needle and the laser go over the job in sewing order.</p>
+          </div>`,
+        foot: `<div class="simple-stats"><div><span class="k">Needle positions</span><b class="num">${st.stitches.toLocaleString()}</b></div><div><span class="k">Estimated time</span><b class="num">${fmtTime(st.seconds)}</b></div></div>
+          <button class="btn primary big" data-act="saveMachine">${ICO.save}Save machine file…</button>` +
+          S.drives.map(d => `<button class="btn big" data-act="saveUsb" data-drive="${esc(d)}">${ICO.usb}Save to USB drive ${esc(d.replace('\\', ''))}</button>`).join(''),
+      };
+    },
     import: () => {
       const dpi = J().dpi;
       return {
@@ -522,7 +574,7 @@
     // a value committed with Tab re-renders the panel while the next field has focus: keep that field focused
     const fa = document.activeElement, fk = fa && fa.closest('.inspector') && focusKey(fa);
     const fv = fk && fa.tagName === 'INPUT' ? { v: fa.value, typed: fa.value !== fa.defaultValue, s: fa.selectionStart, e: fa.selectionEnd } : null;
-    const p = PANELS[stage]();
+    const p = PANELS[stg()]();
     $('#insp').innerHTML = `<div class="i-title"><h2>${p.title}</h2><p>${p.sub}</p>${p.pick || ''}</div>${p.body}`;
     $('#ifoot').innerHTML = p.foot;
     $('#ifoot').hidden = !p.foot;
@@ -728,7 +780,6 @@
   /* ------------------------------------------------------------------ stages */
   function setStage(s) {
     stage = s; store.set('stage', s); progSel = -1;
-    if (s !== 'sequence') stopSim();
     renderAll();
   }
   $$('.stage').forEach(b => b.addEventListener('click', () => S && setStage(b.dataset.stage)));
@@ -773,7 +824,10 @@
   const insets = () => {
     const a = $('.side').getBoundingClientRect(), b = $('.inspector').getBoundingClientRect();
     const [lp, rp] = a.left < b.left ? [a, b] : [b, a];
-    return { l: lp.right + 16, r: W - rp.left + 16, t: 90, b: 76 };
+    // above: the title and step bars and the readout; below: the show and zoom bars (stacked in small windows)
+    const top = Math.max(...['.topbar', '.stepbar'].map(q => $(q).getBoundingClientRect().bottom));
+    const bars = $$('.viewbar, .zoombar').map(el => el.getBoundingClientRect()).filter(r => r.height);
+    return { l: lp.right + 16, r: W - rp.left + 16, t: top + 40, b: bars.length ? H - Math.min(...bars.map(r => r.top)) + 12 : 76 };
   };
   const sx = x => W / 2 + (x - view.cx) * view.k;
   const sy = y => H / 2 - (y - view.cy) * view.k;
@@ -816,7 +870,7 @@
     ctx.direction = 'ltr'; ctx.textAlign = 'left';
     ctx.fillStyle = colors.canvas; ctx.fillRect(0, 0, W, H);
     drawGrid();
-    const stitchMode = showStitch && (stage === 'stitch' || stage === 'sequence' || stage === 'output');
+    const stitchMode = showStitch && ['stitch', 'sequence', 'output', 'simple'].includes(stg());
     // live preview of a move or resize in progress; the engine applies the same map when the drag ends
     const xf = dragXF(), scaling = SL.isScale(xf);
     const T = xf ? (x, y) => SL.apply(xf, x, y) : null;
@@ -837,7 +891,12 @@
     const vx0 = wx(0), vx1 = wx(W), vy0 = wy(H), vy1 = wy(0);
     const world = (ox, oy) => ctx.setTransform(dpr * k, 0, 0, -dpr * k, dpr * (W / 2 + (ox - view.cx) * k), dpr * (H / 2 + (view.cy - oy) * k));
     const screen = () => ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const dots = stitchMode && k >= 0.9;
+    // lines keep one width on screen at every zoom, with or without stitches; the stitch dots keep one size and are
+    // left out where they would run together into a thick line (needle positions less than 4 px apart)
+    const LW = 1;
+    const dotsFor = L => stitchMode && k * (+L.settings.stitch_len || 2) >= 4;
+    // start marks shrink a little when zoomed out so they do not pile up; the simple mode's original shape has none
+    const markK = Math.min(1, Math.max(0.55, k / 1.5)), marks = !(simple && !showStitch);
     ctx.lineJoin = ctx.lineCap = 'round';
     const band = drag && drag.kind === 'box' ? boxWorld(drag) : null;   // shapes a rubber band will pick light up
     for (const s of S.job.shapes) {
@@ -869,14 +928,14 @@
       // no box, no handles, no points
       const directMark = () => { if (isSel && tool === 'direct') { ctx.globalAlpha = alpha; ctx.setLineDash([5 / k, 4 / k]); ctx.strokeStyle = colors.canvas; ctx.lineWidth = 2.6 / k; ctx.stroke(path); ctx.setLineDash([]); } };
       if (guide) { ctx.globalAlpha = alpha; ctx.setLineDash([5 / k, 4 / k]); ctx.strokeStyle = colors.guide; ctx.lineWidth = 1 / k; ctx.stroke(path); ctx.setLineDash([]); directMark(); continue; }
-      const laser = isLaser(L);
+      const laser = isLaser(L), dots = dotsFor(L);
       if (laser) {
         // laser cuts keep the layer's colour, with a soft glow in that colour
         ctx.globalAlpha = alpha * 0.25; ctx.strokeStyle = L.color; ctx.lineWidth = 6 / k; ctx.stroke(path);
         ctx.globalAlpha = alpha; ctx.strokeStyle = isSel && !stitchMode ? colors.accent : L.color; ctx.lineWidth = 1.4 / k; ctx.stroke(path);
       } else {
         ctx.strokeStyle = isSel && !stitchMode ? colors.accent : L.color;
-        ctx.lineWidth = (stitchMode ? 1 : 1.8) / k; ctx.globalAlpha = alpha * (stitchMode && dots ? 0.45 : 1); ctx.stroke(path);
+        ctx.lineWidth = LW / k; ctx.globalAlpha = alpha * (dots ? 0.45 : 1); ctx.stroke(path);
       }
       ctx.globalAlpha = alpha;
       directMark();
@@ -889,7 +948,7 @@
         const st = S.stitched[s.id];
         if (st) {
           screen();
-          const r = Math.max(1, Math.min(2.4, k * 0.3)), p = st.p, f = st.f;
+          const r = 1.3, p = st.p, f = st.f;
           let last = '';
           for (let i = 0, j = 0; i < p.length; i += 2, j++) {
             const fl = f[j]; const c = fl === 's' ? L.color : (flagColor(fl) || L.color);
@@ -901,8 +960,8 @@
         }
       }
       // start point & direction
-      if (!dim && (isSel || stage !== 'import')) {
-        screen();
+      if (!dim && marks && (isSel || stg() !== 'import')) {
+        screen(); ctx.save(); ctx.translate(sx(P[0][0] + d[0]), sy(P[0][1] + d[1])); ctx.scale(markK, markK); ctx.translate(-sx(P[0][0] + d[0]), -sy(P[0][1] + d[1]));
         const a = P[0], b = P.find(q => Math.hypot(q[0] - a[0], q[1] - a[1]) > 1e-6) || P[1];
         const X = sx(a[0] + d[0]), Y = sy(a[1] + d[1]); const ang = Math.atan2(sy(b[1]) - sy(a[1]), sx(b[0]) - sx(a[0]));
         ctx.fillStyle = colors.ok; ctx.beginPath(); ctx.arc(X, Y, 4.5, 0, 7); ctx.fill();
@@ -911,6 +970,7 @@
         ctx.moveTo(X + Math.cos(ang) * 6, Y + Math.sin(ang) * 6); ctx.lineTo(tx, ty);
         ctx.moveTo(tx, ty); ctx.lineTo(tx + Math.cos(ang + 2.5) * 5, ty + Math.sin(ang + 2.5) * 5);
         ctx.moveTo(tx, ty); ctx.lineTo(tx + Math.cos(ang - 2.5) * 5, ty + Math.sin(ang - 2.5) * 5); ctx.stroke();
+        ctx.restore();
       }
     }
     screen();
@@ -935,9 +995,8 @@
       ctx.fillStyle = colors.bad; ctx.font = '600 11px system-ui'; ctx.fillText(k.toUpperCase(), X + 10, Y - 10);
     }
     // sewing order
-    if (showOrder || stage === 'sequence') drawOrder();
+    if (showOrder || stg() === 'sequence') drawOrder();
     // simulation
-    if (sim.on) drawSim();
     // rubber band / measure
     if (drag && drag.kind === 'box') {
       // translucent so the pieces under the box stay visible
@@ -1197,10 +1256,17 @@
     } else draw();
   });
   cv.addEventListener('wheel', e => { e.preventDefault(); zoomAt(Math.pow(1.0018, -e.deltaY), e.clientX, e.clientY); }, { passive: false });
-  cv.addEventListener('dblclick', e => { const s = hit(e.clientX, e.clientY); if (s) { sel = new Set([s.id]); if (stage !== 'arrange') setStage('arrange'); else renderAll(); } });
+  cv.addEventListener('dblclick', e => { if (simple) return; const s = hit(e.clientX, e.clientY); if (s) { sel = new Set([s.id]); if (stage !== 'arrange') setStage('arrange'); else renderAll(); } });
   cv.addEventListener('contextmenu', e => {
     e.preventDefault(); if (!S) return;
     const s = hit(e.clientX, e.clientY);
+    if (simple) {
+      const L = s && layerOf(s);
+      if (s) { sel = new Set([s.id]); curLayer = L.id; selChanged(); }
+      return menu(e.clientX, e.clientY, [
+        ...(L ? [isLaser(L) ? ['Make this a sewing layer', () => setKind(L.id, 'sew')] : ['Make this a laser cut layer', () => setKind(L.id, 'laser')]] : []),
+        ['Fit drawing', fitView, 'Ctrl 0']]);
+    }
     if (s && !sel.has(s.id)) { sel = new Set([s.id]); selChanged(); }
     if (!sel.size) { const at = [wx(e.clientX), wy(e.clientY)]; return menu(e.clientX, e.clientY, [['Add a shape here…', () => openSheet('add', { x: at[0], y: at[1] })], ...(clip ? [['Paste here', () => paste('view', at), 'Ctrl V']] : []), ['Fit drawing', fitView, 'Ctrl 0'], ['Select all', ACT.selectAll, 'Ctrl A']]); }
     const x = wx(e.clientX), y = wy(e.clientY);
@@ -1249,7 +1315,7 @@
   $$('[data-view]').forEach(b => b.addEventListener('click', () => { viewMode = b.dataset.view; $$('[data-view]').forEach(x => x.setAttribute('aria-pressed', x === b)); draw(); }));
   $('#zoomIn').onclick = () => zoomAt(1.25); $('#zoomOut').onclick = () => zoomAt(0.8); $('#fit').onclick = fitView;
   $('#showOrder').onclick = () => { showOrder = !showOrder; store.set('showOrder', showOrder); renderTop(); draw(); };
-  $('#showStitch').onclick = () => { showStitch = !showStitch; store.set('showStitch', showStitch); renderTop(); draw(); };
+  $('#showStitch').onclick = $('#showOrig').onclick = () => { showStitch = !showStitch; store.set('showStitch', showStitch); renderTop(); draw(); };
   $('#undo').onclick = () => api('undo', {}, { quiet: true });
   $('#redo').onclick = () => api('redo', {}, { quiet: true });
   $('#btnOpen').onclick = () => ACT.open();
@@ -1278,6 +1344,20 @@
   let lite = store.get('lite', true);
   function setLite(v) { lite = v; store.set('lite', v); document.documentElement.classList.toggle('lite', v); draw(); }
   setLite(lite);
+  /* simple / advanced mode (Settings › General): the simple mode hides the steps, tools and every setting but the few
+     a job needs; the drawing can only be looked at and picked from */
+  function setSimple(v) {
+    simple = v; store.set('simple', v);
+    document.documentElement.classList.toggle('simple', v);
+    if (v) {
+      cancelDrag(); setTool('select'); $('#paletteScrim').hidden = true;
+      viewMode = 'all'; $$('[data-view]').forEach(x => x.setAttribute('aria-pressed', x.dataset.view === 'all'));   // its bar is hidden
+    }
+    if (!S) return;
+    syncSettings(); renderAll();
+    if (autoFit) fitView();
+  }
+  document.documentElement.classList.toggle('simple', simple);
 
   /* font, text size, accent colour, interface size and the parts of the window that are shown (Settings) */
   const FONTS = {
@@ -1309,7 +1389,7 @@
   applyUI();
   function resetUI() {
     ui = { ...UI_DEF }; store.set('ui', ui); store.set('theme', null);
-    applyTheme(); applyUI(); setLite(true); setInspector(true); syncSettings();
+    applyTheme(); applyUI(); setLite(true); setInspector(true); setSimple(true); syncSettings();
     if (autoFit) fitView(); else draw();
     toast('Settings are back to their defaults');
   }
@@ -1336,7 +1416,7 @@
     pressed('[data-ts]', b => +b.dataset.ts === ui.ts);
     pressed('[data-zoom]', b => +b.dataset.zoom === ui.zoom);
     const on = (id, v) => $('#' + id).setAttribute('aria-checked', !!v);
-    on('swHome', store.get('homeOnStart', true)); on('swAnim', !lite); on('swBold', ui.bold);
+    on('swHome', store.get('homeOnStart', true)); on('swAnim', !lite); on('swBold', ui.bold); on('swAdvanced', !simple);
     on('swInsp', !document.documentElement.classList.contains('insp-off'));
     for (const k of ['side', 'readout', 'viewbar', 'zoombar', 'grid', 'kbd']) on('sw' + k[0].toUpperCase() + k.slice(1), ui[k]);
   }
@@ -1373,6 +1453,7 @@
     const v = s.getAttribute('aria-checked') !== 'true';
     if (s.id === 'swHome') { store.set('homeOnStart', v); $('#homeOnStart').setAttribute('aria-checked', v); }
     else if (s.id === 'swAnim') setLite(!v);
+    else if (s.id === 'swAdvanced') setSimple(!v);
     else if (s.id === 'swInsp') setInspector(v);
     else return setUI(s.id === 'swBold' ? 'bold' : s.id[2].toLowerCase() + s.id.slice(3), v);
     syncSettings();
@@ -1407,18 +1488,29 @@
       const pause = L.needle === 3 ? laserWaitMs() : 0;
       for (let i = 0; i < st.p.length; i += 2) sim.seq.push([st.p[i], st.p[i + 1], i === 0, L.color, laser, i === 0 ? pause : 0]);
     }
+    sim.box = null;
     sim.pos = Math.min(sim.pos, sim.seq.length);
     $('#simPos').max = Math.max(1, sim.seq.length);
   }
+  /* the simulation window: opens over the job and stays until it is closed (X or Esc), also when the run is over */
+  let simFrom = null;
   function startSim(play) {
     sim.heldAt = -1; sim.hold = 0;
     if (!sim.seq.length) return toast('Nothing to sew yet: turn on a layer with shapes.', true);
-    if (stage !== 'sequence') setStage('sequence');
-    sim.on = true; $('#sim').hidden = false;
+    if (!sim.on) {
+      simFrom = document.activeElement;
+      $('#ctx').hidden = true; $('#paletteScrim').hidden = true;
+      sim.on = true; sim.pos = 0; $('#simScrim').hidden = false;
+      $('#simPlay').focus();
+    }
     if (play) { if (sim.pos >= sim.seq.length) sim.pos = 0; sim.playing = true; sim.last = performance.now(); loop(); }
-    syncSim();
+    syncSim(); simPaint();
   }
-  function stopSim() { sim.on = false; sim.playing = false; cancelAnimationFrame(sim.raf); $('#sim').hidden = true; draw(); }
+  function stopSim() {
+    sim.on = false; sim.playing = false; cancelAnimationFrame(sim.raf); $('#simScrim').hidden = true;
+    if (simFrom?.isConnected) simFrom.focus({ preventScroll: true });
+    simFrom = null;
+  }
   function loop() {
     cancelAnimationFrame(sim.raf);
     sim.raf = requestAnimationFrame(now => {
@@ -1429,75 +1521,106 @@
       if (sim.hold > 0) {                                          // the machine waits here (laser start / stop)
         sim.hold -= dt * sim.speed;
         $('#simTxt').textContent = (window.tr || (x => x))('Laser waiting') + ' ' + Math.max(0, sim.hold).toFixed(2) + ' s';
-        draw(); loop(); return;
+        simPaint(); loop(); return;
       }
       const i = Math.floor(sim.pos), a = sim.seq[i - 1], b = sim.seq[i];
       let rate = (J().speed || 1800) / 60 * sim.speed;            // needle: stitches per second
       if (a && b && b[4] && !b[2]) rate = 40 * sim.speed / Math.max(0.05, Math.hypot(b[0] - a[0], b[1] - a[1]));   // laser: 40 mm per second
       sim.pos = Math.min(sim.seq.length, sim.pos + dt * rate);
-      syncSim(); draw();
-      if (sim.pos >= sim.seq.length) { sim.playing = false; syncSim(); toast('Simulation finished'); return; }
-      loop();
+      if (sim.pos >= sim.seq.length) sim.playing = false;          // the end: the window stays open on the finished job
+      syncSim(); simPaint();
+      if (sim.playing) loop();
     });
   }
   function syncSim() {
     $('#simPos').max = sim.seq.length; $('#simPos').value = Math.floor(sim.pos);
     $('#simTxt').textContent = `${Math.floor(sim.pos).toLocaleString()} / ${sim.seq.length.toLocaleString()}`;
+    $('#simDone').hidden = sim.pos < sim.seq.length;
     $('#simIcon').innerHTML = sim.playing ? '<path d="M7 5h3v14H7zM14 5h3v14h-3z" fill="currentColor"/>' : '<path d="M7 5v14l11-7z" fill="currentColor"/>';
   }
-  function drawSim() {
+  /* only what has been sewn or cut so far is drawn: the drawing appears as the needle and the laser go. The view
+     fits the whole run from the start, so nothing moves while it grows */
+  const scv = $('#simCv'), sctx = scv.getContext('2d');
+  function simPaint() {
+    if (!sim.on) return;
+    const R = scv.getBoundingClientRect(), dp = window.devicePixelRatio || 1, w = Math.max(1, R.width), h = Math.max(1, R.height);
+    if (scv.width !== Math.round(w * dp) || scv.height !== Math.round(h * dp)) { scv.width = Math.round(w * dp); scv.height = Math.round(h * dp); }
+    readColors();
+    const c = sctx;
+    c.setTransform(dp, 0, 0, dp, 0, 0); c.direction = 'ltr'; c.textAlign = 'left';
+    c.fillStyle = colors.canvas; c.fillRect(0, 0, w, h);
+    if (!sim.box) {
+      let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+      for (const [x, y] of sim.seq) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+      sim.box = [x0, y0, x1, y1];
+    }
+    const [x0, y0, x1, y1] = sim.box, pad = 40;
+    const k = Math.min((w - 2 * pad) / Math.max(1, x1 - x0), (h - 2 * pad) / Math.max(1, y1 - y0));
+    const SX = x => w / 2 + (x - (x0 + x1) / 2) * k, SY = y => h / 2 - (y - (y0 + y1) / 2) * k;
     const n = Math.floor(sim.pos); if (!n) return;
     const frac = Math.min(1, sim.pos - n);
-    ctx.lineJoin = ctx.lineCap = 'round';
-    let prev = null;
-    // sewn thread and laser cuts so far
-    for (let i = 0; i < n; i++) {
-      const [x, y, first, col, laser] = sim.seq[i];
-      if (prev) {
-        ctx.beginPath(); ctx.moveTo(sx(prev[0]), sy(prev[1])); ctx.lineTo(sx(x), sy(y));
-        if (first) { ctx.strokeStyle = colors['fg-3']; ctx.lineWidth = 1; ctx.setLineDash([3, 4]); ctx.stroke(); ctx.setLineDash([]); }
-        else if (laser) { ctx.globalAlpha = 0.25; ctx.strokeStyle = col; ctx.lineWidth = 5; ctx.stroke(); ctx.globalAlpha = 1; ctx.lineWidth = 1.6; ctx.stroke(); }
-        else { ctx.strokeStyle = col; ctx.lineWidth = 2.2; ctx.stroke(); }
-      }
-      prev = [x, y];
+    c.lineJoin = c.lineCap = 'round';
+    // sewn thread, laser cuts and travel moves so far; a run of the same kind and colour is one stroke
+    let kind = null, col = null, laser = false, path = null;
+    const flush = () => {
+      if (!path) return;
+      if (kind === 'travel') { c.strokeStyle = colors['fg-3']; c.lineWidth = 1; c.setLineDash([3, 4]); c.stroke(path); c.setLineDash([]); }
+      else if (laser) { c.globalAlpha = 0.25; c.strokeStyle = col; c.lineWidth = 5; c.stroke(path); c.globalAlpha = 1; c.lineWidth = 1.6; c.stroke(path); }
+      else { c.strokeStyle = col; c.lineWidth = 2; c.stroke(path); }
+    };
+    for (let i = 1; i < n; i++) {
+      const p = sim.seq[i - 1], q = sim.seq[i];
+      const kd = q[2] ? 'travel' : (q[4] ? 'L' : 'S') + q[3];
+      if (kd !== kind) { flush(); kind = kd; col = q[3]; laser = q[4]; path = new Path2D(); path.moveTo(SX(p[0]), SY(p[1])); }
+      path.lineTo(SX(q[0]), SY(q[1]));
     }
+    flush();
     // the head moves smoothly towards the next point
-    let [x, y, , , laser] = sim.seq[n - 1];
+    let [x, y, , , onLaser] = sim.seq[n - 1];
     const nx = sim.seq[n];
     if (nx && !nx[2]) { x += (nx[0] - x) * frac; y += (nx[1] - y) * frac; }
-    const X = sx(x), Y = sy(y), t = performance.now() / 1000;
-    if (laser && nx && !nx[2]) {
+    const X = SX(x), Y = SY(y), t = performance.now() / 1000;
+    if (onLaser && nx && !nx[2]) {
       // glowing cut line up to the beam, a pulsing beam spot and a few sparks
-      ctx.beginPath(); ctx.moveTo(sx(sim.seq[n - 1][0]), sy(sim.seq[n - 1][1])); ctx.lineTo(X, Y);
-      ctx.strokeStyle = colors.laser; ctx.lineWidth = 2; ctx.stroke();
+      c.beginPath(); c.moveTo(SX(sim.seq[n - 1][0]), SY(sim.seq[n - 1][1])); c.lineTo(X, Y);
+      c.strokeStyle = colors.laser; c.lineWidth = 2; c.stroke();
       const r = 13 + Math.sin(t * 18) * 3;
-      const g = ctx.createRadialGradient(X, Y, 0, X, Y, r);
+      const g = c.createRadialGradient(X, Y, 0, X, Y, r);
       g.addColorStop(0, 'rgba(255,255,255,0.95)'); g.addColorStop(0.25, colors.laser); g.addColorStop(1, 'rgba(255,60,40,0)');
-      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(X, Y, r, 0, 7); ctx.fill();
-      ctx.fillStyle = '#ffd27a';
+      c.fillStyle = g; c.beginPath(); c.arc(X, Y, r, 0, 7); c.fill();
+      c.fillStyle = '#ffd27a';
       for (let i = 0; i < 6; i++) {
         const a = (i * 1.7 + t * 23) % (Math.PI * 2), d = 6 + ((i * 37 + t * 140) % 12);
-        ctx.fillRect(X + Math.cos(a) * d - 1, Y + Math.sin(a) * d - 1, 2, 2);
+        c.fillRect(X + Math.cos(a) * d - 1, Y + Math.sin(a) * d - 1, 2, 2);
       }
-      ctx.strokeStyle = colors.laser; ctx.lineWidth = 1; ctx.beginPath();
-      ctx.moveTo(X - 20, Y); ctx.lineTo(X - 8, Y); ctx.moveTo(X + 8, Y); ctx.lineTo(X + 20, Y);
-      ctx.moveTo(X, Y - 20); ctx.lineTo(X, Y - 8); ctx.moveTo(X, Y + 8); ctx.lineTo(X, Y + 20); ctx.stroke();
-    } else if (laser) {
+      c.strokeStyle = colors.laser; c.lineWidth = 1; c.beginPath();
+      c.moveTo(X - 20, Y); c.lineTo(X - 8, Y); c.moveTo(X + 8, Y); c.lineTo(X + 20, Y);
+      c.moveTo(X, Y - 20); c.lineTo(X, Y - 8); c.moveTo(X, Y + 8); c.lineTo(X, Y + 20); c.stroke();
+    } else if (onLaser) {
       // laser head travelling (beam off): an outlined crosshair
-      ctx.strokeStyle = colors.laser; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(X, Y, 7, 0, 7);
-      ctx.moveTo(X - 12, Y); ctx.lineTo(X + 12, Y); ctx.moveTo(X, Y - 12); ctx.lineTo(X, Y + 12); ctx.stroke();
+      c.strokeStyle = colors.laser; c.lineWidth = 1.5; c.beginPath(); c.arc(X, Y, 7, 0, 7);
+      c.moveTo(X - 12, Y); c.lineTo(X + 12, Y); c.moveTo(X, Y - 12); c.lineTo(X, Y + 12); c.stroke();
     } else {
       // sewing needle: thread-coloured ring and needle point
-      ctx.fillStyle = colors['thread-soft']; ctx.beginPath(); ctx.arc(X, Y, 11, 0, 7); ctx.fill();
-      ctx.fillStyle = colors.thread; ctx.beginPath(); ctx.arc(X, Y, 4, 0, 7); ctx.fill();
+      c.fillStyle = colors['thread-soft']; c.beginPath(); c.arc(X, Y, 11, 0, 7); c.fill();
+      c.fillStyle = colors.thread; c.beginPath(); c.arc(X, Y, 4, 0, 7); c.fill();
     }
-    const label = (window.tr || (x => x))(laser ? 'Laser' : 'Needle');
-    ctx.font = '600 11px ' + getComputedStyle(document.body).getPropertyValue('--font'); ctx.fillStyle = laser ? colors.laser : colors.thread; ctx.fillText(label, X + 14, Y - 14);
+    const label = (window.tr || (x => x))(onLaser ? 'Laser' : 'Needle');
+    c.font = '600 11px ' + getComputedStyle(document.body).getPropertyValue('--font'); c.fillStyle = onLaser ? colors.laser : colors.thread; c.fillText(label, X + 14, Y - 14);
   }
   $('#simPlay').onclick = () => { if (sim.playing) { sim.playing = false; syncSim(); } else startSim(true); };
-  $('#simPos').addEventListener('input', e => { sim.playing = false; sim.pos = +e.target.value; sim.on = true; syncSim(); draw(); });
+  $('#simPos').addEventListener('input', e => { sim.playing = false; sim.pos = +e.target.value; syncSim(); simPaint(); });
   $('#simSpeed').addEventListener('change', e => { sim.speed = +e.target.value; });
   $('#simClose').onclick = stopSim;
+  $('#simScrim').addEventListener('keydown', e => {
+    e.stopPropagation();
+    if (e.key === 'Escape') { e.preventDefault(); return stopSim(); }
+    if (e.key === ' ' && e.target.tagName !== 'SELECT') { e.preventDefault(); return $('#simPlay').click(); }
+    if (e.key === 'Tab') {   // Tab stays in the window
+      const f = $$('#simScrim button, #simScrim input, #simScrim select'), i = f.indexOf(document.activeElement);
+      if (i < 0 || (e.shiftKey ? i === 0 : i === f.length - 1)) { e.preventDefault(); f[e.shiftKey ? f.length - 1 : 0].focus(); }
+    }
+  });
 
   /* ------------------------------------------------------------------ sheets */
   let sheetCtx = {};
@@ -1516,6 +1639,13 @@
       ['Hide / show the stage panel', 'Shift Tab', 1], ['Find any tool', 'Ctrl K'], ['Light / dark', 'Ctrl Shift L'], ['Settings', 'Ctrl ,', 1], ['Keyboard shortcuts', 'Ctrl Alt Shift K', 1], ['Keyboard shortcuts', '?']]],
     ['Stages', [['Import', '1'], ['Arrange', '2'], ['Stitch', '3'], ['Sequence', '4'], ['Output', '5'], ['Next step', 'PageDown', 1], ['Previous step', 'PageUp', 1]]],
   ];
+  const KEYS_SIMPLE = [
+    ['File', [['Open a drawing or job', 'Ctrl O'], ['Save job', 'Ctrl S'], ['Save machine file', 'Ctrl Alt E'], ['New job', 'Ctrl N'], ['Home: new job, open, recent files', 'Ctrl Shift H']]],
+    ['Edit', [['Undo', 'Ctrl Z'], ['Redo', 'Ctrl Shift Z'], ['Stop the simulation, clear the selection', 'Esc'], ['Delete selected', 'Delete'], ['Nudge the selection', '← ↑ → ↓'], ['Nudge ×10', 'Shift ← ↑ → ↓']]],
+    ['Tools', [['Selection: move and resize whole shapes', 'V'], ['Direct selection: move one path', 'A'], ['Pan', 'H'], ['Set start point', 'C'], ['Measure', 'I'], ['Add shape', 'M']]],
+    ['View', [['Fit the drawing', 'Ctrl 0'], ['Real size (100%)', 'Ctrl 1'], ['Zoom in', 'Ctrl +'], ['Zoom out', 'Ctrl −'], ['Pan while held', 'Space'], ['Original shape / stitches', 'Ctrl Y'],
+      ['Light / dark', 'Ctrl Shift L'], ['Settings', 'Ctrl ,'], ['Keyboard shortcuts', '?']]],
+  ];
   const keyCaps = k => k === '← ↑ → ↓' ? `<kbd>${k}</kbd>` : k.startsWith('Shift ←') ? `<kbd>Shift</kbd><kbd>← ↑ → ↓</kbd>` : k.split(' ').map(x => `<kbd>${x}</kbd>`).join('');
   const SHEETS = {
     newjob: () => {
@@ -1527,7 +1657,7 @@
       <footer><button class="btn" data-close>Cancel</button><button class="btn primary" data-ok>Create</button></footer>`;
     },
     keys: () => `<header><h3>Keyboard shortcuts</h3><p>The same keys as Adobe Illustrator. Point at any button to see its shortcut.</p></header>
-      <div class="body"><div class="keys-grid">${[[KEYS[0], KEYS[4]], [KEYS[1]], [KEYS[2], KEYS[3]]].map(col => `<div>${col.map(([g, list]) => `<h4>${g}</h4>${list.map(([n, k, isNew]) => `<div class="k"><span>${n}${isNew ? '<span class="new">new</span>' : ''}</span><span data-notr>${keyCaps(k)}</span></div>`).join('')}`).join('')}</div>`).join('')}</div></div>
+      <div class="body"><div class="keys-grid">${(simple ? [[KEYS_SIMPLE[0], KEYS_SIMPLE[2]], [KEYS_SIMPLE[1]], [KEYS_SIMPLE[3]]] : [[KEYS[0], KEYS[4]], [KEYS[1]], [KEYS[2], KEYS[3]]]).map(col => `<div>${col.map(([g, list]) => `<h4>${g}</h4>${list.map(([n, k, isNew]) => `<div class="k"><span>${n}${isNew ? '<span class="new">new</span>' : ''}</span><span data-notr>${keyCaps(k)}</span></div>`).join('')}`).join('')}</div>`).join('')}</div></div>
       <footer><button class="btn primary" data-close>Close</button></footer>`,
     group: () => `<header><h3>Make a layer</h3><p>${sel.size} selected shape${sel.size > 1 ? 's' : ''} move into a new layer with its own needle.</p></header>
       <div class="body">${row('Name', `<span class="field wide" style="width:200px"><input id="gName" value="${nextLayerName()}"></span>`)}
@@ -1800,6 +1930,7 @@
     ['Hide / show the stage panel (Shift+Tab)', 'import', () => toggleInspector()],
     ['Keyboard shortcuts', 'import', () => openSheet('keys')],
     ['Settings: language, theme, fonts, text size, interface (Ctrl+,)', '', () => openSettings()],
+    ['Simple mode: only layers, laser, stitch length, simulation and saving', '', () => setSimple(true)],
     ['Language: العربية / English', 'import', () => setLang(window.STL_LANG === 'ar' ? 'en' : 'ar')],
     ['Make a layer laser cut', 'stitch', () => setKind(curLayer, 'laser')],
     ['Speed up laser paths', 'stitch', () => api('laser_fix', { id: curLayer })],
@@ -1841,6 +1972,11 @@
     const ctrl = e.ctrlKey || e.metaKey;
     // the physical key, so shortcuts also work with the Arabic keyboard layout (Ctrl+Z types ئ there)
     const k = /^(Key[A-Z]|Digit[0-9])$/.test(e.code || '') ? e.code.slice(-1).toLowerCase() : e.key.toLowerCase();
+    if (sim.on) {   // the simulation window has the keys while it is open, wherever the focus is
+      if (e.key === 'Escape') { e.preventDefault(); stopSim(); }
+      else if (e.key === ' ') { e.preventDefault(); $('#simPlay').click(); }
+      return;
+    }
     if (ctrl && e.code === 'Comma' && $('#sheetScrim').hidden) { e.preventDefault(); return openSettings(); }
     if (!$('#paletteScrim').hidden) {
       if (e.key === 'ArrowDown') { hi = Math.min(hits.length - 1, hi + 1); renderPalette(); e.preventDefault(); }
@@ -1866,7 +2002,7 @@
       return;
     }
     if (ctrl && k === 'k' && e.altKey && e.shiftKey) { e.preventDefault(); return openSheet('keys'); }
-    if (ctrl && k === 'k') { e.preventDefault(); return openPalette(); }
+    if (ctrl && k === 'k') { e.preventDefault(); return simple || openPalette(); }
     if (ctrl && k === 'o') { e.preventDefault(); return ACT.open(); }
     if (ctrl && k === 's') { e.preventDefault(); return e.shiftKey ? api('save', { as_new: true }) : ACT.save(); }
     if (ctrl && e.altKey && k === 'e') { e.preventDefault(); return ACT.saveMachine(); }
@@ -1887,6 +2023,7 @@
       return;
     }
     if (e.key === '?' || e.key === '؟') { e.preventDefault(); return openSheet('keys'); }
+    if (simple) return simpleKey(e, ctrl, k);
     if (e.key === 'Tab' && e.shiftKey && !ctrl && !e.altKey) { e.preventDefault(); return toggleInspector(); }
     // edit
     if (ctrl && k === 'z') { e.preventDefault(); return api(e.shiftKey ? 'redo' : 'undo', {}, { quiet: true }); }
@@ -1927,6 +2064,26 @@
     if (/^[1-5]$/.test(k)) setStage(STAGES[+k - 1]);
     if (e.key === 'PageDown' || e.key === 'PageUp') { e.preventDefault(); stepBy(e.key === 'PageDown' ? 1 : -1); }
   });
+  // the simple mode's keys: undo, zoom, pan, Esc, the tools of the rail, delete and nudge
+  function simpleKey(e, ctrl, k) {
+    if (ctrl && k === 'z') { e.preventDefault(); return api(e.shiftKey ? 'redo' : 'undo', {}, { quiet: true }); }
+    if (ctrl && (e.code === 'Digit0' || e.code === 'Numpad0')) return fitView();
+    if (ctrl && (e.code === 'Digit1' || e.code === 'Numpad1')) return zoomAt(3.78 / view.k);
+    if (ctrl && (e.code === 'Equal' || e.code === 'NumpadAdd')) return zoomAt(1.25);
+    if (ctrl && (e.code === 'Minus' || e.code === 'NumpadSubtract')) return zoomAt(0.8);
+    if (ctrl && k === 'y') { e.preventDefault(); return $('#showOrig').click(); }
+    if (e.key === 'Escape') { $('#ctx').hidden = true; if (sim.on) return stopSim(); sel.clear(); selChanged(); return; }
+    if ((e.key === 'Delete' || e.key === 'Backspace') && sel.size) return api('delete', { ids: [...sel] }, { quiet: true });
+    if (e.key.startsWith('Arrow') && sel.size) {
+      e.preventDefault(); const st = (parseFloat(store.get('nudge', '0.10')) || 0.1) * (e.shiftKey ? 10 : 1);
+      const d = { ArrowUp: [0, st], ArrowDown: [0, -st], ArrowLeft: [-st, 0], ArrowRight: [st, 0] }[e.key];
+      return xform('move', { dx: d[0], dy: d[1] });
+    }
+    if (e.key === ' ' && !spaceDown) { spaceDown = true; cv.className = 'pan'; e.preventDefault(); return; }
+    if (ctrl || e.altKey) return;
+    const t = { v: 'select', a: 'direct', h: 'pan', c: 'start', i: 'measure' }[k]; if (t) return setTool(t);
+    if (k === 'm') openSheet('add', { x: view.cx, y: view.cy });
+  }
   document.addEventListener('keyup', e => {
     if (e.key === ' ') { spaceDown = false; cv.className = tool === 'pan' ? 'pan' : ''; }
     if (drag && drag.kind === 'resize' && (e.key === 'Shift' || e.key === 'Alt')) { e.preventDefault(); drag.shift = e.shiftKey; drag.alt = e.altKey; draw(); }
@@ -2124,7 +2281,7 @@
   }
 
   /* ------------------------------------------------------------------ boot */
-  addEventListener('resize', () => { resize(); if (autoFit) fitView(); });
+  addEventListener('resize', () => { resize(); if (autoFit) fitView(); simPaint(); });
   function setInspector(open) {
     document.documentElement.classList.toggle('insp-off', !open); store.set('inspOff', !open);
     const b = $('#inspToggle'), t = `${open ? 'Hide' : 'Show'} the panel (Shift+Tab)`;
