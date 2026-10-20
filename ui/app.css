@@ -51,6 +51,7 @@
   --bar: 52px;             /* the title bar */
   --steph: 58px;           /* the step bar under it */
   --top: calc(var(--bar) + var(--steph));
+  --stath: 30px;           /* the status bar along the bottom */
   --wintop: 36px;
   --railw: 48px;
   --sidew: 248px;
@@ -195,7 +196,7 @@ svg.i, .icon-btn svg, .tool svg, .btn svg { width: 16px; height: 16px; stroke: c
 
 /* ---------- tool rail ---------- */
 .rail {
-  position: fixed; top: var(--top); bottom: 0; inset-inline-start: 0; width: var(--railw); z-index: 12; background: var(--rail); border-inline-end: 1px solid var(--line);
+  position: fixed; top: var(--top); bottom: var(--stath); inset-inline-start: 0; width: var(--railw); z-index: 12; background: var(--rail); border-inline-end: 1px solid var(--line);
   display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 0;
 }
 .rail .tool { position: relative; width: 36px; height: 36px; min-width: 0; padding: 0; color: var(--rail-fg); border-radius: var(--r-sm); }
@@ -211,7 +212,7 @@ svg.i, .icon-btn svg, .tool svg, .btn svg { width: 16px; height: 16px; stroke: c
 .rail-sep { width: 20px; height: 1px; background: var(--rail-line); margin: 4px 0; }
 
 /* ---------- side panels ---------- */
-.side, .inspector { position: fixed; top: var(--top); bottom: 0; z-index: 10; background: var(--app); display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.side, .inspector { position: fixed; top: var(--top); bottom: var(--stath); z-index: 10; background: var(--app); display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
 .side { inset-inline-start: var(--railw); width: var(--sidew); border-inline-end: 1px solid var(--line); }
 .inspector { inset-inline-end: 0; width: var(--inspw); border-inline-start: 1px solid var(--line); }
 /* the tab on the inspector's edge hides it (Shift+Tab) so the drawing gets the whole width; the same tab brings it back */
@@ -220,13 +221,12 @@ svg.i, .icon-btn svg, .tool svg, .btn svg { width: 16px; height: 16px; stroke: c
 /* parts of the window the user turned off in Settings › Interface */
 :root.hide-side { --sidew: 0px; }
 .hide-side .side { visibility: hidden; border: 0; }
-.hide-readout .readout, .hide-viewbar .viewbar, .hide-zoombar .zoombar { display: none; }
+.hide-readout .readout, .hide-readout .statusbar .pos, .hide-viewbar .viewbar, .hide-zoombar .zoombar { display: none; }
 .hide-kbd :is(.topbar, .home-acts) kbd, .hide-kbd .rail .tool[data-key]::after { display: none; }
 /* the simple mode (default): no step bar, size readout, tool search or layer tools; the panel stays */
 :root.simple { --steph: 0px; }
 .simple :is(.stepbar, #openPalette, #btnSave, #saveTop, .insp-toggle, .side .p-foot, #groupSel, #addLayer, #addShape, .adv) { display: none !important; }
 :root.simple.insp-off { --inspw: 348px; }
-.simple .readout .pos { display: none; }   /* the simple mode shows the size only */
 .simple-only { display: none !important; }
 .simple .simple-only { display: inline-flex !important; }
 .simple.hide-viewbar .viewbar { display: flex; }   /* its switch is an advanced one; the simple mode keeps "Original shape" */
@@ -412,8 +412,16 @@ input[type="range"] { width: 100%; accent-color: var(--thread); }
 .float { position: fixed; z-index: 9; display: flex; align-items: center; gap: 2px; border-radius: var(--r); padding: 2px; background: var(--app); border: 1px solid var(--line); box-shadow: var(--shadow); }
 .readout { top: calc(var(--top) + 10px); inset-inline-start: calc(var(--railw) + var(--sidew) + 12px); padding: 5px 10px; gap: 14px; font-size: calc(12px * var(--ts)); color: var(--fg-2); }
 .readout b { color: var(--fg); font-weight: 500; }
-.viewbar { bottom: 12px; inset-inline-start: calc(var(--railw) + var(--sidew) + 12px); }
-.zoombar { bottom: 12px; inset-inline-end: calc(var(--inspw) + 12px); }
+.viewbar { bottom: calc(var(--stath) + 12px); inset-inline-start: calc(var(--railw) + var(--sidew) + 12px); }
+/* ---------- status bar ---------- */
+.statusbar { position: fixed; inset: auto 0 0 0; height: var(--stath); z-index: 20; background: var(--app); border-top: 1px solid var(--line);
+  display: flex; align-items: center; gap: 12px; padding: 0 6px 0 14px; font-size: calc(11.5px * var(--ts)); color: var(--fg-2); }
+[dir="rtl"] .statusbar { padding: 0 14px 0 6px; }
+.statusbar .grow { flex: 1; }
+.statusbar b { color: var(--fg); font-weight: 500; }
+.zoombar { display: flex; align-items: center; gap: 2px; }
+.zoombar .tool { height: 24px; min-width: 24px; padding: 0 6px; }
+.zoombar .sep { height: 14px; }
 .tool { height: 30px; min-width: 30px; padding: 0 9px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 0; background: transparent; border-radius: var(--r-sm); color: var(--fg-2); white-space: nowrap; }
 .tool:hover { background: var(--well); color: var(--fg); }
 .tool[aria-pressed="true"] { background: var(--well); color: var(--fg); font-weight: 500; }
@@ -429,6 +437,32 @@ input[type="range"] { width: 100%; accent-color: var(--thread); }
 [dir="rtl"] .simwin header { padding: 10px 18px 10px 10px; }
 .simwin h3 { margin: 0; font: 600 calc(15px * var(--ts)) var(--font-d); flex: 1; }
 .sim-done { font-size: calc(12px * var(--ts)); font-weight: 500; color: var(--ok); background: color-mix(in srgb, var(--ok) 14%, transparent); padding: 3px 10px; border-radius: 999px; }
+.simbody { display: grid; grid-template-columns: minmax(240px, 300px) minmax(0, 1fr); min-height: 0; }
+.seqside { display: flex; flex-direction: column; min-height: 0; border-inline-end: 1px solid var(--line); }
+.seqtools { display: flex; gap: 6px; padding: 10px; border-bottom: 1px solid var(--line); }
+.seqtools .btn { flex: 1; justify-content: center; }
+.seqtip { margin: 10px 10px 0; padding: 10px 12px; border-radius: var(--r); background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 8px 10px; align-items: center; }
+.seqtip svg { width: 20px; height: 20px; stroke: var(--accent); fill: none; stroke-width: 1.8; stroke-linecap: round; }
+.seqtip .t { display: grid; gap: 2px; }
+.seqtip b { font-weight: 600; color: var(--fg); }
+.seqtip small { font-size: calc(11.5px * var(--ts)); color: var(--fg-2); }
+.seqtip .btn { grid-column: 1 / -1; justify-content: center; }
+.seqlist { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 6px 0; }
+.seqhint { margin: 0; padding: 8px 12px 10px; border-top: 1px solid var(--line); }
+.seqlist .layer-row { grid-template-columns: 20px 12px minmax(0, 1fr) auto auto; cursor: grab; }
+.seqlist .step { width: 20px; height: 20px; border-radius: 6px; display: grid; place-items: center; font: 600 calc(11px * var(--ts)) var(--mono); background: var(--well-strong); color: var(--fg-2); }
+.seqlist .shape-row { grid-template-columns: 30px 22px minmax(0, 1fr); cursor: grab; }
+.seqlist .shape-row .no { font: calc(11px * var(--ts)) var(--mono); color: var(--fg-3); text-align: end; }
+.seqlist .shape-row[aria-selected="true"] .no { color: rgba(255,255,255,.85); }
+.seqlist .shape-row[aria-current="true"] { box-shadow: inset 3px 0 0 var(--thread); color: var(--fg); background: var(--well); }
+.seqlist .layer.laser .shape-row[aria-current="true"] { box-shadow: inset 3px 0 0 var(--laser); }
+[dir="rtl"] .seqlist .shape-row[aria-current="true"] { box-shadow: inset -3px 0 0 var(--thread); }
+[dir="rtl"] .seqlist .layer.laser .shape-row[aria-current="true"] { box-shadow: inset -3px 0 0 var(--laser); }
+.seqlist .best { width: 24px; height: 24px; }
+.seqlist .best svg { width: 15px; height: 15px; }
+.simnow { position: absolute; top: 10px; inset-inline-start: 12px; font-size: calc(12px * var(--ts)); color: var(--fg-2); background: color-mix(in srgb, var(--app) 82%, transparent); border: 1px solid var(--line); padding: 4px 10px; border-radius: 999px; pointer-events: none; }
+.simctl { display: flex; align-items: center; gap: 4px; }
 .simstage { position: relative; background: var(--canvas); min-height: 0; }
 #simCv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .simbar { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-top: 1px solid var(--line); }
@@ -788,8 +822,6 @@ html[lang="ar"] .en-only, html:not([lang="ar"]) .ar-only { display: none; }
   .layer-row { gap: 6px; padding: 6px; } .layer-row .cnt { display: none; }
   .kind-pill { padding: 2px 7px; }
   .viewbar .tool, #fit { font-size: 0; gap: 0; padding: 0; width: 30px; justify-content: center; }
-  .viewbar { bottom: 54px; }
-  .readout .pos { display: none; }
   .i-title { padding: 12px 12px 8px; } .ss { padding: 12px; gap: 8px; }
   .stat { padding: 10px 12px; } .stat .v { font-size: calc(17px * var(--ts)); }
 }
@@ -813,7 +845,7 @@ html.lite * { transition: none !important; }
 [dir="rtl"] .layer.closed .caret { transform: rotate(90deg); }
 [dir="rtl"] .sec:not([open]) > summary .chev { transform: scaleX(-1); }
 [dir="rtl"] .sec > summary .sum { margin-left: 0; margin-right: auto; text-align: left; }
-[dir="rtl"] .field, [dir="rtl"] .num, [dir="rtl"] .mono, [dir="rtl"] kbd, [dir="rtl"] .readout b, [dir="rtl"] .zoomtxt, [dir="rtl"] #simTxt { direction: ltr; }
+[dir="rtl"] .field, [dir="rtl"] .num, [dir="rtl"] .mono, [dir="rtl"] kbd, [dir="rtl"] .readout b, [dir="rtl"] .statusbar b, [dir="rtl"] .zoomtxt, [dir="rtl"] #simTxt { direction: ltr; }
 [dir="rtl"] .field.wide input { text-align: right; direction: rtl; }
 [dir="rtl"] .search { text-align: right; }
 [dir="rtl"] .shapes { padding: 0 20px 4px 0; }

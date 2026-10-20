@@ -8,7 +8,8 @@ use std::collections::HashMap;
 
 pub type Map = serde_json::Map<String, Value>;
 
-pub const PALETTE: [&str; 8] = ["#e8336d", "#7a5cff", "#13a3a3", "#f08c00", "#2f9e44", "#1c7ed6", "#c2255c", "#5f3dc4"];
+// the first layer of a drawing is white (it reads well on the dark canvas; the light one draws it in ink)
+pub const PALETTE: [&str; 8] = ["#ffffff", "#7a5cff", "#13a3a3", "#f08c00", "#2f9e44", "#1c7ed6", "#c2255c", "#5f3dc4"];
 
 pub fn default_layer_settings() -> Map {
     let v = json!({

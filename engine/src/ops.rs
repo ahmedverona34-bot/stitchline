@@ -879,6 +879,18 @@ pub fn order_by_group(job: &mut Job) -> Res<()> {
     Ok(())
 }
 
+/// Every sewing layer first and the laser (needle 3) last, otherwise in the order of the layer list; the sewing
+/// order then follows the layer list.
+pub fn sew_then_laser(job: &mut Job) -> Res<()> {
+    let (layers, order): (Vec<String>, Vec<i64>) = (job.layers.iter().map(|l| l.id.clone()).collect(), job.order.clone());
+    job.layers.sort_by_key(|l| l.needle == 3);
+    order_by_group(job)?;
+    if job.order == order && job.layers.iter().map(|l| &l.id).eq(layers.iter()) {
+        return op("The sewing already comes first and the laser last.");
+    }
+    Ok(())
+}
+
 /// Shortest-travel order: always go to the nearest unsewn shape.
 pub fn nearest_order(job: &mut Job) -> Res<()> {
     let idx = job.shape_index();
@@ -900,6 +912,343 @@ pub fn nearest_order(job: &mut Job) -> Res<()> {
     }
     job.order = out;
     Ok(())
+}
+
+// a plain distance: the order needs no CPython-identical hypot (geom::dist), and it runs millions of times
+fn pd(a: P, b: P) -> f64 {
+    ((b.0 - a.0) * (b.0 - a.0) + (b.1 - a.1) * (b.1 - a.1)).sqrt()
+}
+
+/// The shortest trip through items that each run from one end to the other: start at `from`, finish at `to` (when
+/// given). `ends[i]` is (start, end) of item i; an item may be run the other way round unless `rigid[i]`. Nearest-next
+/// to begin with, then 2-opt and moves of 1–3 items while they shorten it, within `budget` steps of work (not a
+/// clock, so the same input always gets the same trip). Returns (item, the other way round) in trip order.
+fn route(ends: &[(P, P)], rigid: &[bool], from: P, to: Option<P>, budget: usize) -> Vec<(usize, bool)> {
+    let n = ends.len();
+    if n == 0 {
+        return vec![];
+    }
+    let entry = |(i, r): (usize, bool)| if r { ends[i].1 } else { ends[i].0 };
+    let exit = |(i, r): (usize, bool)| if r { ends[i].0 } else { ends[i].1 };
+    let d = pd;
+    let to_end = |p: P| to.map_or(0.0, |t| d(p, t));
+    let cost = |seq: &[(usize, bool)]| {
+        d(from, entry(seq[0])) + seq.windows(2).map(|w| d(exit(w[0]), entry(w[1]))).sum::<f64>() + to_end(exit(seq[seq.len() - 1]))
+    };
+    // nearest next, either way round
+    let mut seq: Vec<(usize, bool)> = Vec::with_capacity(n);
+    let mut left: Vec<usize> = (0..n).collect();
+    let mut pos = from;
+    while !left.is_empty() {
+        let (mut bk, mut br, mut bd) = (0, false, f64::INFINITY);
+        for (k, &i) in left.iter().enumerate() {
+            for r in [false, true] {
+                if r && rigid[i] {
+                    continue;
+                }
+                let dd = d(pos, entry((i, r)));
+                if dd < bd {
+                    (bk, br, bd) = (k, r, dd);
+                }
+            }
+        }
+        let i = left.remove(bk);
+        seq.push((i, br));
+        pos = exit((i, br));
+    }
+    if n < 2 {
+        return seq;
+    }
+    let mut work = 0usize;
+    const EPS: f64 = 1e-6;
+    for _ in 0..100 {
+        let mut better = false;
+        // 2-opt: run seq[i..=j] backwards (each item the other way round)
+        let mut stuck = vec![0usize; n + 1];
+        for k in 0..n {
+            stuck[k + 1] = stuck[k] + rigid[seq[k].0] as usize;
+        }
+        for i in 0..n {
+            if work > budget {
+                break;
+            }
+            work += n - i;
+            let p = if i == 0 { from } else { exit(seq[i - 1]) };
+            for j in i..n {
+                if stuck[j + 1] != stuck[i] {
+                    break;
+                }
+                let (a, b) = (entry(seq[i]), exit(seq[j]));
+                let (old, new) = if j + 1 < n {
+                    let q = entry(seq[j + 1]);
+                    (d(p, a) + d(b, q), d(p, b) + d(a, q))
+                } else {
+                    (d(p, a) + to_end(b), d(p, b) + to_end(a))
+                };
+                if new < old - EPS {
+                    seq[i..=j].reverse();
+                    seq[i..=j].iter_mut().for_each(|s| s.1 = !s.1);
+                    for k in i..=j {
+                        stuck[k + 1] = stuck[k] + rigid[seq[k].0] as usize;
+                    }
+                    better = true;
+                    break;
+                }
+            }
+        }
+        // or-opt: move 1–3 items in a row somewhere else, either way round
+        for len in 1..=3.min(n - 1) {
+            let mut i = 0;
+            while i + len <= n && work <= budget {
+                work += 4 * n;
+                let block: Vec<(usize, bool)> = seq[i..i + len].to_vec();
+                let mut rest = seq.clone();
+                rest.drain(i..i + len);
+                let base = cost(&seq);
+                let flip_ok = !block.iter().any(|s| rigid[s.0]);
+                let flipped: Vec<(usize, bool)> = block.iter().rev().map(|&(s, r)| (s, !r)).collect();
+                let mut best: Option<(f64, usize, bool)> = None;
+                for q in 0..=rest.len() {
+                    let x = if q == 0 { from } else { exit(rest[q - 1]) };
+                    let gap = if q < rest.len() { d(x, entry(rest[q])) } else { to_end(x) };
+                    for f in [false, true] {
+                        if f && !flip_ok {
+                            continue;
+                        }
+                        let b = if f { &flipped } else { &block };
+                        let tail = if q < rest.len() { d(exit(b[len - 1]), entry(rest[q])) } else { to_end(exit(b[len - 1])) };
+                        let add = d(x, entry(b[0])) + tail - gap;
+                        if best.map_or(true, |(c, _, _)| add < c) {
+                            best = Some((add, q, f));
+                        }
+                    }
+                }
+                let (add, q, f) = best.unwrap();
+                if cost(&rest) + add < base - EPS {
+                    let b = if f { flipped } else { block };
+                    rest.splice(q..q, b);
+                    seq = rest;
+                    better = true;
+                }
+                i += 1;
+            }
+            if work > budget {
+                break;
+            }
+        }
+        if !better || work > budget {
+            break;
+        }
+    }
+    seq
+}
+
+/// Pattern pieces, for sewing one piece to the end before going to the next: every shape goes with the closed shape
+/// it lies in (a piece's cut line), and what lies inside a shape that lies inside another goes with the outer one
+/// (the seam line, darts, notches and grain line all go with the cut line). A closed shape that holds two or more
+/// such pieces, like a frame drawn around the whole marker, is not a piece: what is in it stays apart. "In" allows
+/// 9 points in 10 of the shape to lie up to 3 mm outside (lines drawn up to or just over the cut line).
+/// Returns the piece of every shape: the id of its outermost shape (a shape in no piece is a piece of its own).
+pub fn pieces(job: &Job) -> HashMap<i64, i64> {
+    const TOL: f64 = 3.0;
+    let bbox = |pts: &[P]| {
+        pts.iter().fold((f64::INFINITY, f64::INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY), |b, p| (b.0.min(p.0), b.1.min(p.1), b.2.max(p.0), b.3.max(p.1)))
+    };
+    let area = |pts: &[P]| {
+        let mut a = 0.0;
+        for i in 0..pts.len() {
+            let (p, q) = (pts[i], pts[(i + 1) % pts.len()]);
+            a += p.0 * q.1 - q.0 * p.1;
+        }
+        a.abs() / 2.0
+    };
+    let seg_dist = |p: P, a: P, b: P| {
+        let (vx, vy) = (b.0 - a.0, b.1 - a.1);
+        let l = vx * vx + vy * vy;
+        let t = if l > 0.0 { (((p.0 - a.0) * vx + (p.1 - a.1) * vy) / l).clamp(0.0, 1.0) } else { 0.0 };
+        pd(p, (a.0 + t * vx, a.1 + t * vy))
+    };
+    // the closed shapes that can hold others: (shape index, outline, box, area)
+    let rings: Vec<(usize, &Vec<P>, (f64, f64, f64, f64), f64)> = job
+        .shapes
+        .iter()
+        .enumerate()
+        .filter(|(_, s)| s.closed && s.pts.len() >= 3)
+        .map(|(i, s)| (i, &s.pts, bbox(&s.pts), area(&s.pts)))
+        .collect();
+    let inside = |p: P, ring: &[P]| {
+        let mut c = false;
+        let mut near = f64::INFINITY;
+        for k in 0..ring.len() {
+            let (a, b) = (ring[k], ring[(k + 1) % ring.len()]);
+            if (a.1 > p.1) != (b.1 > p.1) && p.0 < (b.0 - a.0) * (p.1 - a.1) / (b.1 - a.1) + a.0 {
+                c = !c;
+            }
+            near = near.min(seg_dist(p, a, b));
+        }
+        c || near <= TOL
+    };
+    // parent: the smallest closed shape a shape lies in
+    let n = job.shapes.len();
+    let mut parent: Vec<Option<usize>> = vec![None; n];
+    for (i, s) in job.shapes.iter().enumerate() {
+        if s.pts.is_empty() {
+            continue;
+        }
+        let b = bbox(&s.pts);
+        let own = if s.closed && s.pts.len() >= 3 { area(&s.pts) } else { 0.0 };
+        let step = (s.pts.len() / 48).max(1);
+        let sample: Vec<P> = s.pts.iter().step_by(step).copied().collect();
+        let mut best: Option<(usize, f64)> = None;
+        for &(ri, ring, rb, ra) in &rings {
+            if ri == i || ra <= own || b.0 < rb.0 - TOL || b.1 < rb.1 - TOL || b.2 > rb.2 + TOL || b.3 > rb.3 + TOL {
+                continue;
+            }
+            if best.is_some_and(|(_, a)| a <= ra) {
+                continue;
+            }
+            let hits = sample.iter().filter(|&&p| inside(p, ring)).count();
+            if hits * 10 >= sample.len() * 9 {
+                best = Some((ri, ra));
+            }
+        }
+        parent[i] = best.map(|b| b.0);
+    }
+    // a frame: a closed shape holding two or more closed shapes that hold something themselves
+    let holds: Vec<bool> = (0..n).map(|i| parent.iter().any(|&p| p == Some(i))).collect();
+    let frame: Vec<bool> = (0..n).map(|i| parent.iter().enumerate().filter(|&(k, &p)| p == Some(i) && holds[k]).count() >= 2).collect();
+    let mut out = HashMap::new();
+    for i in 0..n {
+        let mut x = i;
+        while let Some(p) = parent[x] {
+            if frame[p] {
+                break;
+            }
+            x = p;
+        }
+        out.insert(job.shapes[i].id, job.shapes[x].id);
+    }
+    out
+}
+
+/// Best order inside one layer: the least travel between its shapes, so the machine does not run back and forth,
+/// sewing each pattern piece to the end before it goes to the next (see `pieces`). The layer's shapes keep their
+/// places in the sewing order (the other layers stay as they are); the trip starts where the shape sewn before them
+/// ends and finishes at the start of the one sewn after them. Lines without sections may be sewn the other way
+/// round; closed shapes keep their start point. On a laser layer a piece's cut line is cut last, after what is inside
+/// it, so the piece does not move before it is done. Returns the travel (mm) before and after.
+pub fn best_order_in_layer(job: &mut Job, lid: &str) -> Res<(f64, f64)> {
+    let laser = job.layer(lid).ok_or(Error::Missing)?.needle == 3;
+    let idx = job.shape_index();
+    let at: Vec<usize> = job.order.iter().map(|sid| idx.get(sid).copied().ok_or(Error::Missing)).collect::<Res<_>>()?;
+    let sewn = |k: usize| !job.shapes[at[k]].pts.is_empty();
+    let slots: Vec<usize> = (0..at.len()).filter(|&k| sewn(k) && job.shapes[at[k]].layer == lid).collect();
+    if slots.len() < 2 {
+        return op("This layer needs two or more shapes to put in order.");
+    }
+    let ends = |i: usize| {
+        let s = &job.shapes[i];
+        (s.pts[0], if s.closed { s.pts[0] } else { s.pts[s.pts.len() - 1] })
+    };
+    let from = (0..slots[0]).rev().find(|&k| sewn(k)).map(|k| ends(at[k]).1).unwrap_or((0.0, 0.0));
+    let last = slots[slots.len() - 1];
+    let to = (last + 1..at.len()).find(|&k| sewn(k) && job.shapes[at[k]].layer != lid).map(|k| ends(at[k]).0);
+    let node: Vec<usize> = slots.iter().map(|&k| at[k]).collect();
+    let pt: Vec<(P, P)> = node.iter().map(|&i| ends(i)).collect();
+    // an open line with sections must keep its direction (reversing it would drop them)
+    let rigid: Vec<bool> = node.iter().map(|&i| !job.shapes[i].closed && !job.shapes[i].marks.is_empty()).collect();
+    let entry = |(i, r): (usize, bool)| if r { pt[i].1 } else { pt[i].0 };
+    let exit = |(i, r): (usize, bool)| if r { pt[i].0 } else { pt[i].1 };
+    let cost = |seq: &[(usize, bool)]| {
+        pd(from, entry(seq[0])) + seq.windows(2).map(|w| pd(exit(w[0]), entry(w[1]))).sum::<f64>() + to.map_or(0.0, |t| pd(exit(seq[seq.len() - 1]), t))
+    };
+    let before = cost(&(0..pt.len()).map(|i| (i, false)).collect::<Vec<_>>());
+
+    // the layer's shapes by piece, in the order they come in the layer
+    let piece_of = pieces(job);
+    let mut groups: Vec<(i64, Vec<usize>)> = vec![];
+    for (k, &i) in node.iter().enumerate() {
+        let p = piece_of[&job.shapes[i].id];
+        match groups.iter_mut().find(|g| g.0 == p) {
+            Some(g) => g.1.push(k),
+            None => groups.push((p, vec![k])),
+        }
+    }
+    const BUDGET: usize = 60_000_000;
+    let budget = (BUDGET / (groups.len() + 1)).max(2_000_000);
+    // the pieces in the order of the shortest trip between their middles, then each piece from where the last ended
+    // towards the middle of the next
+    let mid = |g: &Vec<usize>| {
+        let (sx, sy) = g.iter().fold((0.0, 0.0), |a, &k| (a.0 + pt[k].0 .0 + pt[k].1 .0, a.1 + pt[k].0 .1 + pt[k].1 .1));
+        (sx / (2 * g.len()) as f64, sy / (2 * g.len()) as f64)
+    };
+    let mids: Vec<(P, P)> = groups.iter().map(|g| { let m = mid(&g.1); (m, m) }).collect();
+    let tour = route(&mids, &vec![false; mids.len()], from, to, budget);
+    let mut seq: Vec<(usize, bool)> = vec![];
+    let mut pos = from;
+    for (t, &(g, _)) in tour.iter().enumerate() {
+        let (outer, items) = (&groups[g].0, &groups[g].1);
+        let next = tour.get(t + 1).map(|&(h, _)| mids[h].0).or(to);
+        // on a laser layer the cut line (the piece's outer shape, when it is in this layer) comes last
+        let cut = if laser { items.iter().copied().find(|&k| job.shapes[node[k]].id == *outer && job.shapes[node[k]].closed) } else { None };
+        let inner: Vec<usize> = items.iter().copied().filter(|&k| Some(k) != cut).collect();
+        let sub_to = cut.map(|k| pt[k].0).or(next);
+        let ends_g: Vec<(P, P)> = inner.iter().map(|&k| pt[k]).collect();
+        let rigid_g: Vec<bool> = inner.iter().map(|&k| rigid[k]).collect();
+        for (j, r) in route(&ends_g, &rigid_g, pos, sub_to, budget) {
+            seq.push((inner[j], r));
+        }
+        if let Some(k) = cut {
+            seq.push((k, false));
+        }
+        if let Some(&l) = seq.last() {
+            pos = exit(l);
+        }
+    }
+    let after = cost(&seq);
+    if after >= before - 0.01 {
+        return op("This layer is already sewn in the best order.");
+    }
+    for (k, &(i, r)) in seq.iter().enumerate() {
+        let s = &mut job.shapes[node[i]];
+        // a closed shape keeps its start point: the way round only matters for a line
+        if r && !s.closed {
+            s.pts.reverse();
+        }
+        job.order[slots[k]] = s.id;
+    }
+    Ok((before, after))
+}
+
+/// The travel (mm) between the shapes that are sewn, in sewing order, from the machine origin.
+pub fn travel(job: &Job) -> f64 {
+    let mut pos: P = (0.0, 0.0);
+    let mut t = 0.0;
+    for s in job.sewn_shapes() {
+        if s.pts.is_empty() {
+            continue;
+        }
+        t += geom::dist(pos, s.pts[0]);
+        pos = if s.closed { s.pts[0] } else { s.pts[s.pts.len() - 1] };
+    }
+    t
+}
+
+/// Best order inside every layer that is sewn, one layer after the other. Returns the travel before and after.
+pub fn best_order_all(job: &mut Job) -> Res<(f64, f64)> {
+    let before = travel(job);
+    let ids: Vec<String> = job.layers.iter().filter(|l| l.output).map(|l| l.id.clone()).collect();
+    for lid in ids {
+        match best_order_in_layer(job, &lid) {
+            Ok(_) | Err(Error::Op(_)) => {} // already in the best order, or one shape
+            Err(e) => return Err(e),
+        }
+    }
+    let after = travel(job);
+    if after >= before - 0.01 {
+        return op("The sewing order is already the best.");
+    }
+    Ok((before, after))
 }
 
 // ------------------------------------------------------------------ program instructions added by the user
