@@ -22,6 +22,9 @@
   let tool = 'select';
   let viewMode = 'all';
   let showOrder = store.get('showOrder', false);
+  let orderStyle = store.get('orderStyle', 'classic');   // the numbers on the drawing: 'classic' (plain, all shown) or 'badges'
+  let orderScope = store.get('orderScope', 'whole');     // 'whole': every shape; 'layer': the current layer, counted from 1
+  let pickN = 1, pickBusy = false;                        // Number by clicking: the next number, and a click still in flight
   let showStitch = store.get('showStitch', true);
   let progSel = -1;
   const view = { cx: 50, cy: 30, k: 4 };   // k = screen px per mm
@@ -166,11 +169,12 @@
           <button class="switch" role="switch" aria-checked="${L.output}" data-out="${L.id}" aria-label="Sew ${esc(L.name)}" title="Sew this layer"></button>
         </div>
         <div class="shapes">${shapes.slice(0, max).map(s => `
-          <button class="shape-row" data-s="${s.id}" draggable="true" aria-selected="${sel.has(s.id)}">${thumb(s.pts, s.closed)}<span class="nm">${esc(nameOf(s))}</span><span class="meta">${plen(s.pts, s.closed).toFixed(0)} mm</span></button>`).join('')}
+          <button class="shape-row" data-s="${s.id}" draggable="true" aria-selected="${sel.has(s.id)}"><span class="ord">${(rank.get(s.id) ?? -1) + 1}</span>${thumb(s.pts, s.closed)}<span class="nm">${esc(nameOf(s))}</span><span class="meta">${plen(s.pts, s.closed).toFixed(0)} mm</span></button>`).join('')}
           ${shapes.length > max ? `<div class="more">+ ${shapes.length - max} more · select them on the drawing</div>` : ''}
         </div>
       </div>`;
     }).join('') || `<p class="hint" style="padding:8px 18px">No layers yet. Open a drawing or add a shape.</p>`;
+    renderOrderBar();
   }
   $('#layers').addEventListener('click', e => {
     const sh = e.target.closest('[data-s]');
@@ -288,6 +292,62 @@
   // in the simple mode (and in the sequence window) the layers are sewn in the order of the list, so moving one also
   // moves its shapes in the sewing order
   const moveLayer = (id, delta) => api('move_group', { id, delta, follow: simple || sim.on }, { quiet: true });
+
+  /* the order bar under the layers: Up / Down and a number. With shapes selected it acts on them in the sewing order;
+     with none it acts on the current layer in the layer list */
+  const ordNum = $('#ordNum'), ordUp = $('#ordUp'), ordDown = $('#ordDown'), ordOk = $('#ordOk');
+  const curLayerIndex = () => S.job.layers.findIndex(l => l.id === curLayer);
+  function renderOrderBar() {
+    if (!S) return;
+    const onShapes = sel.size > 0, li = curLayerIndex(), none = !S.job.layers.length;
+    const at = onShapes ? S.job.order.findIndex(i => sel.has(i)) : li;
+    if (document.activeElement !== ordNum) ordNum.value = tool === 'orderPick' ? pickN : at >= 0 ? at + 1 : '';
+    ordUp.disabled = none || (!onShapes && li <= 0);
+    ordDown.disabled = none || (!onShapes && li >= S.job.layers.length - 1);
+    ordOk.disabled = ordNum.disabled = none;
+    ordUp.title = onShapes ? 'Sew earlier (Ctrl+[)' : 'Move layer up (Alt+↑)';
+    ordDown.title = onShapes ? 'Sew later (Ctrl+])' : 'Move layer down (Alt+↓)';
+    ordOk.title = ordNum.title = 'Move to this number (Enter)';
+  }
+  function orderStep(d) {
+    if (!S) return;
+    if (sel.size) return sewOrder(d < 0 ? -1 : 1);
+    const j = curLayerIndex() + d;
+    if (curLayer && j >= 0 && j < S.job.layers.length) moveLayer(curLayer, d);
+  }
+  // Ok / Enter: the first selected shape takes the typed number (the rest keep their order); or the layer moves to it
+  function orderGo() {
+    if (!S || !ordNum.value.trim()) return;
+    const n = Math.round(+ordNum.value);
+    if (!Number.isFinite(n)) return toast('Enter a number.', true);
+    if (tool === 'orderPick') { pickN = Math.max(1, n); return renderOrderBar(); }
+    if (sel.size) {
+      const picked = S.job.order.filter(i => sel.has(i)), rest = S.job.order.filter(i => !sel.has(i));
+      const at = Math.min(Math.max(n - 1, 0), rest.length);
+      const order = [...rest.slice(0, at), ...picked, ...rest.slice(at)];
+      if (order.some((v, i) => v !== S.job.order[i])) api('reorder', { ids: order }, { quiet: true });
+      return;
+    }
+    if (!curLayer) return;
+    const d = Math.min(Math.max(n - 1, 0), S.job.layers.length - 1) - curLayerIndex();
+    if (d) moveLayer(curLayer, d);
+  }
+  ordUp.onclick = () => orderStep(-1);
+  ordDown.onclick = () => orderStep(1);
+  ordOk.onclick = orderGo;
+  ordNum.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); orderGo(); }
+    if (e.key === 'Enter' || e.key === 'Escape') { e.stopPropagation(); if (e.key === 'Escape') ordNum.blur(); }
+  });
+  // Number by clicking: each shape clicked takes the counter's place in the sewing order, then the counter goes on
+  async function numberShape(id) {
+    if (pickBusy || !S) return;
+    pickBusy = true;
+    const o = S.job.order.filter(i => i !== id);
+    o.splice(Math.min(Math.max(pickN - 1, 0), o.length), 0, id);
+    pickN++;
+    try { await api('reorder', { ids: o }, { quiet: true }); } finally { pickBusy = false; }
+  }
 
   function pick(id, toggle, add) {
     if (toggle) sel.has(id) ? sel.delete(id) : sel.add(id);
@@ -521,7 +581,7 @@
     sequence: () => {
       const all = S.job.order.map(shapeById).filter(Boolean);
       return {
-        title: 'Sewing order', sub: 'Drag to reorder. Point at a shape to see its number and the shapes sewn before and after it.',
+        title: 'Sewing order', sub: 'Drag to reorder.',
         body: `
           <div class="sec plain"><div class="sec-body">
             <ol class="order" id="order">${all.map((s, i) => `<li draggable="true" data-id="${s.id}" class="${sel.has(s.id) ? 'sel' : ''}" style="${isSewn(s) ? '' : 'opacity:.45'}"><span class="badge" style="background:${esc(layerOf(s).color)};color:${inkOn(layerOf(s).color)}">${i + 1}</span>${thumb(s.pts, s.closed)}<span class="nm">${esc(nameOf(s))}</span><span class="mono" style="color:var(--fg-3);font-size:11px">${esc(layerOf(s).name)}</span></li>`).join('')}</ol>
@@ -819,7 +879,7 @@
     });
     $$('#layers .shape-row').forEach(r => r.setAttribute('aria-selected', sel.has(+r.dataset.s)));
     $('#groupSel').disabled = !sel.size;
-    renderInspector(); draw(); updateReadout();
+    renderInspector(); draw(); updateReadout(); renderOrderBar();
   }
   function renderAll() {
     if (!S) return;
@@ -925,7 +985,8 @@
       if (vb[2] < vx0 || vb[0] > vx1 || vb[3] < vy0 || vb[1] > vy1) continue;   // off screen
       const L = layerOf(s), LC = ink(L.color);
       const dim = viewMode === 'layer' && s.layer !== curL;
-      const alpha = dim ? 0.12 : 1;
+      // with the numbers of one layer only (Order on), the other layers fade so the numbered ones read
+      const alpha = dim ? 0.12 : showOrder && orderScope === 'layer' && s.layer !== curL ? 0.25 : 1;
       const P0 = pathOf(s);
       const P = t && scaling ? P0.map(([x, y]) => t(x, y)) : P0;   // a move only shifts the cached path
       const d = t && !scaling ? [xf.dx, xf.dy] : [0, 0];
@@ -1069,49 +1130,96 @@
     }
     return out;
   }
-  /* sewing order on the drawing. Numbers would pile up where pieces start close together, so each badge looks for a free
-     spot around its start point and is left out when there is none; the shape under the pointer (or the selection)
-     always shows its number, those of the shapes sewn just before and after it, and the travel moves between them */
+  /* every shape in sewing order with its number: the place in the whole order, or (layer scope) among the current layer's */
+  function orderList() {
+    const layerOnly = orderScope === 'layer', out = [];
+    for (const id of S.job.order) {
+      const s = shapeById(id); if (!s || (layerOnly && s.layer !== curLayer)) continue;
+      out.push({ s, n: out.length + 1 });
+    }
+    return out;
+  }
+  /* sewing order on the drawing, in two styles. 'classic' (Sew_Soft): every number next to its shape's start point
+     (classicNumbers). 'badges': numbers would pile up where pieces start close together, so each badge looks for a free
+     spot around its start point and is left out when there is none. Both draw the travel moves between them as thin dashed lines */
   function drawOrder() {
     const items = [];
-    S.job.order.forEach((id, n) => {
-      const s = shapeById(id), st = s && isSewn(s) && S.stitched[s.id];
-      if (st && st.p.length) items.push({ id, n: n + 1, a: [sx(st.p[0]), sy(st.p[1])], z: [sx(st.p.at(-2)), sy(st.p.at(-1))] });
+    orderList().forEach(({ s, n }) => {
+      const st = isSewn(s) && S.stitched[s.id];
+      if (st && st.p.length) items.push({ id: s.id, n, a: [sx(st.p[0]), sy(st.p[1])], z: [sx(st.p.at(-2)), sy(st.p.at(-1))] });
     });
-    const focus = new Set(hoverId != null ? [hoverId] : sel.size <= 3 ? sel : []);   // a big selection would bring the pile back
-    const near = new Set();
-    items.forEach((it, i) => { if (focus.has(it.id)) { near.add(i); if (i) near.add(i - 1); if (i + 1 < items.length) near.add(i + 1); } });
-    // travel moves: quiet dashed lines, the ones next to the focused shape solid with an arrow
+    // travel moves: quiet dashed lines from the end of one shape to the start of the next
+    ctx.strokeStyle = colors['fg-3']; ctx.globalAlpha = .5; ctx.lineWidth = 1; ctx.setLineDash([3, 4]);
     items.forEach((it, i) => {
       if (!i) return;
-      const [x0, y0] = items[i - 1].z, [x1, y1] = it.a, on = focus.has(it.id) || focus.has(items[i - 1].id);
-      ctx.strokeStyle = on ? colors.accent : colors['fg-3']; ctx.globalAlpha = on ? 1 : (focus.size ? .25 : .5);
-      ctx.lineWidth = on ? 1.5 : 1; ctx.setLineDash(on ? [] : [3, 4]);
-      ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke(); ctx.setLineDash([]);
-      if (on && Math.hypot(x1 - x0, y1 - y0) > 40) {
-        const ang = Math.atan2(y1 - y0, x1 - x0), mx = (x0 + x1) / 2, my = (y0 + y1) / 2;
-        ctx.fillStyle = colors.accent; ctx.beginPath(); ctx.moveTo(mx + Math.cos(ang) * 6, my + Math.sin(ang) * 6);
-        ctx.lineTo(mx + Math.cos(ang + 2.4) * 6, my + Math.sin(ang + 2.4) * 6); ctx.lineTo(mx + Math.cos(ang - 2.4) * 6, my + Math.sin(ang - 2.4) * 6); ctx.fill();
-      }
+      const [x0, y0] = items[i - 1].z, [x1, y1] = it.a;
+      ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
     });
-    ctx.globalAlpha = 1;
-    // badges: the focused shape and its neighbours first, so they always find a place
+    ctx.setLineDash([]); ctx.globalAlpha = 1;
+    if (orderStyle === 'classic') return classicNumbers();
+    // badges: every badge has the same rank, so they are placed in sewing order
     const OFF = [[-12, -12], [12, -12], [-12, 12], [12, 12], [0, -17], [17, 0], [0, 17], [-17, 0]];
-    const placed = [], rank = i => focus.has(items[i].id) ? 0 : near.has(i) ? 1 : 2;
-    const idx = items.map((_, i) => i).sort((p, q) => rank(p) - rank(q) || p - q);
+    const placed = [], r = 9;
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    for (const i of idx) {
-      const it = items[i], big = rank(i) === 0, r = big ? 11 : 9;
+    for (const it of items) {
       const free = ([dx, dy]) => placed.every(([X, Y, R]) => Math.hypot(it.a[0] + dx - X, it.a[1] + dy - Y) > r + R + 2);
-      const off = OFF.find(free) || (rank(i) < 2 ? OFF[0] : null);
+      const off = OFF.find(free);
       if (!off) continue;
       const X = it.a[0] + off[0], Y = it.a[1] + off[1];
       placed.push([X, Y, r]);
-      ctx.globalAlpha = focus.size && rank(i) === 2 ? .3 : 1;
-      ctx.fillStyle = big ? colors.accent : colors.fg; ctx.beginPath(); ctx.arc(X, Y, r, 0, 7); ctx.fill();
-      ctx.fillStyle = colors.canvas; ctx.font = `600 ${big ? 12 : 11}px system-ui`; ctx.fillText(String(it.n), X, Y + .5);
+      ctx.fillStyle = colors.fg; ctx.beginPath(); ctx.arc(X, Y, r, 0, 7); ctx.fill();
+      ctx.fillStyle = colors.canvas; ctx.font = '600 11px system-ui'; ctx.fillText(String(it.n), X, Y + .5);
     }
-    ctx.globalAlpha = 1; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  }
+  /* the classic numbers: bold text in a canvas-coloured outline, each one in a free box next to its shape's start point,
+     moved out on a ring (with a leader line) when the spot next to it is taken. Every shape gets one and none is left out
+     for overlap; shapes not sewn yet are dimmed. Leader lines are drawn first so they never cross a number */
+  function classicNumbers() {
+    ctx.font = '700 14px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const RINGS = [12, 20, 30, 42, 56, 72], DIRS = [[-1, -1], [0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0]];
+    const placed = [], marks = [], h = 16;
+    for (const { s, n } of orderList()) {
+      const st = isSewn(s) && S.stitched[s.id], sewn = !!(st && st.p.length);
+      const p = sewn ? [st.p[0], st.p[1]] : s.pts[0];
+      const ax = sx(p[0]), ay = sy(p[1]), t = String(n), w = ctx.measureText(t).width + 4;
+      const fits = ([cx, cy]) => cx - w / 2 >= 0 && cx + w / 2 <= W && cy - h / 2 >= 0 && cy + h / 2 <= H;
+      const free = ([cx, cy]) => placed.every(([X, Y, PW, PH]) => Math.abs(cx - X) >= (w + PW) / 2 + 2 || Math.abs(cy - Y) >= (h + PH) / 2 + 2);
+      let c = null, last = null;
+      for (const r of RINGS) {
+        const cands = DIRS.map(([dx, dy]) => { const k = dx && dy ? Math.SQRT1_2 : 1; return [ax + dx * k * r, ay + dy * k * r]; }).filter(fits);
+        if (!cands.length) continue;
+        last = cands[0];
+        c = cands.find(free);
+        if (c) break;
+      }
+      if (!c) c = last || [Math.min(Math.max(ax, w / 2), W - w / 2), Math.min(Math.max(ay, h / 2), H - h / 2)];   // never skip a number
+      placed.push([c[0], c[1], w, h]);
+      let lead = null;
+      if (Math.hypot(c[0] - ax, c[1] - ay) > 16) {
+        // the leader ends on the box edge, on the line from the box centre to the anchor
+        const dx = c[0] - ax, dy = c[1] - ay;
+        const k = Math.min(Math.abs(dx) ? (w / 2) / Math.abs(dx) : Infinity, Math.abs(dy) ? (h / 2) / Math.abs(dy) : Infinity);
+        lead = [ax, ay, c[0] - dx * k, c[1] - dy * k];
+      }
+      marks.push({ s, t, sewn, c, ax, ay, lead });
+    }
+    // leader lines and anchor dots first, then the numbers, so a line never crosses over a number
+    ctx.strokeStyle = colors['fg-3']; ctx.fillStyle = colors['fg-3'];
+    for (const m of marks) {
+      ctx.globalAlpha = (m.sewn ? 1 : .45) * .7;
+      if (m.lead) {
+        ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(m.lead[0], m.lead[1]); ctx.lineTo(m.lead[2], m.lead[3]); ctx.stroke();
+        ctx.beginPath(); ctx.arc(m.ax, m.ay, 2, 0, 7); ctx.fill();
+      }
+    }
+    ctx.lineJoin = 'round'; ctx.lineWidth = 4;
+    for (const m of marks) {
+      ctx.globalAlpha = m.sewn ? 1 : .45;
+      ctx.strokeStyle = colors.canvas; ctx.strokeText(m.t, m.c[0], m.c[1]);
+      ctx.fillStyle = sel.has(m.s.id) ? colors.accent : colors.fg; ctx.fillText(m.t, m.c[0], m.c[1]);
+    }
+    ctx.globalAlpha = 1; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; ctx.lineWidth = 1;
   }
 
   /* selection tools: black arrow (tool 'select', V) moves and resizes whole shapes inside a bounding box;
@@ -1185,7 +1293,7 @@
   function hover(px, py) {
     if (!S) return;
     const arrow = tool === 'select' || tool === 'direct';
-    const h = (arrow || tool === 'start') ? hit(px, py) : null;
+    const h = (arrow || tool === 'start' || tool === 'orderPick') ? hit(px, py) : null;
     const hh = tool === 'select' && !spaceDown ? hitHandle(px, py) : null;
     const id = h && !hh ? h.id : null;
     if (id !== hoverId || hh !== hoverHandle) { hoverId = id; hoverHandle = hh; draw(); }
@@ -1208,6 +1316,7 @@
     if (e.button !== 0) return;
     if (tool === 'measure') { measure = { x0: wx(e.clientX), y0: wy(e.clientY), x1: wx(e.clientX), y1: wy(e.clientY) }; drag = { kind: 'measure' }; return; }
     const s = hit(e.clientX, e.clientY);
+    if (tool === 'orderPick') { if (s) numberShape(s.id); return; }
     if (tool === 'start') {
       if (!s) return toast('Click on a shape to set where it starts.', true);
       sel = new Set([s.id]); api('set_start', { id: s.id, x: wx(e.clientX), y: wy(e.clientY) }, { quiet: true }).then(d => d && toast('Start point set'));
@@ -1328,11 +1437,25 @@
     if (t !== 'measure') measure = null;
     draw();                                           // the selection keeps; only the black arrow shows its box
     if (t === 'start') toast('Click a shape where its sewing should start.');
+    if (t === 'orderPick') { pickN = Math.max(1, Math.round(+ordNum.value) || 1); showOrder = true; store.set('showOrder', true); renderTop(); toast('Click the shapes in the order you want them sewn. Esc stops.'); }
+    renderOrderBar();
   }
   $$('.rail [data-tool]').forEach(b => b.addEventListener('click', () => setTool(b.dataset.tool)));
   $$('[data-view]').forEach(b => b.addEventListener('click', () => { viewMode = b.dataset.view; $$('[data-view]').forEach(x => x.setAttribute('aria-pressed', x === b)); draw(); }));
   $('#zoomIn').onclick = () => zoomAt(1.25); $('#zoomOut').onclick = () => zoomAt(0.8); $('#fit').onclick = fitView;
   $('#showOrder').onclick = () => { showOrder = !showOrder; store.set('showOrder', showOrder); renderTop(); draw(); };
+  // right-click: how the numbers are drawn (all shapes or the current layer only, plain or badges)
+  function setOrderPref(k, v) { if (k === 'orderScope') orderScope = v; else orderStyle = v; store.set(k, v); draw(); }
+  $('#showOrder').addEventListener('contextmenu', e => {
+    e.preventDefault();
+    menu(e.clientX, e.clientY, [
+      [`${orderScope === 'whole' ? '✓ ' : ''}Number all shapes`, () => setOrderPref('orderScope', 'whole')],
+      [`${orderScope === 'layer' ? '✓ ' : ''}Number the current layer only`, () => setOrderPref('orderScope', 'layer')],
+      null,
+      [`${orderStyle === 'classic' ? '✓ ' : ''}Numbers style: plain`, () => setOrderPref('orderStyle', 'classic')],
+      [`${orderStyle === 'badges' ? '✓ ' : ''}Numbers style: badges`, () => setOrderPref('orderStyle', 'badges')],
+    ]);
+  });
   $('#showStitch').onclick = $('#showOrig').onclick = () => { showStitch = !showStitch; store.set('showStitch', showStitch); renderTop(); draw(); };
   $('#undo').onclick = () => api('undo', {}, { quiet: true });
   $('#redo').onclick = () => api('redo', {}, { quiet: true });
@@ -1747,6 +1870,7 @@
       ['Copy', 'Ctrl C', 1], ['Cut', 'Ctrl X', 1], ['Paste in the middle of the view', 'Ctrl V', 1], ['Paste in place, sewn last', 'Ctrl F', 1], ['Paste in place, sewn first', 'Ctrl B', 1],
       ['Copy while dragging', 'Alt', 1], ['Do the last move, rotate, mirror or resize again', 'Ctrl D', 1], ['Delete selected', 'Delete'], ['Nudge the selection', '← ↑ → ↓'], ['Nudge ×10', 'Shift ← ↑ → ↓'],
       ['Join line ends', 'Ctrl J', 1], ['Reverse direction', 'Ctrl Alt R', 1], ['Make a layer from the selection', 'Ctrl G'], ['Delete layer, keep its shapes', 'Ctrl Shift G'],
+      ['Move the layer earlier / later (no shape selected)', 'Alt ↑ ↓', 1],
       ['Sew one step later', 'Ctrl ]', 1], ['Sew one step earlier', 'Ctrl [', 1], ['Sew last', 'Ctrl Shift ]', 1], ['Sew first', 'Ctrl Shift [', 1]]],
     ['Tools', [['Selection: move and resize whole shapes', 'V'], ['Direct selection: move one path', 'A'], ['Resize keeping proportions', 'Shift'], ['Resize from the centre', 'Alt'], ['Box: only shapes fully inside', 'Alt'],
       ['Pan', 'H'], ['Pan while held', 'Space'], ['Rotate: type the angle', 'R', 1], ['Mirror left–right', 'O', 1], ['Mirror up–down', 'Shift O', 1], ['Resize: type the size', 'S', 1], ['Move: type the distance', 'Enter', 1],
@@ -2058,6 +2182,7 @@
     ['Speed up laser paths', 'stitch', () => api('laser_fix', { id: curLayer })],
     ['Stitch length', 'stitch'], ['Convert lines to stitches', 'stitch'], ['Sewing head (needle 1–3)', 'stitch'], ['Back-tack', 'stitch'], ['Closed-shape reinforcement', 'stitch'], ['Slow down at corners', 'stitch'], ['Dense stitches at corners', 'stitch'], ['Dense stitches at start / end', 'stitch'], ['Special stitch length', 'stitch'], ['Double stitch length', 'stitch'], ['Machine origin', 'stitch'], ['Backlash compensation', 'stitch'], ['Small closed shapes to points', 'stitch'], ['Copy stitch settings to all layers', 'stitch', () => ACT.copySettings()],
     ['Sewing order', 'sequence'], ['Sort top → bottom / left → right', 'sequence'], ['Shortest travel order', 'sequence', () => ACT.nearest()], ['Sort by end point', 'sequence'], ['Row spacing', 'sequence'], ['Corners on travel moves', 'sequence'], ['Simulate sewing', 'sequence', () => startSim(true)], ['Show sewing order on the drawing', 'sequence', () => $('#showOrder').click()],
+    ['Number all shapes', 'sequence', () => setOrderPref('orderScope', 'whole')], ['Number the current layer only', 'sequence', () => setOrderPref('orderScope', 'layer')], ['Numbers style: plain', 'sequence', () => setOrderPref('orderStyle', 'classic')], ['Numbers style: badges', 'sequence', () => setOrderPref('orderStyle', 'badges')], ['Number by clicking', 'sequence', () => setTool('orderPick')],
     ['Program instructions (insert, move, delete)', 'output'], ['Default instructions', 'output', () => openSheet('defaults')], ['Output IO at positions', 'output', () => openSheet('io')], ['IO on reverse', 'output', () => openSheet('ioRev')], ['Sewing speed', 'output'], ['Gradual speed start', 'output'], ['Scale output', 'output'], ['Save machine file (SLW)', 'output', () => ACT.saveMachine()], ['Save to USB drive', 'output'], ['Export PLT', 'output', () => api('export', { kind: 'plt', mode: J().dxf_mode })], ['Export DXF', 'output', () => api('export', { kind: 'dxf', mode: J().dxf_mode })], ['Export picture (SVG)', 'output', () => api('export', { kind: 'svg' })], ['Export stitch list (CSV)', 'output', () => api('export', { kind: 'csv' })],
   ];
   const NAMES = { import: 'Import', arrange: 'Arrange', stitch: 'Stitch', sequence: 'Sequence', output: 'Output' };
@@ -2145,6 +2270,8 @@
       return;
     }
     if (e.key === '?' || e.key === '؟') { e.preventDefault(); return openSheet('keys'); }
+    // Alt + Up / Down moves the current layer when no shape is selected (with shapes selected, the arrows nudge them)
+    if (e.altKey && !ctrl && !sel.size && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) { e.preventDefault(); return orderStep(e.key === 'ArrowUp' ? -1 : 1); }
     if (simple) return simpleKey(e, ctrl, k);
     if (e.key === 'Tab' && e.shiftKey && !ctrl && !e.altKey) { e.preventDefault(); return toggleInspector(); }
     // edit
