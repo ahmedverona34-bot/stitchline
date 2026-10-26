@@ -548,3 +548,18 @@ fn making_a_layer_laser_with_laser_last_moves_it_after_the_sewing_in_one_undo_st
     assert_eq!(s.job.layers[0].id, l1);
 }
 
+
+#[test]
+fn saving_replaces_the_file_whole_and_leaves_no_temporary_file() {
+    use stitchline_engine::platform::write_atomic;
+    let dir = std::env::temp_dir().join(format!("sl_atomic_{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let f = dir.join("job.stitchline");
+    write_atomic(&f, b"first version, longer than the second").unwrap();
+    write_atomic(&f, b"second").unwrap();
+    assert_eq!(std::fs::read(&f).unwrap(), b"second");
+    assert!(!dir.join("job.stitchline.tmp").exists());
+    // a failed write (the folder is missing) reports an error and leaves nothing behind
+    assert!(write_atomic(&dir.join("missing").join("a.slw"), b"x").is_err());
+    let _ = std::fs::remove_dir_all(&dir);
+}

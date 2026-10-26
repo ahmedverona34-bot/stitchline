@@ -4,6 +4,26 @@ fn is_sep(c: char) -> bool {
     c == '\\' || c == '/'
 }
 
+/// Write a file through a temporary one beside it and rename it into place, so a crash or a power cut while
+/// writing never leaves a half-written file where the user's project (or the machine file) used to be.
+pub fn write_atomic(path: &std::path::Path, data: &[u8]) -> std::io::Result<()> {
+    use std::io::Write;
+    let mut tmp = path.as_os_str().to_owned();
+    tmp.push(".tmp");
+    let tmp = std::path::PathBuf::from(tmp);
+    let res = (|| {
+        let mut f = std::fs::File::create(&tmp)?;
+        f.write_all(data)?;
+        f.sync_all()?;
+        drop(f);
+        std::fs::rename(&tmp, path)
+    })();
+    if res.is_err() {
+        let _ = std::fs::remove_file(&tmp);
+    }
+    res
+}
+
 /// ntpath.splitdrive (drive letters and UNC shares)
 pub fn splitdrive(p: &str) -> (&str, &str) {
     let b = p.as_bytes();
