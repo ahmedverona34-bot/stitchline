@@ -61,6 +61,11 @@ may fail to link; the scripts set PATH and `CARGO_TARGET_X86_64_PC_WINDOWS_GNU_L
 - Dev app: `powershell -File tests/dev_run.ps1` — builds debug, starts it with a fresh profile
   (`STITCHLINE_HOME=%TEMP%\sl_ui_dev`) and DevTools on port 9333; then `node tests/ui_shortcuts.mjs` /
   `node tests/ui_selection_tools.mjs` drive it over CDP. Only kills the debug exe, never an installed one.
+  **Known failures (as of 2026-10-26, main 7dd9fdd), not caused by recent changes — don't re-verify against
+  an older build:** `ui_shortcuts.mjs` fails 3 checks ("it says the keys follow Illustrator", Alt-drag "puts a
+  moved copy where it was dropped", "Ctrl+D makes the next copy one more step along");
+  `ui_selection_tools.mjs` stops with `TypeError: (intermediate value) is not iterable` in `mapping1` (finds no
+  bare canvas point). Treat only failures beyond these as new; update this note when they are fixed.
 - Installer: `powershell -ExecutionPolicy Bypass -File build.ps1 [-Test]` →
   `target\release\bundle\nsis\Stitchline_<version>_x64-setup.exe`
 - Release an update: `tools/release.ps1 -Version x.y.z` bumps tauri.conf.json / src-tauri/Cargo.toml / package.json;
