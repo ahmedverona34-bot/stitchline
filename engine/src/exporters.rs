@@ -22,7 +22,7 @@ fn scale(job: &Job) -> (f64, f64) {
 }
 
 fn write(path: &Path, data: &[u8]) -> Result<(), String> {
-    std::fs::write(path, data).map_err(|e| crate::platform::os_error(&e, path))
+    crate::platform::write_atomic(path, data).map_err(|e| crate::platform::os_error(&e, path))
 }
 
 /// Write an AutoCAD R12 DXF. mode 'geometry': every sewn shape as drawn; 'stitches': every needle position.

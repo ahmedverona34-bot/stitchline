@@ -145,14 +145,6 @@ fn exists(p: &str) -> bool {
     Path::new(p).exists()
 }
 
-/// Write through a temporary file, so a crash while writing never leaves half a file.
-fn write_atomic(path: &Path, data: &[u8]) -> std::io::Result<()> {
-    let mut tmp = path.as_os_str().to_owned();
-    tmp.push(".tmp");
-    std::fs::write(&tmp, data)?;
-    std::fs::rename(&tmp, path)
-}
-
 /// Stitch a job that is not the session's yet: Err when it is too large; else the stitch cache for it.
 fn stitch_check(job: &Job) -> Res<HashMap<i64, (u64, Stitched)>> {
     let mut cache = HashMap::new();
@@ -260,7 +252,7 @@ impl Session {
         let mut ser = serde_json::Serializer::with_formatter(&mut buf, serde_json::ser::PrettyFormatter::with_indent(b" "));
         serde::Serialize::serialize(&Value::Object(self.prefs.clone()), &mut ser).unwrap();
         let text = String::from_utf8(buf).unwrap().replace('\n', "\r\n");
-        write_atomic(&self.prefs_path(), text.as_bytes()).map_err(|e| Error::Unexpected(platform::os_error(&e, &self.prefs_path())))
+        platform::write_atomic(&self.prefs_path(), text.as_bytes()).map_err(|e| Error::Unexpected(platform::os_error(&e, &self.prefs_path())))
     }
 
     fn last_dir(&self) -> String {
@@ -309,7 +301,7 @@ impl Session {
             m.insert("_dirty".into(), json!(self.dirty));
         }
         if std::fs::create_dir_all(&self.dir).is_ok() {
-            let _ = write_atomic(&self.autosave_path(), &serde_json::to_vec(&d).unwrap());
+            let _ = platform::write_atomic(&self.autosave_path(), &serde_json::to_vec(&d).unwrap());
         }
     }
 
@@ -516,7 +508,7 @@ impl Session {
         }
         let path = path.unwrap();
         let data = serde_json::to_vec(&self.job.to_dict()).unwrap();
-        std::fs::write(&path, data).map_err(|e| Error::Unexpected(platform::os_error(&e, Path::new(&path))))?;
+        platform::write_atomic(Path::new(&path), &data).map_err(|e| Error::Unexpected(platform::os_error(&e, Path::new(&path))))?;
         self.path = Some(path.clone());
         self.dirty = false;
         self.job.name = platform::splitext(&platform::basename(&path)).0;

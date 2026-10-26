@@ -741,7 +741,7 @@ pub fn slw_bytes(job: &Job, stitched: &StitchMap, file_name: &str, stamp: Option
 pub fn write_slw(job: &Job, stitched: &StitchMap, path: &std::path::Path) -> Result<usize, String> {
     let name = crate::platform::basename(&path.to_string_lossy());
     let (bytes, n) = slw_bytes(job, stitched, &name, None)?;
-    std::fs::write(path, bytes).map_err(|e| crate::platform::os_error(&e, path))?;
+    crate::platform::write_atomic(path, &bytes).map_err(|e| crate::platform::os_error(&e, path))?;
     Ok(n)
 }
 
