@@ -147,7 +147,7 @@ await sleep(3500);
 DPR = await js('return devicePixelRatio');
 
 // ------------------------------------------------------------------ Home, new job
-await rec('01-home-first-start.png', { brand: '.home-brand', new: '[data-home=new]', open: '.home-acts [data-home=open]', quick: '#homeQuick', filter: '.home-row .home-filter', view: '#homeView', recent: '#homeRecent', start: '.home-check', tools: '.home-tools' });
+await rec('01-home-first-start.png', { brand: '.home-brand', new: '[data-home=new]', open: '.home-acts [data-home=open]', quick: '#homeHero', filter: '.home-row .home-filter', view: '#homeView', recent: '#homeRecent', start: '.home-check', tools: '.home-tools' });
 await shot('01-home-first-start.png');
 await clickSel('.home-acts [data-home=new]');
 await boxShot('02-new-job-dialog.png', '#sheet', 16);
@@ -308,10 +308,10 @@ await openPath(JOB); await sleep(300);
 await boxShot('45-unsaved-changes-dialog.png', '#sheet', 16);
 await jsClick('#sheet [data-nosave]'); await sleep(1600);
 await key('h', 'KeyH', ['ctrl', 'shift']); await sleep(2800);
-await rec('46-home-with-recent.png', { cont: '#homeContinue .home-cont', back: '#homeBack', recent: '#homeRecent', count: '#homeCount' });
+await rec('46-home-with-recent.png', { cont: '#homeHero', back: '#homeBack', recent: '#homeRecent', count: '#homeCount' });
 await shot('46-home-with-recent.png');
 await jsClick('#homeView [data-k="list"]'); await sleep(800);
-await js(`document.querySelector('.home-main').scrollTop = 9999;`); await sleep(300);
+await js(`document.querySelector('#home').scrollTop = 9999;`); await sleep(300);
 await rec('47-home-recent-list.png', { view: '#homeView', recent: '#homeRecent', card: '#homeRecent .rcard', folders: '#homeRecent' });
 const folders = await js(`return [...document.querySelectorAll('#homeRecent .folder')].map(e => { const b = e.getBoundingClientRect(); return [b.left, b.top, b.right, b.bottom]; });`);
 RECTS['47-home-recent-list.png'].blur = folders.map(b => b.map(v => Math.round(v * DPR)));

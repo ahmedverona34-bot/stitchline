@@ -2240,6 +2240,7 @@
     }
     if (homeOpen()) {
       if (e.key === 'Escape' && !$('#homeBack').hidden) { e.preventDefault(); return hideHome(); }
+      if (e.key === 'Enter' && !ctrl && S?.job.shapes.length && !e.target.closest?.('input, button, [data-open]')) { e.preventDefault(); return hideHome(); }
       if (ctrl && k === 'o') { e.preventDefault(); return ACT.open(); }
       if (ctrl && k === 'n') { e.preventDefault(); return openSheet('newjob'); }
       if (ctrl && e.shiftKey && k === 'h') { e.preventDefault(); if (!$('#homeBack').hidden) hideHome(); return; }
@@ -2429,27 +2430,35 @@
     $('#homeOnStart').setAttribute('aria-checked', store.get('homeOnStart', true));
     const has = S.job.shapes.length > 0;
     $('#homeBack').hidden = !(has || home.used);
-    // the job left open: autosaved, so it comes back even when it was never saved
-    const c = $('#homeContinue'); c.hidden = !has;
+    // the big card: the job left open (autosaved, so it comes back even when it was never saved), else a start card
+    const go = (cls, act, label, key, icon = '') => `<button class="btn ${cls}" data-home="${act}">${icon}<span>${label}</span>${key ? `<kbd data-notr>${key}</kbd>` : ''}</button>`;
     if (has) {
-      const nl = S.job.layers.length;
-      c.innerHTML = `<h2>Continue</h2><button class="home-cont" data-home="editor">
-        <div class="thumb">${jobSvg() || FILE_ICON}</div>
-        <div class="t"><span class="eyebrow">Pick up where you left off</span><b>${esc(S.file.name)}</b>
-          <span class="meta"><span>${S.job.shapes.length} ${S.job.shapes.length === 1 ? 'shape' : 'shapes'}</span>·<span>${nl} ${nl === 1 ? 'layer' : 'layers'}</span>${S.file.dirty ? '·<span class="unsaved">Unsaved changes</span>' : S.file.path ? '·<span>Saved</span>' : ''}</span></div>
-        <span class="btn primary">Continue</span></button>`;
+      const n = S.job.shapes.length, nl = S.job.layers.length, folder = (S.file.path || '').replace(/[\\/][^\\/]*$/, '');
+      $('#homeHero').innerHTML = `<div class="t">
+          <span class="eyebrow">Pick up where you left off</span>
+          <h1 class="nm" data-notr title="${esc(S.file.path || S.file.name)}">${esc(S.file.name)}</h1>
+          ${folder ? `<span class="path" data-notr>${esc(folder)}</span>` : ''}
+          <div class="home-chips">
+            <span class="chip">${n} ${n === 1 ? 'shape' : 'shapes'}</span><span class="chip">${nl} ${nl === 1 ? 'layer' : 'layers'}</span>
+            <span class="chip">${sizeTxt(J().table_w, J().table_h)}</span>
+            ${S.job.layers.some(isLaser) ? '<span class="chip laser">Laser cut</span>' : ''}
+            ${S.file.dirty ? '<span class="chip warn">Unsaved changes</span>' : S.file.path ? '<span class="chip">Saved</span>' : ''}
+          </div>
+          <div class="home-go">${go('primary', 'editor', 'Continue the job', 'Enter')}${go('', 'new', 'New job', 'Ctrl N')}</div>
+        </div>
+        <div class="thumb" data-home="editor" title="Continue the job (Enter)">${jobSvg() || FILE_ICON}</div>`;
+    } else {
+      const [w, h] = tableSizes()[0], k = Math.min(300 / w, 220 / h);
+      $('#homeHero').innerHTML = `<div class="t">
+          <span class="eyebrow">Start a new job</span>
+          <h1>Welcome to Stitchline</h1>
+          <p>Start a new sewing job on your machine table, or open a drawing.</p>
+          <div class="home-chips">${tableSizes().map(([w, h]) => `<button class="chip" data-size="${w}x${h}" title="New job with this machine table">${sizeTxt(w, h)}</button>`).join('')}
+            <button class="chip dashed" data-home="new" title="New job (Ctrl+N)">Custom size…</button></div>
+          <div class="home-go">${go('primary', 'new', 'New job', 'Ctrl N', '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>')}${go('', 'open', 'Open a drawing', 'Ctrl O')}</div>
+        </div>
+        <div class="thumb start"><div class="sheetbox" style="width:${Math.max(8, w * k).toFixed(0)}px;height:${Math.max(8, h * k).toFixed(0)}px"></div></div>`;
     }
-    $('#homeQuick').innerHTML = tableSizes().map(([w, h], i) => {
-      const k = Math.min(132 / w, 66 / h);
-      return `<button class="qcard" data-size="${w}x${h}" title="New job with this machine table">
-        <div class="pv"><div class="sheetbox" style="width:${Math.max(8, w * k).toFixed(0)}px;height:${Math.max(8, h * k).toFixed(0)}px"></div></div>
-        <div class="tx"><b>${sizeTxt(w, h)}</b><small>${i === 0 ? 'Machine table' : 'Used before'}</small></div></button>`;
-    }).join('') + `<button class="qcard" data-home="new" title="New job (Ctrl+N)">
-        <div class="pv dashed"><svg viewBox="0 0 24 24"><path d="M12 6v12M6 12h12"/></svg></div>
-        <div class="tx"><b>Custom size…</b><small>Name and table size</small></div></button>
-      <button class="qcard" data-home="open" title="Open (Ctrl+O)">
-        <div class="pv"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
-        <div class="tx"><b>Open a drawing</b><small data-notr>DXF · AI · PLT · DST · DSB · SLW</small></div></button>`;
     $$('#homeView button').forEach(b => b.setAttribute('aria-pressed', b.dataset.k === home.view));
     renderRecent();
   }
