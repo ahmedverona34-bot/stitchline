@@ -446,7 +446,7 @@
             <div class="callout warn" style="margin:0"><svg viewBox="0 0 24 24"><path d="M12 3 2 21h20z"/><path d="M12 10v5M12 18h.01"/></svg><div>This layer may cut slowly.</div></div>
             <button class="btn primary" data-act="laserFix">Speed up laser paths</button></div>` : '') : `
           <div class="ss big-slider">${row('Stitch length', fld('lenNum', +(+L.settings.stitch_len).toFixed(2), 'mm', '', 'layer:stitch_len'), 'lenNum')}
-            <input type="range" id="lenRange" min="0.5" max="12" step="0.1" value="${L.settings.stitch_len}" aria-label="Stitch length">
+            <div class="len-slider" id="lenSlider" data-v="${L.settings.stitch_len}"></div>
             <p class="hint">${n.toLocaleString()} needle positions in this layer</p></div>`}
           <div class="ss">
             <h4>Try it</h4>
@@ -550,7 +550,7 @@
           ${L.needle === 3 ? laserSpeedSection(L) : ''}
           <div class="sec plain" ${isLaser(L) ? 'hidden' : ''}><div class="sec-body">
             <div class="big-slider">${row('Stitch length', fld('lenNum', +(+s.stitch_len).toFixed(2), 'mm', '', 'layer:stitch_len'), 'lenNum')}
-              <input type="range" id="lenRange" min="0.5" max="12" step="0.1" value="${s.stitch_len}" aria-label="Stitch length">
+              <div class="len-slider" id="lenSlider" data-v="${s.stitch_len}"></div>
               <p class="hint">${n.toLocaleString()} needle positions in this layer</p></div>
             ${row('Convert lines to stitches', lsw('convert'))}
             ${s.convert ? '' : `<p class="hint">Off: the machine sews along each line with its own stitch length.</p>`}
@@ -656,6 +656,7 @@
 
   // the focused control, found again after the panel is rebuilt: by its id, or by its data-* attributes (buttons)
   const focusKey = el => el.id ? '#' + CSS.escape(el.id) : Object.entries(el.dataset).map(([k, v]) => `[data-${k.replace(/[A-Z]/g, c => '-' + c.toLowerCase())}="${CSS.escape(v)}"]`).join('') || null;
+  let lenSlider = null;   // the stitch length slider (React), while its panel is shown
   function renderInspector() {
     const sc = $('#insp').scrollTop;
     const osc = $('#order')?.scrollTop;   // the sewing order list scrolls on its own; keep its place across re-renders
@@ -663,6 +664,8 @@
     const fa = document.activeElement, fk = fa && fa.closest('.inspector') && focusKey(fa);
     const fv = fk && fa.tagName === 'INPUT' ? { v: fa.value, typed: fa.value !== fa.defaultValue, s: fa.selectionStart, e: fa.selectionEnd } : null;
     const p = PANELS[stg()]();
+    const lenFocused = !!fa?.closest?.('#lenSlider');
+    lenSlider?.unmount(); lenSlider = null;   // the React slider goes with the panel it was mounted in
     $('#insp').innerHTML = `<div class="i-title"><h2>${p.title}</h2><p>${p.sub}</p>${p.pick || ''}</div>${p.body}`;
     $('#ifoot').innerHTML = p.foot;
     $('#ifoot').hidden = !p.foot;
@@ -675,11 +678,15 @@
       if (fv && fv.s != null) try { fv.s === 0 && fv.e === fv.v.length ? nf.select() : nf.setSelectionRange(fv.s, fv.e); } catch {}
     }
     $$('#insp details[data-key]').forEach(d => d.addEventListener('toggle', () => { openSecs[d.dataset.key] = d.open; store.set('openSecs', openSecs); }));
-    const r = $('#lenRange');
-    if (r) {
-      let t;
-      r.addEventListener('input', () => { $('#lenNum').value = (+r.value).toFixed(1); clearTimeout(t); t = setTimeout(() => setLayer({ stitch_len: +r.value }), 220); });
-      $('#lenNum').addEventListener('input', () => { const v = num('lenNum'); if (v > 0) r.value = v; });   // the slider follows what is typed; Tab or Enter saves it
+    // stitch length: Ark UI's slider (ui-react/islands.jsx); the field shows the value while it moves and saves it once it settles
+    const ls = $('#lenSlider');
+    if (ls && window.STL_REACT) {
+      lenSlider = window.STL_REACT.mountSlider(ls, {
+        init: +ls.dataset.v, min: 0.5, max: 12, step: 0.1, marks: [2, 4, 6, 8, 10], label: 'Stitch length', focus: lenFocused,
+        onLive: v => { $('#lenNum').value = v.toFixed(1); },
+        onCommit: v => setLayer({ stitch_len: v }),
+      });
+      $('#lenNum').addEventListener('input', () => { const v = num('lenNum'); if (v > 0) lenSlider?.set(Math.min(12, Math.max(0.5, v))); });   // the slider follows what is typed; Tab or Enter saves it
     }
     const ol = $('#order'); if (ol) wireOrder(ol);
   }

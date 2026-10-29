@@ -4,3 +4,4 @@
 /src-tauri/gen/
 *.log
 __pycache__/
+/ui/react/

@@ -1,8 +1,8 @@
 # CLAUDE.md
 
 Stitchline: a Windows desktop app (Tauri 2 + WebView2) for pattern sewing machines that read **SLW** files
-(the format of the original "Sew_Soft" CAD; needle 3 can be a laser head). Rust engine + plain HTML/JS UI,
-no framework, no bundler. Arabic (default, RTL) and English. README.md has the user-facing overview.
+(the format of the original "Sew_Soft" CAD; needle 3 can be a laser head). Rust engine + plain HTML/JS UI
+(app.js), with React + Ark UI parts mounted into it (ui-react/, built by esbuild). Arabic (default, RTL) and English. README.md has the user-facing overview.
 
 The user writes in Egyptian Arabic; answer in the same language unless asked otherwise. Code, comments and
 commit messages are in English.
@@ -41,6 +41,11 @@ ui/
                        every text node/tooltip. UI is written in English; ADD AN ARABIC ENTRY for every new
                        visible string (Egyptian wording, e.g. "مشروع", "الشباك"). `data-notr` skips translation
   app.css              tokens for light/dark (`data-theme`), RTL handled via `dir`
+  react/islands.js     BUILT from ui-react/ by `npm run build:ui` (gitignored; tauri build and dev_run.ps1 run it)
+ui-react/islands.jsx   React + Ark UI components (`@ark-ui/react`), exposed as window.STL_REACT.mount*(el, opts)
+                       -> { set, unmount }. app.js renders panels as HTML strings, so it mounts a component into a
+                       placeholder after each render and unmounts it before replacing the panel (see lenSlider).
+                       New Ark components go here; style them in app.css by their class / data-part
 reference/             drawings + SLW files written by the original program (parity ground truth)
 tests/                 data/, Python comparison scripts, CDP UI tests (ui_*.mjs), dev_run.ps1
 tools/update-desktop.ps1  desktop copy rebuild (see below)

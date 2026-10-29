@@ -4,7 +4,9 @@
   "version": "1.0.4",
   "identifier": "com.stitchline.desktop",
   "build": {
-    "frontendDist": "../ui"
+    "frontendDist": "../ui",
+    "beforeBuildCommand": "npm run build:ui",
+    "beforeDevCommand": "npm run build:ui"
   },
   "app": {
     "windows": [],

@@ -6,9 +6,16 @@
     "tauri": "tauri",
     "build": "tauri build",
     "dev": "tauri dev",
-    "test": "node --test tests/selection.test.mjs"
+    "test": "node --test tests/selection.test.mjs",
+    "build:ui": "esbuild ui-react/islands.jsx --bundle --minify --format=iife --jsx=automatic --target=chrome110 --legal-comments=none --define:process.env.NODE_ENV=\\\"production\\\" --outfile=ui/react/islands.js"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "2.12.3"
+    "@tauri-apps/cli": "2.12.3",
+    "esbuild": "^0.28.2"
+  },
+  "dependencies": {
+    "@ark-ui/react": "^5.39.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   }
 }

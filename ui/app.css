@@ -382,6 +382,22 @@ input[type="range"] { width: 100%; accent-color: var(--thread); }
 .row { display: flex; align-items: center; gap: 10px; min-height: 30px; }
 .row > label, .row > .lbl { flex: 1; color: var(--fg-2); min-width: 0; }
 .big-slider { display: grid; gap: 6px; }
+/* Ark UI slider (ui-react/islands.jsx): a thin track, the value filled in thread colour, a ring thumb, marks below */
+.ark-slider { display: grid; gap: 8px; padding: 4px 9px 0; }
+.ark-slider-control { height: 22px; display: flex; align-items: center; cursor: pointer; }
+.ark-slider-track { flex: 1; height: 4px; border-radius: 999px; background: var(--well-strong); overflow: hidden; }
+.ark-slider-range { height: 100%; border-radius: inherit; background: var(--thread); }
+.ark-slider-thumb {
+  width: 18px; height: 18px; border-radius: 50%; background: var(--app); border: 2px solid var(--thread); box-sizing: border-box;
+  box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: box-shadow .15s, transform .15s; outline: none; cursor: grab;
+}
+.ark-slider-thumb:hover { box-shadow: 0 0 0 6px var(--thread-soft), 0 1px 3px rgba(0,0,0,.25); }
+.ark-slider-thumb[data-focus-visible], .ark-slider-thumb:focus-visible { box-shadow: 0 0 0 4px var(--thread-soft), 0 0 0 1px var(--thread); }
+.ark-slider-thumb[data-dragging] { cursor: grabbing; box-shadow: 0 0 0 7px var(--thread-soft), 0 1px 3px rgba(0,0,0,.25); }
+.ark-slider-marks { height: 16px; }
+.ark-slider-mark { display: grid; justify-items: center; gap: 3px; font: calc(10.5px * var(--ts)) var(--mono); color: var(--fg-3); }
+.ark-slider-mark::before { content: ""; width: 2px; height: 4px; border-radius: 1px; background: var(--line-strong); }
+.ark-slider-mark[data-state="under-value"]::before { background: var(--thread); }
 .pad { display: grid; grid-template-columns: repeat(3, 34px); grid-template-rows: repeat(3, 34px); gap: 4px; }
 .pad button { border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--app); display: grid; place-items: center; color: var(--fg-2); }
 .pad button:hover { color: var(--accent); background: var(--accent-soft); }

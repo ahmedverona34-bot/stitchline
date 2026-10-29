@@ -27,7 +27,7 @@ if ($Test) {
     Remove-Item Env:\CARGO_TARGET_DIR
 }
 
-if (-not (Test-Path node_modules)) { npm install --no-audit --no-fund }
+if (-not (Test-Path node_modules/@ark-ui/react)) { npm install --no-audit --no-fund }
 npx tauri build
 if ($LASTEXITCODE) { throw 'tauri build failed' }
 Get-ChildItem target\release\bundle\nsis\*.exe | ForEach-Object { '{0}  {1:N1} MB' -f $_.FullName, ($_.Length / 1MB) }

@@ -67,7 +67,7 @@ try {
     if (-not $winlibs) { throw 'MinGW binutils not found: winget install BrechtSanders.WinLibs.POSIX.MSVCRT --scope user' }
     $env:PATH = "$cargo;$env:PATH;$winlibs"
     $env:CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER = Join-Path $selfContained 'x86_64-w64-mingw32-gcc.exe'
-    if (-not (Test-Path node_modules)) { npm install --no-audit --no-fund 2>&1 | Out-Null }
+    if (-not (Test-Path node_modules/@ark-ui/react)) { npm install --no-audit --no-fund 2>&1 | Out-Null }
 
     $built = $null
     while ($true) {
