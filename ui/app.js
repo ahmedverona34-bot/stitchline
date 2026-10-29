@@ -122,13 +122,20 @@
   }
 
   /* window buttons: the window has no Windows title bar; the top bar (and Home's top strip) drags it */
-  const winctl = (action) => window.__TAURI_INTERNALS__?.invoke('window_ctl', { action }).then(maxed => {
+  const winctl = (action) => window.__TAURI_INTERNALS__?.invoke('window_ctl', { action }).then(([maxed, full]) => {
     const w = $('#winctl'), b = $('#winctl [data-win="max"]');
     w.classList.toggle('maxed', maxed); b.title = maxed ? 'Restore' : 'Maximize'; b.setAttribute('aria-label', b.title);
+    document.documentElement.classList.toggle('fullscreen', full);
   }).catch(() => {});
   $$('#winctl [data-win]').forEach(b => b.addEventListener('click', () => winctl(b.dataset.win)));
   addEventListener('resize', () => winctl('state'));
   winctl('state');
+  // F11: full screen on / off, wherever the focus is (sheets and fields keep their keys to themselves)
+  addEventListener('keydown', e => {
+    if (e.key !== 'F11' || e.ctrlKey || e.altKey || e.metaKey || e.repeat) return;
+    e.preventDefault(); e.stopPropagation();
+    winctl('full');
+  }, true);
 
   /* ------------------------------------------------------------------ layers sidebar */
   const openLayers = new Set(store.get('openLayers', []));
@@ -1502,7 +1509,12 @@
   }
   /* light / dark: the user's choice, or the same as Windows while nothing is chosen */
   const darkOS = matchMedia('(prefers-color-scheme: dark)');
-  function applyTheme() { document.documentElement.dataset.theme = store.get('theme', null) || (darkOS.matches ? 'dark' : 'light'); }
+  function applyTheme() {
+    document.documentElement.dataset.theme = store.get('theme', null) || (darkOS.matches ? 'dark' : 'light');
+    // the window behind the page gets the page's colour, so resizing it (F11) shows no white strip
+    const rgb = getComputedStyle(document.body).backgroundColor.match(/\d+/g).slice(0, 3).map(Number);
+    window.__TAURI_INTERNALS__?.invoke('set_background', { rgb }).catch(() => {});
+  }
   function setTheme(t) { store.set('theme', t === 'system' ? null : t); applyTheme(); syncSettings(); draw(); }
   function toggleTheme() { setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'); }
   applyTheme();
@@ -1900,7 +1912,7 @@
     ['Tools', [['Selection: move and resize whole shapes', 'V'], ['Direct selection: move one path', 'A'], ['Resize keeping proportions', 'Shift'], ['Resize from the centre', 'Alt'], ['Box: only shapes fully inside', 'Alt'],
       ['Pan', 'H'], ['Pan while held', 'Space'], ['Rotate: type the angle', 'R', 1], ['Mirror left–right', 'O', 1], ['Mirror up–down', 'Shift O', 1], ['Resize: type the size', 'S', 1], ['Move: type the distance', 'Enter', 1],
       ['Set start point', 'C', 1], ['Measure', 'I', 1], ['Add shape', 'M', 1]]],
-    ['View', [['Fit the drawing', 'Ctrl 0', 1], ['Real size (100%)', 'Ctrl 1', 1], ['Zoom in', 'Ctrl +', 1], ['Zoom out', 'Ctrl −', 1], ['Show stitches', 'Ctrl Y', 1], ['Show sewing order', 'Ctrl H', 1],
+    ['View', [['Full screen on / off', 'F11', 1], ['Fit the drawing', 'Ctrl 0', 1], ['Real size (100%)', 'Ctrl 1', 1], ['Zoom in', 'Ctrl +', 1], ['Zoom out', 'Ctrl −', 1], ['Show stitches', 'Ctrl Y', 1], ['Show sewing order', 'Ctrl H', 1],
       ['Hide / show the stage panel', 'Shift Tab', 1], ['Find any tool', 'Ctrl K'], ['Light / dark', 'Ctrl Shift L'], ['Settings', 'Ctrl ,', 1], ['Keyboard shortcuts', 'Ctrl Alt Shift K', 1], ['Keyboard shortcuts', '?']]],
     ['Stages', [['Import', '1'], ['Arrange', '2'], ['Stitch', '3'], ['Sequence', '4'], ['Output', '5'], ['Next step', 'PageDown', 1], ['Previous step', 'PageUp', 1]]],
   ];
@@ -1908,7 +1920,7 @@
     ['File', [['Open a drawing or job', 'Ctrl O'], ['Save job', 'Ctrl S'], ['Save machine file', 'Ctrl Alt E'], ['New job', 'Ctrl N'], ['Home: new job, open, recent files', 'Ctrl Shift H']]],
     ['Edit', [['Undo', 'Ctrl Z'], ['Redo', 'Ctrl Shift Z'], ['Stop the simulation, clear the selection', 'Esc'], ['Delete selected', 'Delete'], ['Create group from the selection', 'Ctrl G'], ['Merge the selection into one shape', 'Ctrl Shift J'], ['Sequence window: step through the run', '← →'], ['Sequence window: a shape at a time', 'Shift ← →'], ['Nudge the selection', '← ↑ → ↓'], ['Nudge ×10', 'Shift ← ↑ → ↓']]],
     ['Tools', [['Selection: move and resize whole shapes', 'V'], ['Direct selection: move one path', 'A'], ['Pan', 'H'], ['Set start point', 'C'], ['Measure', 'I'], ['Add shape', 'M']]],
-    ['View', [['Fit the drawing', 'Ctrl 0'], ['Real size (100%)', 'Ctrl 1'], ['Zoom in', 'Ctrl +'], ['Zoom out', 'Ctrl −'], ['Pan while held', 'Space'], ['Original shape / stitches', 'Ctrl Y'],
+    ['View', [['Full screen on / off', 'F11'], ['Fit the drawing', 'Ctrl 0'], ['Real size (100%)', 'Ctrl 1'], ['Zoom in', 'Ctrl +'], ['Zoom out', 'Ctrl −'], ['Pan while held', 'Space'], ['Original shape / stitches', 'Ctrl Y'],
       ['Light / dark', 'Ctrl Shift L'], ['Settings', 'Ctrl ,'], ['Keyboard shortcuts', '?']]],
   ];
   const keyCaps = k => k === '← ↑ → ↓' ? `<kbd>${k}</kbd>` : k.startsWith('Shift ←') ? `<kbd>Shift</kbd><kbd>← ↑ → ↓</kbd>` : k.split(' ').map(x => `<kbd>${x}</kbd>`).join('');
@@ -2197,7 +2209,7 @@
     ['Remove overlapping shapes on open', 'import'], ["Don't join lines automatically", 'import'], ['Work without reference point', 'import'], ['Drawing resolution (dpi)', 'import'], ['Scale drawing', 'import'], ['Calculate scale from a measurement', 'import', () => openSheet('calc')], ['Machine table size', 'import'], ['New job', 'import', () => openSheet('newjob')], ['Home: new job, open, recent files', 'import', () => showHome()],
     ['Add shape (point, line, rectangle, circle)', 'arrange', () => openSheet('add')], ['Duplicate', 'arrange', () => openSheet('dup')], ['Move shape to another layer', 'arrange'], ['New empty layer', 'arrange', () => $('#addLayer').click()], ['Reference point', 'arrange', () => openSheet('ref')], ['Nudge / move', 'arrange'], ['Rotate', 'arrange'], ['Mirror', 'arrange'], ['Resize selected shapes', 'arrange', () => openSheet('resize')], ['Pick start point', 'arrange', () => setTool('start')], ['Reverse direction', 'arrange', () => ACT.op({ dataset: { op: 'reverse' } })], ['Extend or shorten ends', 'arrange'], ['Edit points one by one', 'arrange', () => openSheet('points')], ['Split a shape', 'arrange'], ['Merge close points', 'arrange'], ['Delete short lines', 'arrange'], ['Join line ends', 'arrange'], ['Select all', 'arrange', () => ACT.selectAll()], ['Delete selected', 'arrange', () => ACT.op({ dataset: { op: 'delete' } })], ['Start every shape at top / bottom / left / right', 'arrange'], ['Sections: zigzag, back-tack, special length', 'arrange', () => openSheet('marks')], ['Measure distance', 'arrange', () => setTool('measure')], ['Undo', 'arrange', () => api('undo')], ['Redo', 'arrange', () => api('redo')],
     ['Make a layer from the selection (Ctrl+G)', 'arrange', () => ACT.groupSheet()], ['Merge the selection into one shape (Ctrl+Shift+J)', 'arrange', () => ACT.merge()], ['Delete layer, keep its shapes (Ctrl+Shift+G)', 'arrange'], ['Set the needle of a layer', 'arrange'],
-    ['Light / dark (Ctrl+Shift+L)', 'import', () => toggleTheme()],
+    ['Light / dark (Ctrl+Shift+L)', 'import', () => toggleTheme()], ['Full screen on / off (F11)', '', () => winctl('full')],
     ['Hide / show the stage panel (Shift+Tab)', 'import', () => toggleInspector()],
     ['Keyboard shortcuts', 'import', () => openSheet('keys')],
     ['Settings: language, theme, fonts, text size, interface (Ctrl+,)', '', () => openSettings()],

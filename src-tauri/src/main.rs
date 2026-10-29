@@ -171,19 +171,177 @@ fn set_zoom(window: tauri::WebviewWindow, scale: f64) -> Result<(), String> {
     window.set_zoom(scale.clamp(0.5, 2.0)).map_err(|e| e.to_string())
 }
 
-/// The window buttons drawn by the UI (the window has no Windows title bar): "min", "max" (maximize / restore),
-/// "close" (goes through the close question like Alt+F4), or "state". Returns whether the window is maximized.
+/// Full screen (F11) on Windows in one step. Tauri's full screen first restores a maximized window and then makes
+/// it full screen, which shows a smaller window in between. Here the window goes, in one go on the main thread
+/// (before anything is drawn), from maximized to a normal window that covers the whole monitor, taskbar included;
+/// leaving puts back the placement it had (maximized, with its normal size). The taskbar is told the window is full
+/// screen, or it stays drawn over it. A window that is not maximized uses Tauri's full screen.
+#[cfg(windows)]
+mod full_screen {
+    use std::sync::Mutex;
+    use std::ffi::c_void;
+    use windows_sys::core::GUID;
+    use windows_sys::Win32::Foundation::{HWND, POINT, RECT};
+    use windows_sys::Win32::Graphics::Dwm::{DwmSetWindowAttribute, DWMWA_TRANSITIONS_FORCEDISABLED};
+    use windows_sys::Win32::Graphics::Gdi::{ClientToScreen, GetMonitorInfoW, MonitorFromWindow, MONITORINFO, MONITOR_DEFAULTTONEAREST};
+    use windows_sys::Win32::System::Com::{CoCreateInstance, CLSCTX_INPROC_SERVER};
+    use windows_sys::Win32::UI::WindowsAndMessaging::{
+        GetClientRect, GetWindowPlacement, GetWindowRect, SetWindowPlacement, SetWindowPos, ShowWindow, SWP_NOACTIVATE, SWP_NOOWNERZORDER,
+        SWP_NOZORDER, SW_MAXIMIZE, SW_SHOWMAXIMIZED, SW_SHOWNORMAL, WINDOWPLACEMENT,
+    };
+
+    /// while the window covers the monitor: the placement it had, to put back
+    static SAVED: Mutex<Option<WINDOWPLACEMENT>> = Mutex::new(None);
+
+    fn hwnd(window: &tauri::WebviewWindow) -> Option<isize> {
+        window.hwnd().ok().map(|h| h.0 as isize)
+    }
+    unsafe fn rects(h: HWND) -> Option<(RECT, RECT)> {
+        // the window rectangle and the page (client) rectangle, both on the screen
+        let (mut wr, mut cr): (RECT, RECT) = (std::mem::zeroed(), std::mem::zeroed());
+        let mut o = POINT { x: 0, y: 0 };
+        if GetWindowRect(h, &mut wr) == 0 || GetClientRect(h, &mut cr) == 0 || ClientToScreen(h, &mut o) == 0 {
+            return None;
+        }
+        Some((wr, RECT { left: o.x, top: o.y, right: o.x + cr.right, bottom: o.y + cr.bottom }))
+    }
+    /// Windows animates maximizing: off for this change, back a moment later
+    unsafe fn no_animation(h: HWND) {
+        let off: i32 = 1;
+        DwmSetWindowAttribute(h, DWMWA_TRANSITIONS_FORCEDISABLED as u32, &off as *const i32 as _, 4);
+        let h = h as isize;
+        std::thread::spawn(move || {
+            std::thread::sleep(std::time::Duration::from_millis(400));
+            let on: i32 = 0;
+            unsafe { DwmSetWindowAttribute(h as HWND, DWMWA_TRANSITIONS_FORCEDISABLED as u32, &on as *const i32 as _, 4) };
+        });
+    }
+
+    thread_local! {
+        /// the taskbar's ITaskbarList2, made once on the main thread
+        static TASKBAR: std::cell::Cell<*mut c_void> = const { std::cell::Cell::new(std::ptr::null_mut()) };
+    }
+    /// ITaskbarList2::MarkFullscreenWindow: keeps the taskbar below the window (windows-sys has no COM interfaces, so
+    /// it is called through the vtable: HrInit is entry 3, MarkFullscreenWindow entry 8)
+    unsafe fn mark_full_screen(h: HWND, on: bool) {
+        const CLSID_TASKBAR_LIST: GUID = GUID::from_u128(0x56fdf344_fd6d_11d0_958a_006097c9a090);
+        const IID_ITASKBAR_LIST2: GUID = GUID::from_u128(0x602d4995_b13a_429b_a66e_1935e44f4317);
+        type Init = unsafe extern "system" fn(*mut c_void) -> i32;
+        type Mark = unsafe extern "system" fn(*mut c_void, HWND, i32) -> i32;
+        let mut t = TASKBAR.get();
+        if t.is_null() {
+            if CoCreateInstance(&CLSID_TASKBAR_LIST, std::ptr::null_mut(), CLSCTX_INPROC_SERVER, &IID_ITASKBAR_LIST2, &mut t) < 0 || t.is_null() {
+                return;
+            }
+            let vt = *(t as *const *const usize);
+            if std::mem::transmute::<usize, Init>(*vt.add(3))(t) < 0 {
+                return;
+            }
+            TASKBAR.set(t);
+        }
+        let vt = *(t as *const *const usize);
+        std::mem::transmute::<usize, Mark>(*vt.add(8))(t, h, on as i32);
+    }
+
+    pub fn covering() -> bool {
+        SAVED.lock().unwrap().is_some()
+    }
+
+    pub fn cover(window: &tauri::WebviewWindow) -> tauri::Result<()> {
+        let Some(h) = hwnd(window) else { return Ok(()) };
+        window.run_on_main_thread(move || unsafe {
+            let h = h as HWND;
+            let mut mi: MONITORINFO = std::mem::zeroed();
+            mi.cbSize = std::mem::size_of::<MONITORINFO>() as u32;
+            let mut p: WINDOWPLACEMENT = std::mem::zeroed();
+            p.length = std::mem::size_of::<WINDOWPLACEMENT>() as u32;
+            if GetMonitorInfoW(MonitorFromWindow(h, MONITOR_DEFAULTTONEAREST), &mut mi) == 0 || GetWindowPlacement(h, &mut p) == 0 {
+                return;
+            }
+            let Some((wr, cr)) = rects(h) else { return };
+            *SAVED.lock().unwrap() = Some(p);
+            let (m, w) = (mi.rcMonitor, mi.rcWork);
+            // a normal window over the whole monitor, grown by the invisible border the maximized window has now on the
+            // left, right and bottom (a normal window without a title bar has none on top). The normal size is in
+            // workspace coordinates: relative to the work area
+            let (bl, bt, br, bb) = (cr.left - wr.left, 0, wr.right - cr.right, wr.bottom - cr.bottom);
+            let mut n = p;
+            n.showCmd = SW_SHOWNORMAL as u32;
+            no_animation(h);
+            n.rcNormalPosition =
+                RECT { left: m.left - bl - w.left, top: m.top - bt - w.top, right: m.right + br - w.left, bottom: m.bottom + bb - w.top };
+            SetWindowPlacement(h, &n);
+            // a normal window's border can differ: make the page cover the monitor exactly
+            let Some((wr, cr)) = rects(h) else { return };
+            if (cr.left, cr.top, cr.right, cr.bottom) != (m.left, m.top, m.right, m.bottom) {
+                let (l, t) = (m.left - (cr.left - wr.left), m.top - (cr.top - wr.top));
+                let (r, b) = (m.right + (wr.right - cr.right), m.bottom + (wr.bottom - cr.bottom));
+                SetWindowPos(h, std::ptr::null_mut(), l, t, r - l, b - t, SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE);
+            }
+            mark_full_screen(h, true);
+        })
+    }
+
+    pub fn uncover(window: &tauri::WebviewWindow) -> tauri::Result<()> {
+        let Some(h) = hwnd(window) else { return Ok(()) };
+        let Some(saved) = SAVED.lock().unwrap().take() else { return Ok(()) };
+        window.run_on_main_thread(move || unsafe {
+            let h = h as HWND;
+            // maximized straight from full screen, then its normal size put back (that changes nothing on screen)
+            no_animation(h);
+            ShowWindow(h, SW_MAXIMIZE);
+            let mut p: WINDOWPLACEMENT = std::mem::zeroed();
+            p.length = std::mem::size_of::<WINDOWPLACEMENT>() as u32;
+            if GetWindowPlacement(h, &mut p) != 0 {
+                p.rcNormalPosition = saved.rcNormalPosition;
+                p.showCmd = SW_SHOWMAXIMIZED as u32;
+                SetWindowPlacement(h, &p);
+            }
+            mark_full_screen(h, false);
+        })
+    }
+}
+#[cfg(not(windows))]
+mod full_screen {
+    pub fn covering() -> bool {
+        false
+    }
+    pub fn cover(window: &tauri::WebviewWindow) -> tauri::Result<()> {
+        window.set_fullscreen(true)
+    }
+    pub fn uncover(_: &tauri::WebviewWindow) -> tauri::Result<()> {
+        Ok(())
+    }
+}
+
+/// The window's colour behind the page, the page's own background (light or dark): a resize (F11) shows it for a
+/// moment before the page fills the new size, white by default.
 #[tauri::command]
-fn window_ctl(window: tauri::WebviewWindow, action: String) -> Result<bool, String> {
+fn set_background(window: tauri::WebviewWindow, rgb: [u8; 3]) -> Result<(), String> {
+    window.set_background_color(Some(tauri::window::Color(rgb[0], rgb[1], rgb[2], 255))).map_err(|e| e.to_string())
+}
+
+/// The window buttons drawn by the UI (the window has no Windows title bar): "min", "max" (maximize / restore),
+/// "close" (goes through the close question like Alt+F4), "full" (full screen on / off, F11), or "state".
+/// Returns (maximized, full screen).
+#[tauri::command]
+fn window_ctl(window: tauri::WebviewWindow, action: String) -> Result<(bool, bool), String> {
     let r = match action.as_str() {
         "min" => window.minimize(),
         "max" if window.is_maximized().unwrap_or(false) => window.unmaximize(),
         "max" => window.maximize(),
         "close" => window.close(),
+        "full" if full_screen::covering() => full_screen::uncover(&window),
+        "full" if window.is_fullscreen().unwrap_or(false) => window.set_fullscreen(false),
+        "full" if window.is_maximized().unwrap_or(false) => full_screen::cover(&window),
+        "full" => window.set_fullscreen(true),
         _ => Ok(()),
     };
     r.map_err(|e| e.to_string())?;
-    window.is_maximized().map_err(|e| e.to_string())
+    let e = |e: tauri::Error| e.to_string();
+    let full = full_screen::covering() || window.is_fullscreen().map_err(e)?;
+    // while it covers the monitor it is a normal window, but it comes back maximized
+    Ok((full_screen::covering() || window.is_maximized().map_err(e)?, full))
 }
 
 /// Updates (Settings › Check for updates, the Update button): the signed installer of the latest GitHub release
@@ -321,7 +479,7 @@ fn main() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(Updates::default())
         .manage(Launch(Mutex::new(file_arg(&args, &cwd))))
-        .invoke_handler(tauri::generate_handler![api, upload, quit, set_zoom, window_ctl, update_check, update_install, update_progress, launch_file])
+        .invoke_handler(tauri::generate_handler![api, upload, quit, set_zoom, window_ctl, set_background, update_check, update_install, update_progress, launch_file])
         .on_window_event(|window, event| {
             if let WindowEvent::CloseRequested { api, .. } = event {
                 on_close_requested(window.app_handle(), api);

@@ -254,7 +254,7 @@
     'Nudge the selection': 'تحريك المحدد شوية', 'Nudge ×10': 'تحريك ×10', 'Delete layer, keep its shapes': 'حذف الطبقة مع الاحتفاظ بأشكالها',
     'Make a layer from the selection': 'اعمل طبقة من المحدد', 'Delete selected': 'حذف المحدد',
     'Select and move': 'تحديد وتحريك', 'Pan': 'تحريك العرض', 'Pan while held': 'تحريك العرض وهو مضغوط', 'Set start point': 'تحديد نقطة البداية',
-    'Measure': 'قياس', 'Fit the drawing': 'الرسمة كلها في الشاشة', 'Zoom in / out': 'تكبير / تصغير', 'Show stitches': 'عرض الغرز',
+    'Measure': 'قياس', 'Fit the drawing': 'الرسمة كلها في الشاشة', 'Full screen on / off': 'ملء الشاشة / إلغاؤه', 'Full screen on / off (F11)': 'ملء الشاشة / إلغاؤه (F11)', 'Zoom in / out': 'تكبير / تصغير', 'Show stitches': 'عرض الغرز',
     'Show sewing order': 'عرض ترتيب الخياطة',
     'Hide the panel (Shift+Tab)': 'إخفاء اللوحة (Shift+Tab)', 'Show the panel (Shift+Tab)': 'إظهار اللوحة (Shift+Tab)',
     'Hide / show the stage panel': 'إخفاء / إظهار لوحة المرحلة', 'Hide / show the stage panel (Shift+Tab)': 'إخفاء / إظهار لوحة المرحلة (Shift+Tab)',

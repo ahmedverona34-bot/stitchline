@@ -134,6 +134,7 @@ input, textarea { user-select: text; }
 /* the window buttons (no Windows title bar): always at the right edge, like Windows, also in Arabic */
 .winctl { position: fixed; top: 0; right: 0; z-index: 60; display: flex; height: var(--bar); }
 body:has(#home:not([hidden])) .winctl { height: var(--wintop); }
+.fullscreen .winctl { display: none; }   /* full screen (F11): no window buttons, F11 leaves it */
 .winctl button { width: 46px; height: 100%; display: grid; place-items: center; border: 0; padding: 0; background: transparent; color: var(--fg-2); border-radius: 0; }
 .winctl button:hover { background: var(--well-strong); color: var(--fg); }
 .winctl button.close:hover { background: #c42b1c; color: #fff; }
