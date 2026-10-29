@@ -1,4 +1,4 @@
-/* Stitchline: geometry of the selection tools, kept apart from app.js so it can be tested with Node.
+/* Stitchline: geometry of the selection tools (and the split-line check of the layers list), kept apart from app.js so it can be tested with Node.
    Coordinates are drawing millimetres with y up, as in the engine. A transform is
    { ax, ay, sx, sy, dx, dy }: p -> (ax + (x - ax) * sx + dx, ay + (y - ay) * sy + dy), the same map the
    engine's 'move' (dx, dy) and 'scale' about (ox, oy) = (ax, ay) apply to every point of a shape. */
@@ -100,7 +100,48 @@
   /** Alt-marquee rule: only shapes that lie completely inside the box. */
   const insideBox = (P, bb) => P.length > 0 && P.every(([x, y]) => x >= bb[0] && x <= bb[2] && y >= bb[1] && y <= bb[3]);
 
-  const api = { MIN_SIZE, HANDLES, CURSOR, identity, translation, apply, applyBox, isScale, visibleHandles, handlePos, resize, segmentTouchesBox, touchesBox, insideBox };
+  /** Lines that look whole but are split into pieces: open shapes on the same layer whose ends touch (within tol
+      mm) and carry straight on, turning at most maxTurn degrees at the joint, like one straight line cut in half.
+      A corner where two lines meet at an angle is not a split. Shapes are { id, layer, pts, closed }; returns a
+      Map from the id of every piece to the ids of all the pieces of its line. */
+  function splitLines(shapes, tol = 0.05, maxTurn = 15) {
+    const ends = [];                                    // each free end and the direction the line leaves it
+    const away = (P, i, step) => {
+      for (let j = i + step; j >= 0 && j < P.length; j += step) {
+        const dx = P[i][0] - P[j][0], dy = P[i][1] - P[j][1], d = Math.hypot(dx, dy);
+        if (d > 1e-6) return [dx / d, dy / d];
+      }
+      return null;
+    };
+    for (const s of shapes) {
+      const P = s.pts;
+      if (s.closed || P.length < 2) continue;
+      for (const [i, step] of [[0, 1], [P.length - 1, -1]]) { const d = away(P, i, step); if (d) ends.push({ s, p: P[i], d }); }
+    }
+    const cell = Math.max(tol, 1e-6), key = (x, y) => Math.floor(x / cell) + ',' + Math.floor(y / cell);
+    const grid = new Map();
+    ends.forEach((e, k) => { const g = key(e.p[0], e.p[1]); grid.has(g) ? grid.get(g).push(k) : grid.set(g, [k]); });
+    const root = new Map(), find = id => { while (root.get(id) !== id) { root.set(id, root.get(root.get(id))); id = root.get(id); } return id; };
+    const straight = -Math.cos(maxTurn * Math.PI / 180);
+    ends.forEach((a, ka) => {
+      const cx = Math.floor(a.p[0] / cell), cy = Math.floor(a.p[1] / cell);
+      for (let gx = cx - 1; gx <= cx + 1; gx++) for (let gy = cy - 1; gy <= cy + 1; gy++) for (const kb of grid.get(gx + ',' + gy) || []) {
+        const b = ends[kb];
+        if (kb <= ka || b.s === a.s || b.s.layer !== a.s.layer) continue;
+        if (Math.hypot(a.p[0] - b.p[0], a.p[1] - b.p[1]) > tol) continue;
+        if (a.d[0] * b.d[0] + a.d[1] * b.d[1] > straight) continue;   // the two pieces leave the joint in opposite directions
+        for (const id of [a.s.id, b.s.id]) if (!root.has(id)) root.set(id, id);
+        root.set(find(a.s.id), find(b.s.id));
+      }
+    });
+    const groups = new Map();
+    for (const id of root.keys()) { const r = find(id); groups.has(r) ? groups.get(r).push(id) : groups.set(r, [id]); }
+    const out = new Map();
+    for (const ids of groups.values()) for (const id of ids) out.set(id, ids);
+    return out;
+  }
+
+  const api = { splitLines, MIN_SIZE, HANDLES, CURSOR, identity, translation, apply, applyBox, isScale, visibleHandles, handlePos, resize, segmentTouchesBox, touchesBox, insideBox };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else window.STL_SEL = api;
 })();

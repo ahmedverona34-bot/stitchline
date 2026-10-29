@@ -629,6 +629,7 @@ impl Session {
             "merge_points" => return msg(format!("{} points merged", ops::merge_points(j, &ids(a, "ids")?, f(a, "tol", 0.3)?)?)),
             "delete_short" => return msg(format!("{} short lines deleted", ops::delete_short(j, &ids(a, "ids")?, f(a, "min", 3.5)?)?)),
             "join" => return msg(format!("{} lines joined", ops::join_lines(j, &ids(a, "ids")?, f(a, "tol", 2.0)?, false)?)),
+            "merge" => return msg(format!("{} shapes merged into one", ops::merge_shapes(j, &ids(a, "ids")?)?)),
             "remove_overlaps" => return msg(format!("{} overlapping shapes removed", ops::remove_overlaps(j, &ids(a, "ids")?))),
             "delete" => ops::delete(j, &ids(a, "ids")?)?,
             "duplicate" => {

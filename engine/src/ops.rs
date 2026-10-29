@@ -462,6 +462,68 @@ pub fn join_lines(job: &mut Job, ids: &[i64], tol: f64, quiet: bool) -> Res<usiz
     Ok(joined)
 }
 
+/// Merge the selected shapes into one, in their sewing order: each next shape is turned (open) or started at
+/// its nearest point (closed) so it begins as close as possible to where the path so far ends, and a straight
+/// stitch line joins the two. The merged shape keeps the first shape's id, name, layer and place in the order.
+pub fn merge_shapes(job: &mut Job, ids: &[i64]) -> Res<usize> {
+    let idset: HashSet<i64> = ids.iter().copied().collect();
+    let picked: Vec<i64> = job.order.iter().copied().filter(|id| idset.contains(id)).collect();
+    let picked: Vec<i64> = picked.into_iter().filter(|&id| job.shapes.iter().any(|s| s.id == id && !s.pts.is_empty())).collect();
+    if picked.len() < 2 {
+        return op("Select two or more shapes to merge.");
+    }
+    // a closed shape as an open loop that starts (and ends) at point k
+    let ring = |pts: &[P], k: usize| -> Vec<P> {
+        let mut r: Vec<P> = pts[k..].iter().chain(pts[..k].iter()).copied().collect();
+        r.push(pts[k]);
+        r
+    };
+    let paths: Vec<(Vec<P>, bool)> = picked
+        .iter()
+        .map(|&id| {
+            let s = &job.shapes[shape_pos(job, id).unwrap()];
+            (s.pts.clone(), s.closed && s.pts.len() > 2)
+        })
+        .collect();
+    let mut out: Vec<P> = if paths[0].1 { ring(&paths[0].0, 0) } else { paths[0].0.clone() };
+    // an open first shape runs towards the second one
+    if !paths[0].1 && out.len() > 1 {
+        let next = &paths[1].0;
+        let near = |p: P| next.iter().map(|&q| geom::dist(p, q)).fold(f64::INFINITY, f64::min);
+        if near(out[0]) < near(out[out.len() - 1]) {
+            out.reverse();
+        }
+    }
+    for (pts, closed) in &paths[1..] {
+        let end = out[out.len() - 1];
+        let mut next = if *closed {
+            let k = py::argmin(pts.len(), |i| geom::dist(end, pts[i]));
+            ring(pts, k)
+        } else if geom::dist(end, pts[pts.len() - 1]) < geom::dist(end, pts[0]) {
+            pts.iter().rev().copied().collect()
+        } else {
+            pts.clone()
+        };
+        if geom::dist(end, next[0]) < 1e-9 {
+            next.remove(0);
+        }
+        out.extend(next);
+    }
+    let closed = out.len() > 3 && geom::dist(out[0], out[out.len() - 1]) < 1e-9;
+    if closed {
+        out.pop();
+    }
+    let i = shape_pos(job, picked[0])?;
+    let s = &mut job.shapes[i];
+    s.pts = out;
+    s.closed = closed;
+    s.marks.clear();
+    for &id in &picked[1..] {
+        job.remove_shape(id);
+    }
+    Ok(picked.len())
+}
+
 // ------------------------------------------------------------------ add / copy / delete / layers
 
 pub fn delete(job: &mut Job, ids: &[i64]) -> Res<()> {

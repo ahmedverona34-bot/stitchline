@@ -75,7 +75,8 @@
     // ---------------------------------------------------------------- layers panel
     'Layers': 'الطبقات', 'Layers and shapes': 'الطبقات والأشكال', 'Layer': 'طبقة',
     'Make a layer from the selection (Ctrl+G)': 'اعمل طبقة من المحدد (Ctrl+G)', 'Make a layer from the selection': 'اعمل طبقة من المحدد',
-    'Create group': 'إنشاء مجموعة',
+    'Create group': 'إنشاء مجموعة', 'Merge into one shape': 'دمج في شكل واحد', 'Merge the selection into one shape': 'دمج المحدد في شكل واحد',
+    'Merge the selection into one shape (Ctrl+Shift+J)': 'دمج المحدد في شكل واحد (Ctrl+Shift+J)', 'Select two or more shapes to merge.': 'حدد شكلين أو أكتر عشان تدمجهم.',
     'Sewing then laser': 'خياطة ثم ليزر', 'Sew every sewing layer first and cut with the laser last': 'خيّط كل طبقات الخياطة الأول وبعدين قص الليزر في الآخر',
     'Drag layers and shapes to change the order.': 'اسحب الطبقات والأشكال عشان تغيّر الترتيب.', 'Close sequence': 'إغلاق التسلسل',
     'Step back (←, Shift+← a shape)': 'رجوع خطوة (←، و Shift+← شكل كامل)', 'Step forward (→, Shift+→ a shape)': 'تقديم خطوة (→، و Shift+→ شكل كامل)',
@@ -373,6 +374,8 @@
     [/^(.+) · ([\d.]+) mm · (\d+) points · (closed|open)$/, (m, a, b, c, d) => `${tr(a)} · ${b} مم · ${c} نقطة · ${d === 'closed' ? 'مغلق' : 'مفتوح'}`],
     [/^([\d.]+) mm in total$/, (m, a) => `${a} مم إجمالي`],
     [/^(\d+) shapes?$/, (m, a) => `${a} شكل`],
+    [/^This line is split into (\d+) pieces\. Click to select them all, then Merge into one shape \(Ctrl\+Shift\+J\)\.$/, (m, a) => `الخط ده متقسم ${a} أجزاء. دوس عشان تحددهم كلهم، وبعدين ادمجهم في شكل واحد (Ctrl+Shift+J).`],
+    [/^(\d+) shapes merged into one$/, (m, a) => `تم دمج ${a} أشكال في شكل واحد`],
     [/^(\d+) layers?$/, (m, a) => `${a} طبقة`],
     [/^(\d+) (shape|shapes|layer|layers)$/, (m, a, b) => `${a} ${b.startsWith('shape') ? 'شكل' : 'طبقة'}`],
     [/^Move to (-?[\d.]+), (-?[\d.]+)$/, (m, a, b) => `انتقال إلى ${a}، ${b}`],

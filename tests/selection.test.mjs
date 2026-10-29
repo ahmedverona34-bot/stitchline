@@ -134,3 +134,27 @@ test('marquee and single points', () => {
   assert.equal(SL.touchesBox([], false, [0, 0, 10, 10]), false);
   assert.equal(SL.insideBox([[5, 5]], [0, 0, 10, 10]), true);
 });
+
+test('a straight line cut in half is found as split, a corner is not', () => {
+  const shapes = [
+    { id: 1, layer: 'a', pts: [[100, 100], [400, 100]] },          // the two halves of split-line.svg
+    { id: 2, layer: 'a', pts: [[400, 100], [700, 100]] },
+    { id: 3, layer: 'a', pts: [[700, 100], [700, 300]] },          // meets the line at a right angle
+    { id: 4, layer: 'b', pts: [[100, 100], [-200, 100]] },         // carries straight on, but on another layer
+    { id: 5, layer: 'a', pts: [[0, 0], [10, 0], [10, 10]], closed: true },
+  ];
+  const m = SL.splitLines(shapes);
+  assert.deepEqual([...m.keys()].sort(), [1, 2]);
+  assert.deepEqual(m.get(1).slice().sort(), [1, 2]);
+});
+
+test('pieces drawn against each other, a gentle bend and a chain of three are split; a gap is not', () => {
+  const m = SL.splitLines([
+    { id: 1, layer: 'a', pts: [[0, 0], [10, 0]] },
+    { id: 2, layer: 'a', pts: [[20, 1], [10.01, 0]] },             // drawn backwards, 0.01 mm off, bends ~6°
+    { id: 3, layer: 'a', pts: [[20, 1], [30, 2]] },
+    { id: 4, layer: 'a', pts: [[30.5, 2], [40, 3]] },              // 0.5 mm gap: really apart
+  ]);
+  assert.deepEqual(m.get(1).slice().sort(), [1, 2, 3]);
+  assert.equal(m.has(4), false);
+});

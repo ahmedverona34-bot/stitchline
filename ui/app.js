@@ -151,9 +151,17 @@
     fresh.forEach(id => layerOfId.has(id) && openLayers.add(layerOfId.get(id)));
     if (openLayers.size !== n) store.set('openLayers', [...openLayers]);
   }
+  // lines that look whole but are split into pieces (STL_SEL.splitLines): a red warning in the layers list
+  let splitMap = new Map();
+  const WARN = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.27 4.5a2 2 0 0 1 3.46 0l7.53 13a2 2 0 0 1-1.73 3H4.47a2 2 0 0 1-1.73-3z"/><path d="M12 9.2v4.3"/><circle cx="12" cy="16.9" r=".6"/></svg>';
+  const splitFlag = id => {
+    const n = splitMap.get(id)?.length;
+    return n ? `<span class="split" data-split="${id}" title="This line is split into ${n} pieces. Click to select them all, then Merge into one shape (Ctrl+Shift+J).">${WARN}</span>` : '<span></span>';
+  };
   function renderLayers() {
     const max = 300;
     openForNewSel();
+    splitMap = window.STL_SEL.splitLines(S.job.shapes);
     const rank = new Map(S.job.order.map((id, i) => [id, i]));   // shapes are listed in sewing order
     $('#layers').innerHTML = S.job.layers.map(L => {
       const shapes = S.job.shapes.filter(s => s.layer === L.id).sort((a, b) => (rank.get(a.id) ?? 1e15) - (rank.get(b.id) ?? 1e15));
@@ -169,7 +177,7 @@
           <button class="switch" role="switch" aria-checked="${L.output}" data-out="${L.id}" aria-label="Sew ${esc(L.name)}" title="Sew this layer"></button>
         </div>
         <div class="shapes">${shapes.slice(0, max).map(s => `
-          <button class="shape-row" data-s="${s.id}" draggable="true" aria-selected="${sel.has(s.id)}"><span class="ord">${(rank.get(s.id) ?? -1) + 1}</span>${thumb(s.pts, s.closed)}<span class="nm">${esc(nameOf(s))}</span><span class="meta">${plen(s.pts, s.closed).toFixed(0)} mm</span></button>`).join('')}
+          <button class="shape-row" data-s="${s.id}" draggable="true" aria-selected="${sel.has(s.id)}"><span class="ord">${(rank.get(s.id) ?? -1) + 1}</span>${thumb(s.pts, s.closed)}<span class="nm">${esc(nameOf(s))}</span><span class="meta">${plen(s.pts, s.closed).toFixed(0)} mm</span>${splitFlag(s.id)}</button>`).join('')}
           ${shapes.length > max ? `<div class="more">+ ${shapes.length - max} more · select them on the drawing</div>` : ''}
         </div>
       </div>`;
@@ -177,6 +185,8 @@
     renderOrderBar();
   }
   $('#layers').addEventListener('click', e => {
+    const sp = e.target.closest('[data-split]');
+    if (sp) { sel = new Set(splitMap.get(+sp.dataset.split) || []); selChanged(); return; }
     const sh = e.target.closest('[data-s]');
     if (sh) { pick(+sh.dataset.s, e.ctrlKey || e.metaKey, e.shiftKey); return; }
     const t = e.target.closest('[data-toggle]');
@@ -261,11 +271,12 @@
   wireDrag($('#layers'));
   $('#layers').addEventListener('contextmenu', e => {
     // a shape row: right-click a row outside the selection selects it, then the menu makes a group of the selection
+    // or merges it into one shape
     const sr = e.target.closest('.shape-row');
     if (sr) {
       e.preventDefault(); const id = +sr.dataset.s;
       if (!sel.has(id)) { sel = new Set([id]); selChanged(); }
-      return menu(e.clientX, e.clientY, [['Create group', () => ACT.groupSheet(), 'Ctrl G']]);
+      return menu(e.clientX, e.clientY, [['Create group', () => ACT.groupSheet(), 'Ctrl G'], ...(sel.size > 1 ? [['Merge into one shape', ACT.merge, 'Ctrl Shift J']] : [])]);
     }
     const row = e.target.closest('[data-layer]'); if (!row) return;
     e.preventDefault(); const id = row.dataset.layer;
@@ -789,6 +800,12 @@
     tool: b => setTool(b.dataset.tool),
     sheet: b => openSheet(b.dataset.sheet),
     groupSheet: () => needSel() && openSheet('group'),
+    // the selected shapes become one shape (the first in the sewing order keeps its place), which stays selected
+    merge: () => {
+      if (sel.size < 2) return toast('Select two or more shapes to merge.', true);
+      const first = S.job.order.find(i => sel.has(i));
+      api('merge', { ids: [...sel] }).then(d => { if (d) { sel = new Set([first]); selChanged(); } });
+    },
     dpi: b => setJob({ dpi: +b.dataset.v }),
     gotoLaser: b => { curLayer = b.dataset.l; setStage('stitch'); },
     laserFix: () => api('laser_fix', { id: curLayer }).then(d => { if (d) fitView(); }),
@@ -1400,6 +1417,7 @@
     menu(e.clientX, e.clientY, [
       ['Start sewing here', () => api('set_start', { id: [...sel][0], x, y }, { quiet: true }), ''],
       ['Reverse direction', () => api('reverse', { ids: [...sel] }, { quiet: true }), 'Ctrl Alt R'],
+      ...(sel.size > 1 ? [['Merge into one shape', ACT.merge, 'Ctrl Shift J']] : []),
       ['Copy', () => copySel(false), 'Ctrl C'],
       ['Duplicate', () => api('duplicate', { ids: [...sel], dx: 5, dy: -5 })],
       ['Mirror left–right', () => xform('mirror', { axis: 'h' }), 'O'],
@@ -1869,7 +1887,7 @@
     ['Edit', [['Undo', 'Ctrl Z'], ['Redo', 'Ctrl Shift Z', 1], ['Select all', 'Ctrl A'], ['Clear the selection', 'Ctrl Shift A', 1], ['Clear the selection, leave a tool', 'Esc'],
       ['Copy', 'Ctrl C', 1], ['Cut', 'Ctrl X', 1], ['Paste in the middle of the view', 'Ctrl V', 1], ['Paste in place, sewn last', 'Ctrl F', 1], ['Paste in place, sewn first', 'Ctrl B', 1],
       ['Copy while dragging', 'Alt', 1], ['Do the last move, rotate, mirror or resize again', 'Ctrl D', 1], ['Delete selected', 'Delete'], ['Nudge the selection', '← ↑ → ↓'], ['Nudge ×10', 'Shift ← ↑ → ↓'],
-      ['Join line ends', 'Ctrl J', 1], ['Reverse direction', 'Ctrl Alt R', 1], ['Make a layer from the selection', 'Ctrl G'], ['Delete layer, keep its shapes', 'Ctrl Shift G'],
+      ['Join line ends', 'Ctrl J', 1], ['Merge into one shape', 'Ctrl Shift J', 1], ['Reverse direction', 'Ctrl Alt R', 1], ['Make a layer from the selection', 'Ctrl G'], ['Delete layer, keep its shapes', 'Ctrl Shift G'],
       ['Move the layer earlier / later (no shape selected)', 'Alt ↑ ↓', 1],
       ['Sew one step later', 'Ctrl ]', 1], ['Sew one step earlier', 'Ctrl [', 1], ['Sew last', 'Ctrl Shift ]', 1], ['Sew first', 'Ctrl Shift [', 1]]],
     ['Tools', [['Selection: move and resize whole shapes', 'V'], ['Direct selection: move one path', 'A'], ['Resize keeping proportions', 'Shift'], ['Resize from the centre', 'Alt'], ['Box: only shapes fully inside', 'Alt'],
@@ -1881,7 +1899,7 @@
   ];
   const KEYS_SIMPLE = [
     ['File', [['Open a drawing or job', 'Ctrl O'], ['Save job', 'Ctrl S'], ['Save machine file', 'Ctrl Alt E'], ['New job', 'Ctrl N'], ['Home: new job, open, recent files', 'Ctrl Shift H']]],
-    ['Edit', [['Undo', 'Ctrl Z'], ['Redo', 'Ctrl Shift Z'], ['Stop the simulation, clear the selection', 'Esc'], ['Delete selected', 'Delete'], ['Create group from the selection', 'Ctrl G'], ['Sequence window: step through the run', '← →'], ['Sequence window: a shape at a time', 'Shift ← →'], ['Nudge the selection', '← ↑ → ↓'], ['Nudge ×10', 'Shift ← ↑ → ↓']]],
+    ['Edit', [['Undo', 'Ctrl Z'], ['Redo', 'Ctrl Shift Z'], ['Stop the simulation, clear the selection', 'Esc'], ['Delete selected', 'Delete'], ['Create group from the selection', 'Ctrl G'], ['Merge the selection into one shape', 'Ctrl Shift J'], ['Sequence window: step through the run', '← →'], ['Sequence window: a shape at a time', 'Shift ← →'], ['Nudge the selection', '← ↑ → ↓'], ['Nudge ×10', 'Shift ← ↑ → ↓']]],
     ['Tools', [['Selection: move and resize whole shapes', 'V'], ['Direct selection: move one path', 'A'], ['Pan', 'H'], ['Set start point', 'C'], ['Measure', 'I'], ['Add shape', 'M']]],
     ['View', [['Fit the drawing', 'Ctrl 0'], ['Real size (100%)', 'Ctrl 1'], ['Zoom in', 'Ctrl +'], ['Zoom out', 'Ctrl −'], ['Pan while held', 'Space'], ['Original shape / stitches', 'Ctrl Y'],
       ['Light / dark', 'Ctrl Shift L'], ['Settings', 'Ctrl ,'], ['Keyboard shortcuts', '?']]],
@@ -2171,7 +2189,7 @@
     ['Open file', 'import', () => ACT.open()], ['Insert another drawing into the job', 'import', () => ACT.insert()], ['Save job', 'import', () => ACT.save()], ['Save job as…', 'import', () => api('save', { as_new: true })],
     ['Remove overlapping shapes on open', 'import'], ["Don't join lines automatically", 'import'], ['Work without reference point', 'import'], ['Drawing resolution (dpi)', 'import'], ['Scale drawing', 'import'], ['Calculate scale from a measurement', 'import', () => openSheet('calc')], ['Machine table size', 'import'], ['New job', 'import', () => openSheet('newjob')], ['Home: new job, open, recent files', 'import', () => showHome()],
     ['Add shape (point, line, rectangle, circle)', 'arrange', () => openSheet('add')], ['Duplicate', 'arrange', () => openSheet('dup')], ['Move shape to another layer', 'arrange'], ['New empty layer', 'arrange', () => $('#addLayer').click()], ['Reference point', 'arrange', () => openSheet('ref')], ['Nudge / move', 'arrange'], ['Rotate', 'arrange'], ['Mirror', 'arrange'], ['Resize selected shapes', 'arrange', () => openSheet('resize')], ['Pick start point', 'arrange', () => setTool('start')], ['Reverse direction', 'arrange', () => ACT.op({ dataset: { op: 'reverse' } })], ['Extend or shorten ends', 'arrange'], ['Edit points one by one', 'arrange', () => openSheet('points')], ['Split a shape', 'arrange'], ['Merge close points', 'arrange'], ['Delete short lines', 'arrange'], ['Join line ends', 'arrange'], ['Select all', 'arrange', () => ACT.selectAll()], ['Delete selected', 'arrange', () => ACT.op({ dataset: { op: 'delete' } })], ['Start every shape at top / bottom / left / right', 'arrange'], ['Sections: zigzag, back-tack, special length', 'arrange', () => openSheet('marks')], ['Measure distance', 'arrange', () => setTool('measure')], ['Undo', 'arrange', () => api('undo')], ['Redo', 'arrange', () => api('redo')],
-    ['Make a layer from the selection (Ctrl+G)', 'arrange', () => ACT.groupSheet()], ['Delete layer, keep its shapes (Ctrl+Shift+G)', 'arrange'], ['Set the needle of a layer', 'arrange'],
+    ['Make a layer from the selection (Ctrl+G)', 'arrange', () => ACT.groupSheet()], ['Merge the selection into one shape (Ctrl+Shift+J)', 'arrange', () => ACT.merge()], ['Delete layer, keep its shapes (Ctrl+Shift+G)', 'arrange'], ['Set the needle of a layer', 'arrange'],
     ['Light / dark (Ctrl+Shift+L)', 'import', () => toggleTheme()],
     ['Hide / show the stage panel (Shift+Tab)', 'import', () => toggleInspector()],
     ['Keyboard shortcuts', 'import', () => openSheet('keys')],
@@ -2285,6 +2303,7 @@
     if (ctrl && k === 'b') { e.preventDefault(); return paste('back'); }
     if (ctrl && k === 'd') { e.preventDefault(); return again(); }
     if (ctrl && k === 'g') { e.preventDefault(); if (e.shiftKey) { const L = layerById(curLayer); if (L) api('ungroup', { id: L.id }, { quiet: true }); } else ACT.groupSheet(); return; }
+    if (ctrl && e.shiftKey && k === 'j') { e.preventDefault(); return ACT.merge(); }
     if (ctrl && k === 'j') return needSel() && api('join', { ids: [...sel], tol: parseFloat($('#jt')?.value) || 2 });
     if (ctrl && e.altKey && k === 'r') { e.preventDefault(); return needSel() && api('reverse', { ids: [...sel] }, { quiet: true }); }
     if (ctrl && (e.code === 'BracketRight' || e.code === 'BracketLeft')) { e.preventDefault(); return sewOrder(e.code === 'BracketRight' ? 1 : -1, e.shiftKey); }
@@ -2323,6 +2342,7 @@
     if (ctrl && (e.code === 'Minus' || e.code === 'NumpadSubtract')) return zoomAt(0.8);
     if (ctrl && k === 'y') { e.preventDefault(); return $('#showOrig').click(); }
     if (ctrl && k === 'g' && !e.shiftKey) { e.preventDefault(); return ACT.groupSheet(); }
+    if (ctrl && e.shiftKey && k === 'j') { e.preventDefault(); return ACT.merge(); }
     if (e.key === 'Escape') { $('#ctx').hidden = true; if (sim.on) return stopSim(); sel.clear(); selChanged(); return; }
     if ((e.key === 'Delete' || e.key === 'Backspace') && sel.size) return api('delete', { ids: [...sel] }, { quiet: true });
     if (e.key.startsWith('Arrow') && sel.size) {

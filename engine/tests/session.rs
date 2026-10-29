@@ -563,3 +563,28 @@ fn saving_replaces_the_file_whole_and_leaves_no_temporary_file() {
     assert!(write_atomic(&dir.join("missing").join("a.slw"), b"x").is_err());
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+#[test]
+fn merge_joins_the_selected_shapes_into_one_in_sewing_order_in_one_undo_step() {
+    let (mut s, _) = session(&home("merge"));
+    let (a, _) = add_line(&mut s);
+    let (b, _) = add_line(&mut s);
+    let (c, _) = add_line(&mut s);
+    let (d, _) = add_line(&mut s);
+    s.handle("set_points", &json!({"id": a, "pts": [[0, 0], [10, 0]]})).unwrap();
+    // drawn the other way round: it is turned so it starts where a ends
+    s.handle("set_points", &json!({"id": b, "pts": [[30, 4], [10, 4]]})).unwrap();
+    // closed: it starts (and ends) at its corner nearest to b's end
+    s.handle("set_points", &json!({"id": c, "pts": [[40, 0], [40, 10], [30, 10], [30, 0]], "closed": true})).unwrap();
+    let before = state(&mut s)["job"]["order"].clone();
+    let st = s.handle("merge", &json!({"ids": [c, b, a]})).unwrap();
+    assert_eq!(st["job"]["order"], json!([a, d]));
+    let m = s.job.shape(a).unwrap();
+    assert!(!m.closed);
+    let pts: Vec<(f64, f64)> = m.pts.clone();
+    assert_eq!(pts, vec![(0.0, 0.0), (10.0, 0.0), (10.0, 4.0), (30.0, 4.0), (30.0, 0.0), (40.0, 0.0), (40.0, 10.0), (30.0, 10.0), (30.0, 0.0)]);
+    assert!(s.job.shape(b).is_none() && s.job.shape(c).is_none());
+    let st = s.handle("undo", &json!({})).unwrap();
+    assert_eq!(st["job"]["order"], before);
+    assert_eq!(error(s.handle("merge", &json!({"ids": [a]}))), "Select two or more shapes to merge.");
+}
