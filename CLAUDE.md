@@ -85,5 +85,6 @@ Prefs/autosave: `%APPDATA%\Stitchline` or `%STITCHLINE_HOME%`. UI-only prefs: lo
 - Keep UI edits keyboard-friendly: buttons show their shortcut in the tooltip, `?`/F1 lists shortcuts,
   Esc closes sheets, focus is kept after edits.
 - Commit messages: one plain-English sentence about the user-visible change (see `git log`).
-- **Every commit/merge triggers a git hook** (`.git/hooks/post-commit`, `post-merge`) that rebuilds the desktop
-  shortcut's copy in the background via `tools/update-desktop.ps1`; status in `target\desktop\update.log`.
+- **The desktop shortcut's copy is built only on request** (no git hook): run
+  `powershell -ExecutionPolicy Bypass -File tools/update-desktop.ps1` when the user asks for it; status in
+  `target\desktop\update.log`. Don't build it after commits on your own.

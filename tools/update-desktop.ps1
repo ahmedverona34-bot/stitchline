@@ -1,9 +1,8 @@
 ﻿# Keep a desktop copy of Stitchline on the latest code.
-#   powershell -ExecutionPolicy Bypass -File tools\update-desktop.ps1 -Install   once: git hooks + desktop shortcut, then a first build
+#   powershell -ExecutionPolicy Bypass -File tools\update-desktop.ps1 -Install   once: desktop shortcut, then a first build
 #   powershell -ExecutionPolicy Bypass -File tools\update-desktop.ps1            build now and replace the desktop copy
-# After -Install, every commit or merge in this repository starts this script hidden in the background, so the
-# desktop shortcut opens the newest build a few minutes later. The copy lives in target\desktop\Stitchline.exe;
-# progress and errors go to target\desktop\update.log. A copy that is open while it updates keeps running; the new
+# It runs only when asked (there is no git hook): build the desktop copy by hand when you want it.
+# The copy lives in target\desktop\Stitchline.exe; progress and errors go to target\desktop\update.log. A copy that is open while it updates keeps running; the new
 # build starts the next time it is opened.
 param([switch]$Install)
 $ErrorActionPreference = 'Stop'
@@ -41,16 +40,6 @@ function Register-Projects {
 }
 
 if ($Install) {
-    # git hooks: start this script hidden, so the commit does not wait for the build
-    $hook = @'
-#!/bin/sh
-# Stitchline: rebuild the desktop copy in the background (tools/update-desktop.ps1)
-powershell.exe -NoProfile -Command "Start-Process powershell.exe -WindowStyle Hidden -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-File','$(pwd -W)/tools/update-desktop.ps1'" >/dev/null 2>&1 &
-exit 0
-'@
-    foreach ($h in 'post-commit', 'post-merge') {
-        [IO.File]::WriteAllText((Join-Path $root ".git\hooks\$h"), $hook.Replace("`r`n", "`n"))
-    }
     # desktop shortcut to the copy (its icon comes from the exe)
     # WScript.Shell cannot save a shortcut with an Arabic name: save it with a plain name, then rename it
     $desk = [Environment]::GetFolderPath('Desktop')
@@ -60,7 +49,7 @@ exit 0
     $s.TargetPath = $exe; $s.WorkingDirectory = $dir; $s.Description = 'Stitchline: the latest build of this repository'
     $s.Save()
     Move-Item $tmp $lnk -Force
-    Log "installed hooks and shortcut $lnk"
+    Log "installed shortcut $lnk"
 }
 
 # one build at a time: a newer commit during a build is picked up by the loop below
